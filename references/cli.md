@@ -186,14 +186,21 @@ map reviewed with code changes; the Kuzu directory stays ignored.
 ### render
 
 ```
-render [--out PATH] [--title TEXT]    # default: .dataflow/graph.html
+render [--out PATH] [--title TEXT] [--flow-db PATH]   # default: .dataflow/graph.html
 ```
 
-Writes a standalone HTML file (no network, no CDN) with a force-directed graph.
-Fields are hidden by default; enable the **Fields** chip. Click a node for
-attributes, references, fields and connections, or click an **edge** for its
-`note`, `refs`, file and endpoints. Search, zoom, pan, drag, and PNG export are
-built in.
+Writes a standalone HTML file (no network, no CDN) with two tabs.
+
+**Contracts** is a force-directed graph. Fields are hidden by default; enable the
+**Fields** chip. Click a node for attributes, references, fields and
+connections, or click an **edge** for its `note`, `refs`, file and endpoints.
+
+**Flows** embeds every flow from the flow database (`--flow-db`, default
+`<db-parent>/flows.kuzu`). Pick a flow in the selector; dashed steps are
+`span=context`, pink badges are joins, and a step panel links back to its
+contract in the Contracts tab.
+
+Search, zoom, pan, drag, and PNG export are built in.
 
 With a contract selected, enable **Impact** to dim everything outside its
 downstream reach. The reach follows `compose` and `transform` edges (not

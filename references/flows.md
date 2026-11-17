@@ -151,5 +151,5 @@ is the shape a renderer or another tool should consume.
 - **One feed per pair.** A `compose` and a `transform` between the same two
   nodes are merged into a single `FEEDS` row with `kind=compose+transform` and
   the notes joined; they are not two separate paths.
-- **No HTML yet.** `flow show` is the current reader; a flow view in `render`
-  is the next step.
+- **The HTML is read-only too.** `render` embeds every flow in the **Flows**
+  tab; clicking a step jumps to its contract in the **Contracts** tab.

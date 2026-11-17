@@ -136,6 +136,7 @@ feeds from the contract graph:
 A step with multiple incoming `FEEDS` is a join; inputs outside the forward
 reach are kept as `context`, so the tree does not pretend one table is the only
 source. The contract graph is never modified; rerun `flow sync` after changes.
+`render` embeds every flow in a **Flows** tab next to the contract map.
 
 `SKILL.md` is the agent-facing guide. Detailed references:
 
@@ -148,9 +149,13 @@ source. The contract graph is never modified; rerun `flow sync` after changes.
 ## HTML map
 
 `render` writes `.dataflow/graph.html` (or `--out PATH`). It is self-contained:
-no CDN, no server. Click nodes or edges for details, enable **Fields** to show
-the field tree, and enable **Impact** with a contract selected to dim everything
-outside its downstream reach and list affected contracts and paths.
+no CDN, no server, and it has two tabs. **Contracts** is the field-aware map:
+click nodes or edges, enable **Fields**, or enable **Impact** to dim everything
+outside the selected contract's reach. **Flows** shows the derived step graph:
+dashed steps are context inputs, pink badges are joins, and clicking a step opens
+its contract details (with a link back to the Contracts tab).
+
+![Flows tab](assets/preview-flows.png)
 
 ## Layout
 

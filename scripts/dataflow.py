@@ -837,12 +837,13 @@ def format_report_markdown(report: dict) -> str:
 # render
 # --------------------------------------------------------------------------
 
-def render_html(db: DB, out_path: Path, title: str) -> Path:
+def render_html(db: DB, out_path: Path, title: str, flows=None) -> Path:
     template_path = Path(__file__).resolve().parent.parent / "assets" / "graph.html"
     if not template_path.exists():
         raise DataflowError(f"visualization template not found: {template_path}")
     payload = graph_payload(db)
     payload["title"] = title
+    payload["flows"] = flows or []
     data = json.dumps(payload, ensure_ascii=False).replace("<", "\\u003c")
     html = template_path.read_text(encoding="utf-8").replace("__DATA__", data)
     out_path = Path(out_path)
@@ -1237,7 +1238,7 @@ def cmd_export(args) -> int:
 def cmd_render(args) -> int:
     db = open_db(args)
     out = Path(args.out) if args.out else db.path.parent / DEFAULT_RENDER
-    path = render_html(db, out, args.title)
+    path = render_html(db, out, args.title, render_flows(db, args))
     if args.json:
         print(json.dumps({"ok": True, "out": str(path)}, indent=2))
     else:
@@ -1459,6 +1460,46 @@ def _flow_rows(db: DB):
     feeds = [{"from": a, "to": b, "kind": kind or "", "note": note or ""}
              for a, b, kind, note in feed_rows]
     return flows, steps, feeds
+
+
+
+def render_flows(contract_db: DB, args) -> list:
+    path = flow_db_path(args)
+    if not path.exists():
+        return []
+    try:
+        flow_db = DB(path)
+        if "Flow" not in flow_db.tables():
+            return []
+        flows, steps, feeds = _flow_rows(flow_db)
+    except Exception:
+        return []
+    nodes, _ = load_graph(contract_db)
+    steps_by_flow = defaultdict(list)
+    for step in steps:
+        steps_by_flow[step.get("flow_id")].append(step)
+    feeds_by_flow = defaultdict(list)
+    step_flow = {step["id"]: step.get("flow_id") for step in steps}
+    for feed in feeds:
+        feeds_by_flow[step_flow.get(feed["from"])].append(feed)
+    contract_keys = ("kind", "description", "entry_point", "location",
+                     "channel", "store_type", "entry_type", "repo",
+                     "commit_sha", "file_path", "refs")
+    payload = []
+    for flow in sorted(flows, key=lambda item: item["id"]):
+        flow_steps = []
+        for step in steps_by_flow.get(flow["id"], []):
+            item = dict(step)
+            contract = nodes.get(step.get("contract_id"), {})
+            item["contract"] = {key: contract[key] for key in contract_keys
+                                if contract.get(key) not in (None, "", [])}
+            flow_steps.append(item)
+        payload.append({
+            "flow": flow,
+            "steps": flow_steps,
+            "feeds": feeds_by_flow.get(flow["id"], []),
+        })
+    return payload
 
 
 def cmd_flow_build(args) -> int:
@@ -1766,6 +1807,8 @@ def build_parser() -> argparse.ArgumentParser:
     render = sub.add_parser("render", parents=[common], help="write a standalone HTML graph")
     render.add_argument("--out")
     render.add_argument("--title", default="Data flow map")
+    render.add_argument("--flow-db", default=None,
+                        help="flow database to embed in the Flows tab")
     render.set_defaults(func=cmd_render)
 
     stats = sub.add_parser("stats", parents=[common], help="print graph counters")

@@ -84,9 +84,9 @@ names.
 5. **Audit** with `report`; treat warnings as questions for the code, not as
    facts. Fix the graph when the code says the report is wrong.
 6. **Publish**: `export` for a git-friendly snapshot and `render` for a
-   standalone HTML graph (click nodes and edges to inspect them). With a
-   contract selected, turn on **Impact** to highlight everything downstream and
-   read the affected contracts and paths.
+   standalone HTML graph. The HTML has two tabs: **Contracts** (fields, edges,
+   Impact) and **Flows** (steps, joins, context). With a contract selected, turn
+   on **Impact** to highlight everything downstream.
 
 ```sh
 "$PY" "$SKILL_DIR/scripts/dataflow.py" add-node --kind input \

@@ -18,6 +18,7 @@
     --compose: #38bdf8;
     --transform: #fbbf24;
     --contains: #64748b;
+    --feeds: #22d3ee;
   }
   * { box-sizing: border-box; }
   html, body { height: 100%; margin: 0; }
@@ -54,6 +55,22 @@
     display: flex; gap: 6px; flex-wrap: wrap; align-items: center;
     padding: 8px 14px; border-bottom: 1px solid var(--line); background: #0a1120;
   }
+  .tabs { display: flex; gap: 2px; padding: 2px; border: 1px solid var(--line);
+    border-radius: 8px; background: #0a1222; }
+  .tab { background: transparent; border: 0; padding: 4px 10px; border-radius: 6px;
+    color: var(--muted); cursor: pointer; font: inherit; font-size: 12px; }
+  .tab:hover { color: var(--text); }
+  .tab.active { background: #1e293b; color: var(--text); }
+  select.flow-select { background: #0a1222; color: var(--text); border: 1px solid var(--line);
+    border-radius: 7px; padding: 5px 8px; font: inherit; outline: none; max-width: 230px; }
+  select.flow-select:disabled { display: none !important; }
+  body .flows-only { display: none; }
+  body.mode-flows .flows-only { display: inline-flex; }
+  body.mode-flows select.flows-only { display: inline-block; }
+  body.mode-flows .contracts-only { display: none; }
+  body #legend .flows-only { display: none; }
+  body.mode-flows #legend .flows-only { display: flex; }
+  body.mode-flows #legend .contracts-only { display: none; }
   .chip {
     display: inline-flex; align-items: center; gap: 6px; cursor: pointer;
     border: 1px solid var(--line); border-radius: 999px; padding: 3px 9px;
@@ -133,6 +150,10 @@
 <header>
   <div class="brand"><span class="dot"></span><h1 id="title">Data flow map</h1></div>
   <div class="stats" id="stats"></div>
+  <div class="tabs">
+    <button class="tab active" id="tabContracts">Contracts</button>
+    <button class="tab" id="tabFlows">Flows</button>
+  </div>
   <div class="spacer"></div>
   <input id="search" type="search" placeholder="Search id, name or path" autocomplete="off">
   <button id="fit" title="Fit graph in view">Fit</button>
@@ -143,11 +164,14 @@
   <label class="chip on"><input type="checkbox" data-kind="input" checked><span class="swatch" style="background:var(--input)"></span>Inputs</label>
   <label class="chip on"><input type="checkbox" data-kind="entry" checked><span class="swatch" style="background:var(--entry)"></span>Entries</label>
   <label class="chip on"><input type="checkbox" data-kind="storage" checked><span class="swatch" style="background:var(--storage)"></span>Storages</label>
-  <label class="chip"><input type="checkbox" data-kind="field"><span class="swatch" style="background:var(--field)"></span>Fields</label>
-  <label class="chip on"><input type="checkbox" data-rel="compose" checked><span class="swatch" style="background:var(--compose)"></span>compose</label>
-  <label class="chip on"><input type="checkbox" data-rel="transform" checked><span class="swatch" style="background:var(--transform)"></span>transform</label>
-  <label class="chip on"><input type="checkbox" data-rel="contains" checked><span class="swatch" style="background:var(--contains)"></span>contains</label>
+  <label class="chip contracts-only"><input type="checkbox" data-kind="field"><span class="swatch" style="background:var(--field)"></span>Fields</label>
+  <label class="chip on contracts-only"><input type="checkbox" data-rel="compose" checked><span class="swatch" style="background:var(--compose)"></span>compose</label>
+  <label class="chip on contracts-only"><input type="checkbox" data-rel="transform" checked><span class="swatch" style="background:var(--transform)"></span>transform</label>
+  <label class="chip on contracts-only"><input type="checkbox" data-rel="contains" checked><span class="swatch" style="background:var(--contains)"></span>contains</label>
+  <label class="chip on flows-only"><input type="checkbox" data-rel="feeds" checked><span class="swatch" style="background:var(--feeds)"></span>feeds</label>
+  <label class="chip on flows-only"><input type="checkbox" id="contextToggle" checked><span class="swatch" style="background:#94a3b8"></span>Context</label>
   <label class="chip" title="Highlight everything reachable from the selected contract"><input type="checkbox" id="impactToggle"><span class="swatch" style="background:#f472b6"></span>Impact</label>
+  <select id="flowSelect" class="flow-select flows-only" aria-label="Select flow"></select>
   <span class="spacer"></span>
   <span class="stats" id="visibleStats"></span>
 </div>
@@ -158,10 +182,13 @@
       <div class="row"><span class="swatch" style="width:8px;height:8px;border-radius:50%;background:var(--input)"></span>Input</div>
       <div class="row"><span class="swatch" style="width:8px;height:8px;border-radius:50%;background:var(--entry)"></span>Entry</div>
       <div class="row"><span class="swatch" style="width:8px;height:8px;border-radius:50%;background:var(--storage)"></span>Storage</div>
-      <div class="row"><span class="swatch" style="width:8px;height:8px;border-radius:50%;background:var(--field)"></span>Field</div>
-      <div class="row" style="margin-top:4px"><span class="line" style="border-color:var(--compose)"></span>compose</div>
-      <div class="row"><span class="line" style="border-color:var(--transform)"></span>transform</div>
-      <div class="row"><span class="line dashed" style="border-color:var(--contains)"></span>contains</div>
+      <div class="row contracts-only"><span class="swatch" style="width:8px;height:8px;border-radius:50%;background:var(--field)"></span>Field</div>
+      <div class="row contracts-only" style="margin-top:4px"><span class="line" style="border-color:var(--compose)"></span>compose</div>
+      <div class="row contracts-only"><span class="line" style="border-color:var(--transform)"></span>transform</div>
+      <div class="row contracts-only"><span class="line dashed" style="border-color:var(--contains)"></span>contains</div>
+      <div class="row flows-only" style="margin-top:4px"><span class="line" style="border-color:var(--feeds)"></span>feeds</div>
+      <div class="row flows-only"><span class="line dashed" style="border-color:var(--feeds)"></span>context feed</div>
+      <div class="row flows-only"><span class="swatch" style="width:8px;height:8px;border-radius:50%;background:#f472b6"></span>join</div>
     </div>
     <div id="hint">drag to pan · wheel to zoom · click a node</div>
   </div>
@@ -180,51 +207,93 @@ const EDGE = {
   contains:  { color: '#64748b', width: 1.1, dash: [4, 4], spring: 38,  label: 'contains' },
   compose:   { color: '#38bdf8', width: 1.7, dash: [],      spring: 115, label: 'compose' },
   transform: { color: '#fbbf24', width: 1.7, dash: [],      spring: 95,  label: 'transform' },
+  feeds:     { color: '#22d3ee', width: 1.7, dash: [],      spring: 105, label: 'feeds' },
 };
 const esc = (v) => String(v ?? '').replace(/[&<>"']/g, (c) => (
   { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
 
-const NODES = DATA.nodes.map((n) => ({
-  ...n, owner: n.kind === 'field' ? String(n.id).split('#')[0] : null,
-  x: 0, y: 0, vx: 0, vy: 0, visible: true, match: null,
-}));
-const N = new Map(NODES.map((n) => [n.id, n]));
-const EDGES = DATA.edges.filter((e) => N.has(e.from) && N.has(e.to)).map((e) => ({ ...e }));
+let NODES = [];
+let N = new Map();
+let EDGES = [];
+let PAIRS = new Map();
+let FLOW_OUT = new Map();
+let FIELDS_BY_OWNER = new Map();
+let NEIGH = new Map();
 
-// parallel edges get a curvature so compose/transform do not overlap
-const PAIRS = new Map();
-for (const e of EDGES) {
-  const key = [e.from, e.to].sort().join('|');
-  if (!PAIRS.has(key)) PAIRS.set(key, []);
-  PAIRS.get(key).push(e);
-}
-for (const list of PAIRS.values()) {
-  list.forEach((e, i) => {
-    e.curve = list.length > 1 ? (i - (list.length - 1) / 2) * 26 : 0;
-  });
-}
+function buildWorld(mode, flowIndex) {
+  const flows = DATA.flows || [];
+  if (mode === 'flows' && flowIndex >= flows.length) {
+    flowIndex = 0;
+    state.flowIndex = 0;
+  }
+  const flow = mode === 'flows' ? flows[flowIndex] : null;
+  const rawNodes = mode === 'flows' ? (flow ? flow.steps : []) : (DATA.nodes || []);
+  const rawEdges = mode === 'flows' ? (flow ? flow.feeds : []) : (DATA.edges || []);
 
-// flow adjacency: compose and transform are both "data moves here"
-const FLOW_OUT = new Map();
-for (const e of EDGES) {
-  if (e.kind === 'contains') continue;
-  if (!FLOW_OUT.has(e.from)) FLOW_OUT.set(e.from, []);
-  FLOW_OUT.get(e.from).push({ to: e.to, edge: e });
-}
+  NODES = rawNodes.map((n) => ({
+    ...(n.contract || {}),
+    ...n,
+    kind: n.contract_kind || n.kind,
+    owner: n.kind === 'field' ? String(n.id).split('#')[0] : null,
+    x: 0, y: 0, vx: 0, vy: 0, visible: true, match: null, join: 0,
+  }));
+  N = new Map(NODES.map((n) => [n.id, n]));
+  EDGES = rawEdges
+    .filter((e) => N.has(e.from) && N.has(e.to))
+    .map((e) => ({ ...e, kind: mode === 'flows' ? 'feeds' : e.kind, curve: 0 }));
 
-const FIELDS_BY_OWNER = new Map();
-for (const n of NODES) {
-  if (n.kind !== 'field') continue;
-  if (!FIELDS_BY_OWNER.has(n.owner)) FIELDS_BY_OWNER.set(n.owner, []);
-  FIELDS_BY_OWNER.get(n.owner).push(n);
-}
+  PAIRS = new Map();
+  for (const e of EDGES) {
+    const key = [e.from, e.to].sort().join('|');
+    if (!PAIRS.has(key)) PAIRS.set(key, []);
+    PAIRS.get(key).push(e);
+  }
+  for (const list of PAIRS.values()) {
+    list.forEach((e, i) => {
+      e.curve = list.length > 1 ? (i - (list.length - 1) / 2) * 26 : 0;
+    });
+  }
 
-const NEIGH = new Map();
-for (const e of EDGES) {
-  if (!NEIGH.has(e.from)) NEIGH.set(e.from, []);
-  if (!NEIGH.has(e.to)) NEIGH.set(e.to, []);
-  NEIGH.get(e.from).push({ edge: e, other: e.to, dir: 'out' });
-  NEIGH.get(e.to).push({ edge: e, other: e.from, dir: 'in' });
+  FLOW_OUT = new Map();
+  for (const e of EDGES) {
+    if (e.kind === 'contains') continue;
+    if (!FLOW_OUT.has(e.from)) FLOW_OUT.set(e.from, []);
+    FLOW_OUT.get(e.from).push({ to: e.to, edge: e });
+  }
+
+  FIELDS_BY_OWNER = new Map();
+  for (const n of NODES) {
+    if (n.kind !== 'field') continue;
+    if (!FIELDS_BY_OWNER.has(n.owner)) FIELDS_BY_OWNER.set(n.owner, []);
+    FIELDS_BY_OWNER.get(n.owner).push(n);
+  }
+
+  NEIGH = new Map();
+  for (const e of EDGES) {
+    if (!NEIGH.has(e.from)) NEIGH.set(e.from, []);
+    if (!NEIGH.has(e.to)) NEIGH.set(e.to, []);
+    NEIGH.get(e.from).push({ edge: e, other: e.to, dir: 'out' });
+    NEIGH.get(e.to).push({ edge: e, other: e.from, dir: 'in' });
+  }
+
+  const indegree = new Map();
+  for (const e of EDGES) indegree.set(e.to, (indegree.get(e.to) || 0) + 1);
+  for (const n of NODES) n.join = indegree.get(n.id) || 0;
+
+  state.flow = flow ? flow.flow : null;
+  const flowSelect = document.getElementById('flowSelect');
+  if (flowSelect && mode === 'flows') flowSelect.value = String(flowIndex);
+  state.selected = null;
+  state.selectedEdge = null;
+  state.hover = null;
+  state.hoverEdge = null;
+  state.impact = null;
+  state.query = '';
+  searchEl.value = '';
+  seed();
+  updateVisibility();
+  fit();
+  renderPanel(null, null);
 }
 
 const titleEl = document.getElementById('title');
@@ -247,8 +316,12 @@ const state = {
   drag: null,
   pan: null,
   moved: false,
+  tab: 'contracts',
+  flowIndex: 0,
+  flow: null,
+  showContext: true,
   kindOn: { input: true, entry: true, storage: true, field: false },
-  relOn: { compose: true, transform: true, contains: true },
+  relOn: { compose: true, transform: true, contains: true, feeds: true },
   impactOn: false,
   impact: null,
   query: '',
@@ -294,13 +367,24 @@ function seed() {
 function allVisible() { return NODES.filter((n) => n.visible); }
 
 function updateVisibility() {
-  for (const n of NODES) n.visible = !!state.kindOn[n.kind];
+  for (const n of NODES) {
+    n.visible = !!state.kindOn[n.kind];
+    if (state.tab === 'flows' && n.span === 'context' && !state.showContext) {
+      n.visible = false;
+    }
+  }
   for (const e of EDGES) {
     e.visible = !!state.relOn[e.kind] && N.get(e.from).visible && N.get(e.to).visible;
   }
-  const contracts = NODES.filter((n) => n.visible && n.kind !== 'field').length;
-  const fields = NODES.filter((n) => n.visible && n.kind === 'field').length;
-  visibleStatsEl.textContent = `visible: ${contracts} contracts, ${fields} fields`;
+  if (state.tab === 'flows') {
+    const steps = NODES.filter((n) => n.visible).length;
+    const feeds = EDGES.filter((e) => e.visible).length;
+    visibleStatsEl.textContent = `visible: ${steps} steps, ${feeds} feeds`;
+  } else {
+    const contracts = NODES.filter((n) => n.visible && n.kind !== 'field').length;
+    const fields = NODES.filter((n) => n.visible && n.kind === 'field').length;
+    visibleStatsEl.textContent = `visible: ${contracts} contracts, ${fields} fields`;
+  }
   state.dirty = true;
 }
 
@@ -461,7 +545,10 @@ function drawEdge(e, active) {
   ctx.globalAlpha = dim ? (active ? 0.55 : 0.12) : (active ? 1 : 0.92);
   ctx.strokeStyle = meta.color;
   ctx.lineWidth = base * (active ? 1.9 : route ? 1.55 : 1);
-  ctx.setLineDash(meta.dash.map((v) => v * Math.min(1.6, state.view.k)));
+  const contextEdge = state.tab === 'flows' && e.kind === 'feeds'
+    && N.get(e.from) && N.get(e.from).span === 'context';
+  ctx.setLineDash(contextEdge ? [4, 4]
+    : meta.dash.map((v) => v * Math.min(1.6, state.view.k)));
   if (active || route) { ctx.shadowColor = meta.color; ctx.shadowBlur = active ? 10 : 7; }
   if (g.self) {
     ctx.beginPath();
@@ -538,7 +625,8 @@ function draw() {
     ctx.fillStyle = '#64748b';
     ctx.font = '14px ui-sans-serif, system-ui, sans-serif';
     ctx.textAlign = 'center';
-    ctx.fillText('No nodes to display', W / 2, H / 2);
+    ctx.fillText(state.tab === 'flows' ? 'No flow steps to display' : 'No nodes to display',
+      W / 2, H / 2);
     return;
   }
 
@@ -565,6 +653,27 @@ function draw() {
     ctx.strokeStyle = 'rgba(8, 13, 25, 0.9)';
     ctx.lineWidth = 2;
     ctx.stroke();
+    if (n.span === 'context') {
+      ctx.beginPath();
+      ctx.arc(p.x, p.y, r + 4, 0, Math.PI * 2);
+      ctx.setLineDash([3, 3]);
+      ctx.strokeStyle = '#94a3b8';
+      ctx.lineWidth = 1.2;
+      ctx.stroke();
+      ctx.setLineDash([]);
+    }
+    if (state.tab === 'flows' && n.join > 1) {
+      const bx = p.x + r * 0.75, by = p.y - r * 0.75;
+      ctx.beginPath();
+      ctx.arc(bx, by, 7, 0, Math.PI * 2);
+      ctx.fillStyle = '#f472b6';
+      ctx.fill();
+      ctx.fillStyle = '#0b1020';
+      ctx.font = '600 9px ui-sans-serif, system-ui, sans-serif';
+      ctx.textAlign = 'center';
+      ctx.textBaseline = 'middle';
+      ctx.fillText(String(n.join), bx, by + 0.5);
+    }
     if (state.hover === n.id) {
       ctx.beginPath();
       ctx.arc(p.x, p.y, r + 3, 0, Math.PI * 2);
@@ -582,7 +691,8 @@ function draw() {
       ctx.font = `${n.kind === 'field' ? 10 : 11.5}px ui-sans-serif, system-ui, sans-serif`;
       ctx.textAlign = 'center';
       ctx.textBaseline = 'top';
-      ctx.fillStyle = dim ? 'rgba(148,163,184,.4)' : '#e2e8f0';
+      ctx.fillStyle = dim ? 'rgba(148,163,184,.4)'
+        : (n.span === 'context' ? '#94a3b8' : '#e2e8f0');
       const ty = p.y + r + 4;
       const metrics = ctx.measureText(label);
       if (metrics.width > 4) {
@@ -710,8 +820,10 @@ function impactSection(node) {
   }
   const fieldCount = entries.reduce(
     (sum, item) => sum + (FIELDS_BY_OWNER.get(item.node.id) || []).length, 0);
+  const contractLabel = entries.length === 1 ? 'contract' : 'contracts';
+  const fieldLabel = fieldCount === 1 ? 'field' : 'fields';
   let html = '<div class="section"><div class="title">Downstream impact ' +
-    `(${entries.length} contracts · ${fieldCount} fields)</div>` +
+    `(${entries.length} ${contractLabel} · ${fieldCount} ${fieldLabel})</div>` +
     '<div class="fields">' + entries.map(({ node: other, depth }) =>
       `<div class="field-row" data-id="${esc(other.id)}"><span>${esc(other.name || other.id)}</span>` +
       `<span class="t">${esc(other.kind)} · d${depth}</span></div>`).join('') +
@@ -770,8 +882,10 @@ function renderEdgePanel(edge) {
       edge.refs.map((r) => `<code>${esc(r)}</code>`).join('') + '</div></div>';
   }
   const endpoint = (id, node, label) => {
+    const text = node ? (node.name || node.id) : id;
     return `<div class="item"><span class="kind">${esc(label)}</span>` +
-      `<span class="link" data-id="${esc(id)}">${esc(node ? node.id : id)}</span></div>`;
+      `<span class="link" data-id="${esc(id)}" title="${esc(id)}">` +
+      `${esc(text)}</span></div>`;
   };
   html += '<div class="section"><div class="title">Endpoints</div><div class="conn">' +
     endpoint(edge.from, from, from ? from.kind : 'from') +
@@ -780,9 +894,89 @@ function renderEdgePanel(edge) {
   panel.scrollTop = 0;
 }
 
+function renderFlowPanel(node) {
+  const contract = node.contract || {};
+  const meta = KIND[node.kind] || KIND.entry;
+  const rows = [];
+  const push = (key, value) => {
+    if (value === undefined || value === null || value === '') return;
+    rows.push([key, String(value)]);
+  };
+  push('role', node.role);
+  push('span', node.span);
+  push('contract', node.contract_id);
+  push('description', contract.description);
+  push('entry point', contract.entry_point);
+  push('location', contract.location);
+  push('entry type', contract.entry_type);
+  push('store type', contract.store_type);
+  push('channel', contract.channel);
+  push('repo', contract.repo);
+  push('commit', contract.commit_sha);
+  push('file', node.file_path || contract.file_path);
+
+  let html = `<span class="badge" style="color:${meta.color}">${meta.label}` +
+    (node.role ? ` · ${esc(node.role)}` : '') + '</span>';
+  html += `<h2 class="node-name">${esc(node.name || node.contract_id || node.id)}</h2>`;
+  html += `<div class="node-id">${esc(node.id)}</div>`;
+  if (rows.length) {
+    html += '<div class="kv">' + rows.map(([k, v]) =>
+      `<div class="k">${esc(k)}</div><div class="v">${esc(v)}</div>`).join('') + '</div>';
+  }
+  if (node.refs && node.refs.length) {
+    html += '<div class="section"><div class="title">References</div><div class="refs">' +
+      node.refs.map((r) => `<code>${esc(r)}</code>`).join('') + '</div></div>';
+  }
+  const links = (NEIGH.get(node.id) || []).slice().sort((a, b) =>
+    a.dir.localeCompare(b.dir) || String(a.other).localeCompare(String(b.other)));
+  if (links.length) {
+    html += '<div class="section"><div class="title">Feeds</div><div class="conn">' +
+      links.map(({ other, dir }) => {
+        const target = N.get(other);
+        const arrow = dir === 'out' ? '\u2192' : '\u2190';
+        return `<div class="item"><span class="kind">${esc(dir)}</span>` +
+          `<span>${arrow} <span class="link" data-id="${esc(other)}">` +
+          `${esc(target ? (target.name || other) : other)}</span></span></div>`;
+      }).join('') + '</div></div>';
+  }
+  if (node.join > 1) {
+    const sources = (NEIGH.get(node.id) || [])
+      .filter((item) => item.dir === 'in')
+      .map((item) => N.get(item.other))
+      .filter(Boolean)
+      .map((item) => item.name || item.contract_id || item.id);
+    html += `<div class="section"><div class="title">Join (${sources.length} inputs)</div>` +
+      '<div class="conn">' + sources.map((source) =>
+        `<div class="item"><span class="kind">input</span><span>${esc(source)}</span></div>`)
+        .join('') + '</div></div>';
+  }
+  const contractId = node.contract_id;
+  if (contractId && (DATA.nodes || []).some((item) => item.id === contractId)) {
+    html += '<div class="section"><span class="link" data-contract="' +
+      esc(contractId) + '">Open contract in Contracts tab</span></div>';
+  }
+  panel.innerHTML = html;
+  panel.scrollTop = 0;
+}
+
 function renderPanel(node, edge) {
   if (edge) { renderEdgePanel(edge); return; }
   if (!node) {
+    if (state.tab === 'flows') {
+      const flow = state.flow;
+      panel.innerHTML = flow
+        ? `<div class="empty">
+            <p><b>${esc(flow.name || flow.id)}</b></p>
+            <p>${NODES.length} steps, ${EDGES.length} feeds. Click a step for its
+            role, contract and feeds. Dashed steps are <b>context</b> inputs;
+            pink badges are <b>joins</b>.</p>
+          </div>`
+        : `<div class="empty">
+            <p><b>No flows embedded.</b></p>
+            <p>Run <code>flow build --from &lt;contract&gt;</code> and render again.</p>
+          </div>`;
+      return;
+    }
     panel.innerHTML = `
       <div class="empty">
         <p><b>Interactive contract map.</b></p>
@@ -795,6 +989,7 @@ function renderPanel(node, edge) {
       </div>`;
     return;
   }
+  if (state.tab === 'flows') { renderFlowPanel(node); return; }
   const meta = KIND[node.kind];
   const rows = [];
   const push = (key, value) => {
@@ -872,6 +1067,55 @@ function renderPanel(node, edge) {
   panel.scrollTop = 0;
 }
 
+function buildFlowSelect() {
+  const flows = DATA.flows || [];
+  const select = document.getElementById('flowSelect');
+  select.innerHTML = flows.map((item, index) =>
+    `<option value="${index}">${esc(item.flow.name || item.flow.id)}</option>`).join('');
+  select.disabled = !flows.length;
+  select.value = String(Math.min(state.flowIndex, Math.max(0, flows.length - 1)));
+}
+
+function updateHeader() {
+  if (state.tab === 'flows') {
+    const flow = state.flow;
+    titleEl.textContent = flow ? (flow.name || flow.id) : 'Flows';
+    if (!flow) {
+      statsEl.textContent = 'no flows';
+    } else {
+      const joins = NODES.filter((n) => n.join > 1).length;
+      statsEl.textContent = `${NODES.length} steps · ${EDGES.length} feeds · ` +
+        `${joins} join${joins === 1 ? '' : 's'}`;
+    }
+    searchEl.placeholder = 'Search step or contract';
+  } else {
+    titleEl.textContent = DATA.title || 'Data flow map';
+    const nodes = DATA.nodes || [];
+    const contracts = nodes.filter((n) => n.kind !== 'field').length;
+    const fields = nodes.filter((n) => n.kind === 'field').length;
+    statsEl.textContent = `${contracts} contracts · ${fields} fields · ` +
+      `${(DATA.edges || []).length} edges`;
+    searchEl.placeholder = 'Search id, name or path';
+  }
+}
+
+function switchTab(tab) {
+  if (state.tab === tab && NODES.length) return;
+  state.tab = tab;
+  document.body.classList.toggle('mode-flows', tab === 'flows');
+  document.body.classList.toggle('mode-contracts', tab === 'contracts');
+  document.getElementById('tabContracts').classList.toggle('active', tab === 'contracts');
+  document.getElementById('tabFlows').classList.toggle('active', tab === 'flows');
+  buildWorld(tab, state.flowIndex);
+  updateHeader();
+}
+
+function openContract(contractId) {
+  if (!(DATA.nodes || []).some((node) => node.id === contractId)) return;
+  switchTab('contracts');
+  if (N.get(contractId)) select(contractId);
+}
+
 function initControls() {
   const impactToggle = document.getElementById('impactToggle');
   impactToggle.addEventListener('change', () => {
@@ -899,6 +1143,11 @@ function initControls() {
       el.closest('.chip').classList.toggle('on', el.checked);
       updateVisibility();
     });
+  });
+  const contextToggle = document.getElementById('contextToggle');
+  contextToggle.addEventListener('change', () => {
+    state.showContext = contextToggle.checked;
+    updateVisibility();
   });
 }
 
@@ -1001,9 +1250,19 @@ function bindEvents() {
   }, { passive: false });
 
   panel.addEventListener('click', (e) => {
+    const contractEl = e.target.closest('[data-contract]');
+    if (contractEl) { openContract(contractEl.dataset.contract); return; }
     const el = e.target.closest('[data-id]');
     if (!el) return;
     select(el.dataset.id);
+  });
+
+  document.getElementById('tabContracts').addEventListener('click', () => switchTab('contracts'));
+  document.getElementById('tabFlows').addEventListener('click', () => switchTab('flows'));
+  document.getElementById('flowSelect').addEventListener('change', (event) => {
+    state.flowIndex = Number(event.target.value) || 0;
+    buildWorld('flows', state.flowIndex);
+    updateHeader();
   });
 
   searchEl.addEventListener('input', () => {
@@ -1040,19 +1299,11 @@ function loop() {
 }
 
 function boot() {
-  const nodes = DATA.nodes || [];
-  const edges = DATA.edges || [];
-  titleEl.textContent = DATA.title || 'Data flow map';
-  const contracts = nodes.filter((n) => n.kind !== 'field').length;
-  const fields = nodes.filter((n) => n.kind === 'field').length;
-  statsEl.textContent = `${contracts} contracts · ${fields} fields · ${edges.length} edges`;
-  seed();
-  updateVisibility();
+  buildFlowSelect();
   bindEvents();
   initControls();
   resize();
-  fit();
-  renderPanel(null, null);
+  switchTab('contracts');
   requestAnimationFrame(loop);
 }
 
