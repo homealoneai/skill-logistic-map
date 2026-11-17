@@ -1,0 +1,1063 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Data flow map</title>
+<style>
+  :root {
+    --bg: #080d19;
+    --panel: #0d1526;
+    --line: #1e293b;
+    --text: #e2e8f0;
+    --muted: #94a3b8;
+    --input: #60a5fa;
+    --entry: #c084fc;
+    --storage: #34d399;
+    --field: #94a3b8;
+    --compose: #38bdf8;
+    --transform: #fbbf24;
+    --contains: #64748b;
+  }
+  * { box-sizing: border-box; }
+  html, body { height: 100%; margin: 0; }
+  body {
+    background: var(--bg); color: var(--text);
+    font: 13px/1.4 ui-sans-serif, system-ui, -apple-system, "Segoe UI", sans-serif;
+    display: flex; flex-direction: column; overflow: hidden;
+  }
+  header {
+    display: flex; align-items: center; gap: 12px;
+    padding: 10px 14px; border-bottom: 1px solid var(--line);
+    background: linear-gradient(180deg, #0c1424, #0a1120);
+    flex-wrap: wrap;
+  }
+  .brand { display: flex; align-items: center; gap: 8px; min-width: 0; }
+  .brand .dot {
+    width: 9px; height: 9px; border-radius: 50%;
+    background: var(--compose); box-shadow: 0 0 12px var(--compose);
+  }
+  h1 { font-size: 13px; font-weight: 600; margin: 0; white-space: nowrap; }
+  .stats { color: var(--muted); font-size: 12px; white-space: nowrap; }
+  .spacer { flex: 1; }
+  input[type=search] {
+    background: #0a1222; color: var(--text); border: 1px solid var(--line);
+    border-radius: 7px; padding: 6px 10px; width: 220px; outline: none;
+  }
+  input[type=search]:focus { border-color: #3b82f6; }
+  button {
+    background: #111c30; color: var(--text); border: 1px solid var(--line);
+    border-radius: 7px; padding: 6px 10px; cursor: pointer; font: inherit;
+  }
+  button:hover { border-color: #334155; background: #16233a; }
+  #controls {
+    display: flex; gap: 6px; flex-wrap: wrap; align-items: center;
+    padding: 8px 14px; border-bottom: 1px solid var(--line); background: #0a1120;
+  }
+  .chip {
+    display: inline-flex; align-items: center; gap: 6px; cursor: pointer;
+    border: 1px solid var(--line); border-radius: 999px; padding: 3px 9px;
+    color: var(--muted); user-select: none; font-size: 12px;
+  }
+  .chip input { accent-color: #3b82f6; margin: 0; }
+  .chip .swatch { width: 8px; height: 8px; border-radius: 50%; }
+  .chip.on { color: var(--text); border-color: #334155; }
+  #stage { flex: 1; display: flex; min-height: 0; }
+  #canvasWrap { flex: 1; position: relative; min-width: 0; }
+  canvas { display: block; width: 100%; height: 100%; cursor: grab; }
+  canvas.dragging { cursor: grabbing; }
+  #legend {
+    position: absolute; left: 12px; bottom: 12px; display: flex; flex-direction: column;
+    gap: 4px; padding: 8px 10px; border: 1px solid var(--line); border-radius: 8px;
+    background: rgba(10, 17, 32, .82); backdrop-filter: blur(6px); font-size: 11px;
+    color: var(--muted); pointer-events: none;
+  }
+  #legend .row { display: flex; align-items: center; gap: 7px; }
+  #legend .line { width: 18px; height: 0; border-top: 2px solid; }
+  #legend .dashed { border-top-style: dashed; }
+  #hint {
+    position: absolute; right: 12px; bottom: 12px; font-size: 11px; color: #475569;
+    pointer-events: none;
+  }
+  aside {
+    width: 340px; min-width: 280px; border-left: 1px solid var(--line);
+    background: var(--panel); overflow: auto; padding: 14px;
+  }
+  aside h2 { font-size: 12px; text-transform: uppercase; letter-spacing: .08em;
+    color: var(--muted); margin: 0 0 8px; font-weight: 600; }
+  .badge {
+    display: inline-block; font-size: 10px; text-transform: uppercase;
+    letter-spacing: .08em; padding: 2px 7px; border-radius: 999px;
+    border: 1px solid currentColor; margin-bottom: 8px;
+  }
+  .node-name { font-size: 15px; font-weight: 600; margin: 0 0 2px; word-break: break-word; }
+  .node-id { font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+    font-size: 11px; color: var(--muted); word-break: break-all; margin-bottom: 12px; }
+  .kv { display: grid; grid-template-columns: 92px 1fr; gap: 5px 10px; margin-bottom: 14px; }
+  .kv .k { color: var(--muted); font-size: 11px; padding-top: 1px; }
+  .kv .v { word-break: break-word; }
+  code, .mono { font-family: ui-monospace, SFMono-Regular, Menlo, monospace; font-size: 11px; }
+  .refs { display: flex; flex-direction: column; gap: 3px; }
+  .refs code { background: #0a1222; border: 1px solid var(--line); border-radius: 5px;
+    padding: 3px 6px; word-break: break-all; }
+  .link {
+    color: #93c5fd; cursor: pointer; text-decoration: none;
+    border-bottom: 1px dotted rgba(147, 197, 253, .4);
+  }
+  .link:hover { color: #bfdbfe; }
+  .conn { display: flex; flex-direction: column; gap: 4px; margin-bottom: 14px; }
+  .conn .item { display: flex; gap: 6px; align-items: baseline; font-size: 12px; }
+  .conn .kind { color: var(--muted); font-size: 10px; text-transform: uppercase;
+    letter-spacing: .05em; min-width: 64px; }
+  .fields { display: flex; flex-direction: column; gap: 3px; margin-bottom: 14px; }
+  .paths { display: flex; flex-direction: column; gap: 5px; margin-bottom: 6px; }
+  .path { font-size: 11.5px; line-height: 1.7; word-break: break-word; }
+  .path .arrow { color: #475569; padding: 0 2px; }
+  .impact-note { color: var(--muted); font-size: 11px; margin-top: 6px; line-height: 1.5; }
+  .field-row { display: flex; justify-content: space-between; gap: 8px;
+    padding: 3px 6px; border-radius: 5px; cursor: pointer; }
+  .field-row:hover { background: #111c30; }
+  .field-row .t { color: var(--muted); font-size: 11px; white-space: nowrap; }
+  .empty { color: var(--muted); font-size: 12px; line-height: 1.6; }
+  .empty b { color: var(--text); }
+  .section { margin-top: 16px; }
+  .section > .title { font-size: 11px; text-transform: uppercase; letter-spacing: .08em;
+    color: var(--muted); margin-bottom: 6px; }
+  @media (max-width: 780px) {
+    aside { display: none; }
+    input[type=search] { width: 150px; }
+  }
+</style>
+</head>
+<body>
+<header>
+  <div class="brand"><span class="dot"></span><h1 id="title">Data flow map</h1></div>
+  <div class="stats" id="stats"></div>
+  <div class="spacer"></div>
+  <input id="search" type="search" placeholder="Search id, name or path" autocomplete="off">
+  <button id="fit" title="Fit graph in view">Fit</button>
+  <button id="relayout" title="Restart the force layout">Relayout</button>
+  <button id="png" title="Download the canvas as PNG">PNG</button>
+</header>
+<div id="controls">
+  <label class="chip on"><input type="checkbox" data-kind="input" checked><span class="swatch" style="background:var(--input)"></span>Inputs</label>
+  <label class="chip on"><input type="checkbox" data-kind="entry" checked><span class="swatch" style="background:var(--entry)"></span>Entries</label>
+  <label class="chip on"><input type="checkbox" data-kind="storage" checked><span class="swatch" style="background:var(--storage)"></span>Storages</label>
+  <label class="chip"><input type="checkbox" data-kind="field"><span class="swatch" style="background:var(--field)"></span>Fields</label>
+  <label class="chip on"><input type="checkbox" data-rel="compose" checked><span class="swatch" style="background:var(--compose)"></span>compose</label>
+  <label class="chip on"><input type="checkbox" data-rel="transform" checked><span class="swatch" style="background:var(--transform)"></span>transform</label>
+  <label class="chip on"><input type="checkbox" data-rel="contains" checked><span class="swatch" style="background:var(--contains)"></span>contains</label>
+  <label class="chip" title="Highlight everything reachable from the selected contract"><input type="checkbox" id="impactToggle"><span class="swatch" style="background:#f472b6"></span>Impact</label>
+  <span class="spacer"></span>
+  <span class="stats" id="visibleStats"></span>
+</div>
+<div id="stage">
+  <div id="canvasWrap">
+    <canvas id="graph"></canvas>
+    <div id="legend">
+      <div class="row"><span class="swatch" style="width:8px;height:8px;border-radius:50%;background:var(--input)"></span>Input</div>
+      <div class="row"><span class="swatch" style="width:8px;height:8px;border-radius:50%;background:var(--entry)"></span>Entry</div>
+      <div class="row"><span class="swatch" style="width:8px;height:8px;border-radius:50%;background:var(--storage)"></span>Storage</div>
+      <div class="row"><span class="swatch" style="width:8px;height:8px;border-radius:50%;background:var(--field)"></span>Field</div>
+      <div class="row" style="margin-top:4px"><span class="line" style="border-color:var(--compose)"></span>compose</div>
+      <div class="row"><span class="line" style="border-color:var(--transform)"></span>transform</div>
+      <div class="row"><span class="line dashed" style="border-color:var(--contains)"></span>contains</div>
+    </div>
+    <div id="hint">drag to pan · wheel to zoom · click a node</div>
+  </div>
+  <aside id="panel"></aside>
+</div>
+<script>
+const DATA = __DATA__;
+
+const KIND = {
+  input:   { label: 'Input',   color: '#60a5fa', r: 10 },
+  entry:   { label: 'Entry',   color: '#c084fc', r: 10 },
+  storage: { label: 'Storage', color: '#34d399', r: 10 },
+  field:   { label: 'Field',   color: '#94a3b8', r: 4.5 },
+};
+const EDGE = {
+  contains:  { color: '#64748b', width: 1.1, dash: [4, 4], spring: 38,  label: 'contains' },
+  compose:   { color: '#38bdf8', width: 1.7, dash: [],      spring: 115, label: 'compose' },
+  transform: { color: '#fbbf24', width: 1.7, dash: [],      spring: 95,  label: 'transform' },
+};
+const esc = (v) => String(v ?? '').replace(/[&<>"']/g, (c) => (
+  { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+
+const NODES = DATA.nodes.map((n) => ({
+  ...n, owner: n.kind === 'field' ? String(n.id).split('#')[0] : null,
+  x: 0, y: 0, vx: 0, vy: 0, visible: true, match: null,
+}));
+const N = new Map(NODES.map((n) => [n.id, n]));
+const EDGES = DATA.edges.filter((e) => N.has(e.from) && N.has(e.to)).map((e) => ({ ...e }));
+
+// parallel edges get a curvature so compose/transform do not overlap
+const PAIRS = new Map();
+for (const e of EDGES) {
+  const key = [e.from, e.to].sort().join('|');
+  if (!PAIRS.has(key)) PAIRS.set(key, []);
+  PAIRS.get(key).push(e);
+}
+for (const list of PAIRS.values()) {
+  list.forEach((e, i) => {
+    e.curve = list.length > 1 ? (i - (list.length - 1) / 2) * 26 : 0;
+  });
+}
+
+// flow adjacency: compose and transform are both "data moves here"
+const FLOW_OUT = new Map();
+for (const e of EDGES) {
+  if (e.kind === 'contains') continue;
+  if (!FLOW_OUT.has(e.from)) FLOW_OUT.set(e.from, []);
+  FLOW_OUT.get(e.from).push({ to: e.to, edge: e });
+}
+
+const FIELDS_BY_OWNER = new Map();
+for (const n of NODES) {
+  if (n.kind !== 'field') continue;
+  if (!FIELDS_BY_OWNER.has(n.owner)) FIELDS_BY_OWNER.set(n.owner, []);
+  FIELDS_BY_OWNER.get(n.owner).push(n);
+}
+
+const NEIGH = new Map();
+for (const e of EDGES) {
+  if (!NEIGH.has(e.from)) NEIGH.set(e.from, []);
+  if (!NEIGH.has(e.to)) NEIGH.set(e.to, []);
+  NEIGH.get(e.from).push({ edge: e, other: e.to, dir: 'out' });
+  NEIGH.get(e.to).push({ edge: e, other: e.from, dir: 'in' });
+}
+
+const titleEl = document.getElementById('title');
+const statsEl = document.getElementById('stats');
+const visibleStatsEl = document.getElementById('visibleStats');
+const panel = document.getElementById('panel');
+const searchEl = document.getElementById('search');
+const canvas = document.getElementById('graph');
+const wrap = document.getElementById('canvasWrap');
+const ctx = canvas.getContext('2d');
+
+const state = {
+  view: { x: 0, y: 0, k: 1 },
+  alpha: 1,
+  dirty: true,
+  selected: null,
+  selectedEdge: null,
+  hover: null,
+  hoverEdge: null,
+  drag: null,
+  pan: null,
+  moved: false,
+  kindOn: { input: true, entry: true, storage: true, field: false },
+  relOn: { compose: true, transform: true, contains: true },
+  impactOn: false,
+  impact: null,
+  query: '',
+};
+
+let W = 0, H = 0, DPR = 1;
+
+function resize() {
+  const rect = wrap.getBoundingClientRect();
+  DPR = window.devicePixelRatio || 1;
+  W = Math.max(1, rect.width);
+  H = Math.max(1, rect.height);
+  canvas.width = Math.round(W * DPR);
+  canvas.height = Math.round(H * DPR);
+  canvas.style.width = W + 'px';
+  canvas.style.height = H + 'px';
+  state.dirty = true;
+  draw();
+}
+
+function contractNodes() { return NODES.filter((n) => n.kind !== 'field'); }
+
+function seed() {
+  const contracts = contractNodes();
+  const radius = 120 + contracts.length * 22;
+  contracts.forEach((n, i) => {
+    const a = (i / Math.max(1, contracts.length)) * Math.PI * 2;
+    n.x = Math.cos(a) * radius;
+    n.y = Math.sin(a) * radius * 0.72;
+    n.vx = 0; n.vy = 0;
+  });
+  NODES.filter((n) => n.kind === 'field').forEach((f) => {
+    const o = N.get(f.owner) || contracts[0];
+    const base = o ? { x: o.x, y: o.y } : { x: 0, y: 0 };
+    f.x = base.x + (Math.random() - 0.5) * 90;
+    f.y = base.y + (Math.random() - 0.5) * 90;
+    f.vx = 0; f.vy = 0;
+  });
+  state.alpha = 1;
+  state.dirty = true;
+}
+
+function allVisible() { return NODES.filter((n) => n.visible); }
+
+function updateVisibility() {
+  for (const n of NODES) n.visible = !!state.kindOn[n.kind];
+  for (const e of EDGES) {
+    e.visible = !!state.relOn[e.kind] && N.get(e.from).visible && N.get(e.to).visible;
+  }
+  const contracts = NODES.filter((n) => n.visible && n.kind !== 'field').length;
+  const fields = NODES.filter((n) => n.visible && n.kind === 'field').length;
+  visibleStatsEl.textContent = `visible: ${contracts} contracts, ${fields} fields`;
+  state.dirty = true;
+}
+
+function center() {
+  const vis = allVisible();
+  if (!vis.length) return { x: 0, y: 0 };
+  let cx = 0, cy = 0;
+  for (const n of vis) { cx += n.x; cy += n.y; }
+  return { x: cx / vis.length, y: cy / vis.length };
+}
+
+function step() {
+  const vis = allVisible();
+  const alpha = state.alpha;
+  for (let i = 0; i < vis.length; i++) {
+    const a = vis[i];
+    for (let j = i + 1; j < vis.length; j++) {
+      const b = vis[j];
+      let dx = b.x - a.x, dy = b.y - a.y;
+      let d2 = dx * dx + dy * dy;
+      if (d2 < 1) { dx = Math.random() - 0.5; dy = Math.random() - 0.5; d2 = 1; }
+      const d = Math.sqrt(d2);
+      const strength = (1200 / d2) * alpha * (a.kind === 'field' ? 0.6 : 1);
+      const fx = (dx / d) * strength, fy = (dy / d) * strength;
+      a.vx -= fx; a.vy -= fy;
+      b.vx += fx; b.vy += fy;
+    }
+  }
+  for (const e of EDGES) {
+    if (!e.visible) continue;
+    const a = N.get(e.from), b = N.get(e.to);
+    if (a === b) continue;
+    const dx = b.x - a.x, dy = b.y - a.y;
+    const d = Math.max(1, Math.hypot(dx, dy));
+    const ideal = EDGE[e.kind].spring;
+    const force = (d - ideal) * 0.02 * alpha;
+    const fx = (dx / d) * force, fy = (dy / d) * force;
+    a.vx += fx; a.vy += fy;
+    b.vx -= fx; b.vy -= fy;
+  }
+
+  const c = center();
+  for (const n of vis) {
+    n.vx += (c.x - n.x) * 0.0009 * alpha;
+    n.vy += (c.y - n.y) * 0.0009 * alpha;
+    if (state.drag === n) { n.vx = 0; n.vy = 0; continue; }
+    n.vx *= 0.86; n.vy *= 0.86;
+    n.x += n.vx; n.y += n.vy;
+  }
+  state.alpha *= 0.988;
+  if (state.alpha < 0.015) state.alpha = 0;
+  state.dirty = true;
+}
+
+function fit(extraPad) {
+  const vis = allVisible();
+  if (!vis.length) return;
+  let minX = Infinity, minY = Infinity, maxX = -Infinity, maxY = -Infinity;
+  for (const n of vis) {
+    minX = Math.min(minX, n.x); minY = Math.min(minY, n.y);
+    maxX = Math.max(maxX, n.x); maxY = Math.max(maxY, n.y);
+  }
+  const pad = extraPad ?? 70;
+  const bw = Math.max(1, maxX - minX), bh = Math.max(1, maxY - minY);
+  state.view.k = Math.max(0.12, Math.min(1.8,
+    Math.min((W - pad * 2) / bw, (H - pad * 2) / bh)));
+  state.view.x = W / 2 - ((minX + maxX) / 2) * state.view.k;
+  state.view.y = H / 2 - ((minY + maxY) / 2) * state.view.k;
+  state.dirty = true;
+}
+
+function screen(n) {
+  return { x: n.x * state.view.k + state.view.x, y: n.y * state.view.k + state.view.y };
+}
+
+function radius(n) { return Math.max(2.6, KIND[n.kind].r * Math.min(1.9, Math.max(0.55, state.view.k))); }
+
+
+function edgeGeometry(e) {
+  const a = N.get(e.from), b = N.get(e.to);
+  if (!a || !b) return null;
+  const pa = screen(a), pb = screen(b);
+  if (a === b) {
+    const r = radius(a);
+    return { self: true, pa, pb, cx: pa.x, cy: pa.y - r - 6, r: r + 5 };
+  }
+  const dx = pb.x - pa.x, dy = pb.y - pa.y;
+  const d = Math.max(1, Math.hypot(dx, dy));
+  const ux = dx / d, uy = dy / d;
+  const ra = radius(a) + 2, rb = radius(b) + 6;
+  const x1 = pa.x + ux * ra, y1 = pa.y + uy * ra;
+  const x2 = pb.x - ux * rb, y2 = pb.y - uy * rb;
+  const curved = !!e.curve;
+  const cx = curved ? (x1 + x2) / 2 - uy * e.curve : (x1 + x2) / 2;
+  const cy = curved ? (y1 + y2) / 2 + ux * e.curve : (y1 + y2) / 2;
+  return { self: false, pa, pb, x1, y1, x2, y2, cx, cy, ux, uy, curved };
+}
+
+function edgeSamples(e, steps = 22) {
+  const g = edgeGeometry(e);
+  if (!g) return [];
+  const pts = [];
+  if (g.self) {
+    const start = Math.PI * 0.6, end = Math.PI * 2.4;
+    for (let i = 0; i <= steps; i++) {
+      const t = start + (end - start) * (i / steps);
+      pts.push({ x: g.cx + Math.cos(t) * g.r, y: g.cy + Math.sin(t) * g.r });
+    }
+    return pts;
+  }
+  for (let i = 0; i <= steps; i++) {
+    const t = i / steps, u = 1 - t;
+    pts.push({
+      x: u * u * g.x1 + 2 * u * t * g.cx + t * t * g.x2,
+      y: u * u * g.y1 + 2 * u * t * g.cy + t * t * g.y2,
+    });
+  }
+  return pts;
+}
+
+function pointSegmentDistance(px, py, ax, ay, bx, by) {
+  const dx = bx - ax, dy = by - ay;
+  const len = dx * dx + dy * dy;
+  let t = len ? ((px - ax) * dx + (py - ay) * dy) / len : 0;
+  t = Math.max(0, Math.min(1, t));
+  return Math.hypot(px - (ax + dx * t), py - (ay + dy * t));
+}
+
+function hitTestEdge(mx, my, tolerance = 7) {
+  let best = null, bestDist = tolerance;
+  for (const e of EDGES) {
+    if (!e.visible) continue;
+    const pts = edgeSamples(e);
+    for (let i = 1; i < pts.length; i++) {
+      const d = pointSegmentDistance(mx, my, pts[i - 1].x, pts[i - 1].y, pts[i].x, pts[i].y);
+      if (d < bestDist) { bestDist = d; best = e; }
+    }
+  }
+  return best;
+}
+
+function drawEdges() {
+  const active = (state.selectedEdge && state.selectedEdge.visible) ? state.selectedEdge
+    : ((state.hoverEdge && state.hoverEdge.visible) ? state.hoverEdge : null);
+  const list = EDGES.filter((e) => e.visible && e !== active);
+  if (active) list.push(active);
+  for (const e of list) drawEdge(e, e === active);
+}
+
+function drawEdge(e, active) {
+  const g = edgeGeometry(e);
+  if (!g) return;
+  const meta = EDGE[e.kind];
+  const dim = nodeDim(e.from) || nodeDim(e.to);
+  const base = meta.width * Math.min(1.8, Math.max(0.7, state.view.k));
+  const route = !!(state.impactOn && state.impact && state.impact.edges.has(e));
+  ctx.save();
+  ctx.globalAlpha = dim ? (active ? 0.55 : 0.12) : (active ? 1 : 0.92);
+  ctx.strokeStyle = meta.color;
+  ctx.lineWidth = base * (active ? 1.9 : route ? 1.55 : 1);
+  ctx.setLineDash(meta.dash.map((v) => v * Math.min(1.6, state.view.k)));
+  if (active || route) { ctx.shadowColor = meta.color; ctx.shadowBlur = active ? 10 : 7; }
+  if (g.self) {
+    ctx.beginPath();
+    ctx.arc(g.cx, g.cy, g.r, Math.PI * 0.6, Math.PI * 2.4);
+    ctx.stroke();
+  } else {
+    ctx.beginPath();
+    ctx.moveTo(g.x1, g.y1);
+    if (g.curved) ctx.quadraticCurveTo(g.cx, g.cy, g.x2, g.y2);
+    else ctx.lineTo(g.x2, g.y2);
+    ctx.stroke();
+    if (e.kind !== 'contains') {
+      let adx = g.ux, ady = g.uy;
+      if (g.curved) {
+        const cdx = g.x2 - g.cx, cdy = g.y2 - g.cy;
+        const cd = Math.max(1, Math.hypot(cdx, cdy));
+        adx = cdx / cd; ady = cdy / cd;
+      }
+      const size = active ? 8 : 6.5;
+      ctx.setLineDash([]);
+      ctx.beginPath();
+      ctx.moveTo(g.x2, g.y2);
+      ctx.lineTo(g.x2 - adx * size - ady * size * 0.5, g.y2 - ady * size + adx * size * 0.5);
+      ctx.lineTo(g.x2 - adx * size + ady * size * 0.5, g.y2 - ady * size - adx * size * 0.5);
+      ctx.closePath();
+      ctx.fillStyle = meta.color;
+      ctx.fill();
+    }
+  }
+  if (active) drawEdgeLabel(g, meta);
+  ctx.restore();
+}
+
+function drawEdgeLabel(g, meta) {
+  let x, y;
+  if (g.self) {
+    x = g.cx; y = g.cy - g.r - 12;
+  } else if (g.curved) {
+    x = 0.25 * g.x1 + 0.5 * g.cx + 0.25 * g.x2;
+    y = 0.25 * g.y1 + 0.5 * g.cy + 0.25 * g.y2;
+  } else {
+    x = (g.x1 + g.x2) / 2; y = (g.y1 + g.y2) / 2;
+  }
+  const text = meta.label || 'edge';
+  ctx.save();
+  ctx.font = '600 10px ui-sans-serif, system-ui, sans-serif';
+  ctx.textAlign = 'center';
+  ctx.textBaseline = 'middle';
+  const w = ctx.measureText(text).width + 12;
+  ctx.setLineDash([]);
+  ctx.beginPath();
+  if (ctx.roundRect) ctx.roundRect(x - w / 2, y - 8, w, 16, 8);
+  else ctx.rect(x - w / 2, y - 8, w, 16);
+  ctx.fillStyle = 'rgba(7, 11, 20, .92)';
+  ctx.fill();
+  ctx.strokeStyle = meta.color;
+  ctx.lineWidth = 1;
+  ctx.stroke();
+  ctx.fillStyle = meta.color;
+  ctx.fillText(text, x, y + 0.5);
+  ctx.restore();
+}
+
+function draw() {
+  ctx.setTransform(DPR, 0, 0, DPR, 0, 0);
+  const bg = ctx.createRadialGradient(W * 0.5, H * 0.35, 40, W * 0.5, H * 0.5, Math.max(W, H));
+  bg.addColorStop(0, '#0c1526');
+  bg.addColorStop(1, '#070b14');
+  ctx.fillStyle = bg;
+  ctx.fillRect(0, 0, W, H);
+
+  const vis = allVisible();
+  if (!vis.length) {
+    ctx.fillStyle = '#64748b';
+    ctx.font = '14px ui-sans-serif, system-ui, sans-serif';
+    ctx.textAlign = 'center';
+    ctx.fillText('No nodes to display', W / 2, H / 2);
+    return;
+  }
+
+  drawEdges();
+
+  for (const n of vis) {
+    const p = screen(n);
+    const r = radius(n);
+    const meta = KIND[n.kind];
+    const dim = nodeDim(n.id);
+    ctx.save();
+    ctx.globalAlpha = dim ? 0.16 : 1;
+    if (state.selected === n.id || n.match) {
+      ctx.beginPath();
+      ctx.arc(p.x, p.y, r + 5, 0, Math.PI * 2);
+      ctx.strokeStyle = n.match ? '#f8fafc' : '#e2e8f0';
+      ctx.lineWidth = 1.5;
+      ctx.stroke();
+    }
+    ctx.beginPath();
+    ctx.arc(p.x, p.y, r, 0, Math.PI * 2);
+    ctx.fillStyle = meta.color;
+    ctx.fill();
+    ctx.strokeStyle = 'rgba(8, 13, 25, 0.9)';
+    ctx.lineWidth = 2;
+    ctx.stroke();
+    if (state.hover === n.id) {
+      ctx.beginPath();
+      ctx.arc(p.x, p.y, r + 3, 0, Math.PI * 2);
+      ctx.strokeStyle = '#f8fafc';
+      ctx.lineWidth = 1;
+      ctx.stroke();
+    }
+    const showLabel = n.kind !== 'field'
+      ? r >= 4
+      : (state.view.k > 1.15 || state.selected === n.id || state.hover === n.id);
+    if (showLabel) {
+      const label = n.kind === 'field'
+        ? (n.path || String(n.id).split('#').slice(1).join('#') || n.id)
+        : (n.name || n.id);
+      ctx.font = `${n.kind === 'field' ? 10 : 11.5}px ui-sans-serif, system-ui, sans-serif`;
+      ctx.textAlign = 'center';
+      ctx.textBaseline = 'top';
+      ctx.fillStyle = dim ? 'rgba(148,163,184,.4)' : '#e2e8f0';
+      const ty = p.y + r + 4;
+      const metrics = ctx.measureText(label);
+      if (metrics.width > 4) {
+        ctx.save();
+        ctx.fillStyle = 'rgba(7,11,20,.72)';
+        ctx.fillRect(p.x - metrics.width / 2 - 3, ty - 1, metrics.width + 6, 14);
+        ctx.restore();
+      }
+      ctx.fillStyle = dim ? 'rgba(148,163,184,.4)' : '#cbd5e1';
+      ctx.fillText(label.length > 34 ? label.slice(0, 31) + '…' : label, p.x, ty);
+    }
+    ctx.restore();
+  }
+}
+
+function nodeDim(id) {
+  const n = N.get(id);
+  if (!n) return true;
+  if (state.query && !n.match) return true;
+  if (state.impactOn && state.impact && state.impact.dist.size > 1) {
+    if (n.kind === 'field') return !state.impact.dist.has(n.owner);
+    return !state.impact.dist.has(id);
+  }
+  return false;
+}
+
+function applySearch() {
+  const q = state.query.trim().toLowerCase();
+  if (!q) {
+    for (const n of NODES) n.match = null;
+  } else {
+    for (const n of NODES) {
+      const hay = [n.id, n.name, n.path, n.type, n.entry_point, n.location, n.kind]
+        .filter(Boolean).join(' ').toLowerCase();
+      n.match = hay.includes(q) ? true : null;
+    }
+    if (!state.kindOn.field && NODES.some((n) => n.kind === 'field' && n.match)) {
+      // surface field matches without changing the user's toggle choice
+    }
+  }
+  state.dirty = true;
+}
+
+function hitTest(mx, my) {
+  let best = null, bestDist = Infinity;
+  const vis = allVisible();
+  for (let i = vis.length - 1; i >= 0; i--) {
+    const n = vis[i];
+    const p = screen(n);
+    const r = radius(n) + 5;
+    const d = Math.hypot(mx - p.x, my - p.y);
+    if (d <= r && d < bestDist) { best = n; bestDist = d; }
+  }
+  return best;
+}
+
+function toWorld(mx, my) {
+  return { x: (mx - state.view.x) / state.view.k, y: (my - state.view.y) / state.view.k };
+}
+
+function computeImpact(startId) {
+  const dist = new Map([[startId, 0]]);
+  const parent = new Map();
+  const edges = new Set();
+  const queue = [startId];
+  while (queue.length) {
+    const current = queue.shift();
+    for (const link of FLOW_OUT.get(current) || []) {
+      if (dist.has(link.to)) continue;
+      dist.set(link.to, dist.get(current) + 1);
+      parent.set(link.to, { from: current, edge: link.edge });
+      edges.add(link.edge);
+      queue.push(link.to);
+    }
+  }
+  return { start: startId, dist, parent, edges };
+}
+
+function shortLabel(id) {
+  const n = N.get(id);
+  if (!n) return id;
+  return n.name || n.path || id;
+}
+
+function impactPaths(limit = 6) {
+  const impact = state.impact;
+  if (!impact) return { paths: [], total: 0 };
+  const reachable = new Set(impact.dist.keys());
+  const terminals = [];
+  for (const id of reachable) {
+    if (id === impact.start) continue;
+    const outgoing = (FLOW_OUT.get(id) || []).filter(
+      (link) => reachable.has(link.to) && link.to !== id);
+    if (!outgoing.length) terminals.push(id);
+  }
+  const chosen = (terminals.length ? terminals : [...reachable].filter(
+    (id) => id !== impact.start)).sort();
+  const paths = chosen.slice(0, limit).map((id) => {
+    const ids = [id];
+    const seen = new Set([id]);
+    let current = id;
+    while (current !== impact.start) {
+      const step = impact.parent.get(current);
+      if (!step || seen.has(step.from)) break;
+      ids.unshift(step.from);
+      seen.add(step.from);
+      current = step.from;
+    }
+    return ids;
+  });
+  return { paths, total: chosen.length };
+}
+
+function impactSection(node) {
+  const impact = state.impact;
+  if (!impact || impact.start !== node.id) return '';
+  const entries = [...impact.dist.entries()]
+    .filter(([id]) => id !== node.id)
+    .map(([id, depth]) => ({ node: N.get(id), depth }))
+    .filter((item) => item.node)
+    .sort((a, b) => a.depth - b.depth || a.node.id.localeCompare(b.node.id));
+  if (!entries.length) {
+    return '<div class="section"><div class="title">Downstream impact</div>' +
+      '<div class="empty">No downstream contract.</div></div>';
+  }
+  const fieldCount = entries.reduce(
+    (sum, item) => sum + (FIELDS_BY_OWNER.get(item.node.id) || []).length, 0);
+  let html = '<div class="section"><div class="title">Downstream impact ' +
+    `(${entries.length} contracts · ${fieldCount} fields)</div>` +
+    '<div class="fields">' + entries.map(({ node: other, depth }) =>
+      `<div class="field-row" data-id="${esc(other.id)}"><span>${esc(other.name || other.id)}</span>` +
+      `<span class="t">${esc(other.kind)} · d${depth}</span></div>`).join('') +
+    '</div>';
+  const { paths, total } = impactPaths();
+  if (paths.length) {
+    html += '<div class="title" style="margin-top:10px">Paths to the end</div>' +
+      '<div class="paths">' + paths.map((ids) => '<div class="path">' +
+        ids.map((id) => `<span class="link" data-id="${esc(id)}">${esc(shortLabel(id))}</span>`)
+          .join(' <span class="arrow">→</span> ') + '</div>').join('') + '</div>';
+    if (total > paths.length) {
+      html += `<div class="impact-note">+${total - paths.length} more path(s)</div>`;
+    }
+  }
+  if (!state.impactOn) {
+    html += '<div class="impact-note">Enable <b>Impact</b> above the graph to dim ' +
+      'everything outside this reach.</div>';
+  }
+  html += '</div>';
+  return html;
+}
+
+function select(id) {
+  const node = id ? N.get(id) : null;
+  state.selected = id;
+  state.selectedEdge = null;
+  const start = node ? (node.kind === 'field' ? node.owner : node.id) : null;
+  state.impact = start ? computeImpact(start) : null;
+  renderPanel(node, null);
+  state.dirty = true;
+}
+
+function pickEdge(edge) {
+  state.selected = null;
+  state.selectedEdge = edge;
+  renderPanel(null, edge);
+  state.dirty = true;
+}
+
+function renderEdgePanel(edge) {
+  const meta = EDGE[edge.kind] || { color: '#94a3b8' };
+  const from = N.get(edge.from), to = N.get(edge.to);
+  const rows = [];
+  if (edge.note) rows.push(['note', edge.note]);
+  if (edge.file_path) rows.push(['file', edge.file_path]);
+  let html = `<span class="badge" style="color:${meta.color}">${esc(edge.kind)}</span>`;
+  html += `<h2 class="node-name">${esc(from ? (from.name || from.id) : edge.from)} ` +
+    `→ ${esc(to ? (to.name || to.id) : edge.to)}</h2>`;
+  html += `<div class="node-id">${esc(edge.from)} → ${esc(edge.to)}</div>`;
+  if (rows.length) {
+    html += '<div class="kv">' + rows.map(([k, v]) =>
+      `<div class="k">${esc(k)}</div><div class="v">${esc(v)}</div>`).join('') + '</div>';
+  }
+  if (edge.refs && edge.refs.length) {
+    html += '<div class="section"><div class="title">References</div><div class="refs">' +
+      edge.refs.map((r) => `<code>${esc(r)}</code>`).join('') + '</div></div>';
+  }
+  const endpoint = (id, node, label) => {
+    return `<div class="item"><span class="kind">${esc(label)}</span>` +
+      `<span class="link" data-id="${esc(id)}">${esc(node ? node.id : id)}</span></div>`;
+  };
+  html += '<div class="section"><div class="title">Endpoints</div><div class="conn">' +
+    endpoint(edge.from, from, from ? from.kind : 'from') +
+    endpoint(edge.to, to, to ? to.kind : 'to') + '</div></div>';
+  panel.innerHTML = html;
+  panel.scrollTop = 0;
+}
+
+function renderPanel(node, edge) {
+  if (edge) { renderEdgePanel(edge); return; }
+  if (!node) {
+    panel.innerHTML = `
+      <div class="empty">
+        <p><b>Interactive contract map.</b></p>
+        <p>Nodes are application contracts (Input, Entry, Storage). Enable
+        <b>Fields</b> to see every contract field, or click a contract to list its
+        fields in this panel.</p>
+        <p>Click an <b>edge</b> to see its note, references and endpoints.
+        <b>compose</b> is the structural pipeline, <b>transform</b> is where data
+        changes shape, <b>contains</b> links a contract to its fields.</p>
+      </div>`;
+    return;
+  }
+  const meta = KIND[node.kind];
+  const rows = [];
+  const push = (key, value) => {
+    if (value === undefined || value === null || value === '') return;
+    if (Array.isArray(value) && !value.length) return;
+    rows.push([key, Array.isArray(value) ? value.join(', ') : String(value)]);
+  };
+  push('description', node.description);
+  push('path', node.path);
+  push('type', node.type);
+  push('required', node.required ? 'yes' : '');
+  push('source', node.source && node.source !== 'declared' ? node.source : '');
+  push('channel', node.channel);
+  push('entry point', node.entry_point);
+  push('entry type', node.entry_type);
+  push('location', node.location);
+  push('store type', node.store_type);
+  push('repo', node.repo);
+  push('commit', node.commit_sha);
+  push('file', node.file_path);
+
+  let html = `<span class="badge" style="color:${meta.color}">${meta.label}</span>`;
+  html += `<h2 class="node-name">${esc(node.name || node.id)}</h2>`;
+  html += `<div class="node-id">${esc(node.id)}</div>`;
+  if (node.kind !== 'field') html += impactSection(node);
+  if (rows.length) {
+    html += '<div class="kv">' + rows.map(([k, v]) =>
+      `<div class="k">${esc(k)}</div><div class="v">${esc(v)}</div>`).join('') + '</div>';
+  }
+  if (node.refs && node.refs.length) {
+    html += '<div class="section"><div class="title">References</div><div class="refs">' +
+      node.refs.map((r) => `<code>${esc(r)}</code>`).join('') + '</div></div>';
+  }
+
+  if (node.kind === 'field') {
+    const owner = N.get(node.owner);
+    html += '<div class="section"><div class="title">Owner</div>' +
+      (owner ? `<div><span class="link" data-id="${esc(owner.id)}">${esc(owner.id)}</span></div>`
+             : `<div class="mono">${esc(node.owner)}</div>`) + '</div>';
+    const siblings = NODES.filter((n) => n.kind === 'field' && n.owner === node.owner &&
+      n.path !== node.path);
+    if (siblings.length) {
+      html += '<div class="section"><div class="title">Sibling fields ' +
+        `(${siblings.length})</div><div class="fields">` +
+        siblings.sort((a, b) => a.path.localeCompare(b.path)).slice(0, 200).map((f) =>
+          `<div class="field-row" data-id="${esc(f.id)}"><span>${esc(f.path)}</span>` +
+          `<span class="t">${esc(f.type || '?')}</span></div>`).join('') + '</div></div>';
+    }
+  } else {
+    const fields = NODES.filter((n) => n.kind === 'field' && n.owner === node.id)
+      .sort((a, b) => a.path.localeCompare(b.path));
+    if (fields.length) {
+      html += `<div class="section"><div class="title">Fields (${fields.length})</div>` +
+        '<div class="fields">' + fields.slice(0, 300).map((f) =>
+          `<div class="field-row" data-id="${esc(f.id)}"><span>${esc(f.path)}</span>` +
+          `<span class="t">${esc(f.type || '?')}</span></div>`).join('') + '</div></div>';
+    } else {
+      html += '<div class="section"><div class="title">Fields</div>' +
+        '<div class="empty">No fields registered.</div></div>';
+    }
+  }
+
+  const links = (NEIGH.get(node.id) || []).slice().sort((a, b) =>
+    a.edge.kind.localeCompare(b.edge.kind) || a.other.localeCompare(b.other));
+  if (links.length) {
+    html += '<div class="section"><div class="title">Connections</div><div class="conn">' +
+      links.map(({ edge, other, dir }) => {
+        const arrow = dir === 'out' ? '→' : '←';
+        const color = EDGE[edge.kind] ? EDGE[edge.kind].color : '#94a3b8';
+        return `<div class="item"><span class="kind" style="color:${color}">${esc(edge.kind)}</span>` +
+          `<span>${arrow} <span class="link" data-id="${esc(other)}">${esc(other)}</span></span></div>`;
+      }).join('') + '</div></div>';
+  }
+  panel.innerHTML = html;
+  panel.scrollTop = 0;
+}
+
+function initControls() {
+  const impactToggle = document.getElementById('impactToggle');
+  impactToggle.addEventListener('change', () => {
+    state.impactOn = impactToggle.checked;
+    impactToggle.closest('.chip').classList.toggle('on', impactToggle.checked);
+    if (state.selected) renderPanel(N.get(state.selected), null);
+    else if (state.selectedEdge) renderPanel(null, state.selectedEdge);
+    else renderPanel(null, null);
+    state.dirty = true;
+  });
+  document.querySelectorAll('input[data-kind]').forEach((el) => {
+    el.addEventListener('change', () => {
+      state.kindOn[el.dataset.kind] = el.checked;
+      el.closest('.chip').classList.toggle('on', el.checked);
+      if (el.dataset.kind === 'field' && el.checked) {
+        state.alpha = Math.max(state.alpha, 0.6);
+        setTimeout(() => fit(), 350);
+      }
+      updateVisibility();
+    });
+  });
+  document.querySelectorAll('input[data-rel]').forEach((el) => {
+    el.addEventListener('change', () => {
+      state.relOn[el.dataset.rel] = el.checked;
+      el.closest('.chip').classList.toggle('on', el.checked);
+      updateVisibility();
+    });
+  });
+}
+
+function bindEvents() {
+  canvas.addEventListener('pointerdown', (e) => {
+    const rect = canvas.getBoundingClientRect();
+    const mx = e.clientX - rect.left, my = e.clientY - rect.top;
+    const node = hitTest(mx, my);
+    state.moved = false;
+    if (node) {
+      state.drag = node;
+      node.vx = 0; node.vy = 0;
+      canvas.setPointerCapture(e.pointerId);
+      canvas.classList.add('dragging');
+    } else {
+      state.pan = { x: mx, y: my, vx: state.view.x, vy: state.view.y };
+      canvas.classList.add('dragging');
+    }
+  });
+
+  canvas.addEventListener('pointermove', (e) => {
+    const rect = canvas.getBoundingClientRect();
+    const mx = e.clientX - rect.left, my = e.clientY - rect.top;
+    if (state.drag) {
+      const p = toWorld(mx, my);
+      if (Math.hypot(p.x - state.drag.x, p.y - state.drag.y) > 0.5) state.moved = true;
+      state.drag.x = p.x; state.drag.y = p.y;
+      state.alpha = Math.max(state.alpha, 0.35);
+      state.dirty = true;
+      return;
+    }
+    if (state.pan) {
+      const dx = mx - state.pan.x, dy = my - state.pan.y;
+      if (Math.abs(dx) + Math.abs(dy) > 2) state.moved = true;
+      state.view.x = state.pan.vx + dx;
+      state.view.y = state.pan.vy + dy;
+      state.dirty = true;
+      return;
+    }
+    const node = hitTest(mx, my);
+    const id = node ? node.id : null;
+    const edge = id ? null : hitTestEdge(mx, my);
+    let changed = false;
+    if (id !== state.hover) { state.hover = id; changed = true; }
+    if (edge !== state.hoverEdge) { state.hoverEdge = edge; changed = true; }
+    if (changed) {
+      canvas.style.cursor = (id || edge) ? 'pointer' : 'grab';
+      state.dirty = true;
+    }
+  });
+
+  const end = (e) => {
+    if (!state.moved) {
+      if (state.drag) {
+        select(state.drag.id);
+      } else if (state.pan) {
+        const rect = canvas.getBoundingClientRect();
+        const edge = hitTestEdge(e.clientX - rect.left, e.clientY - rect.top);
+        if (edge) pickEdge(edge); else select(null);
+      }
+    }
+    state.drag = null;
+    state.pan = null;
+    canvas.classList.remove('dragging');
+  };
+  canvas.addEventListener('pointerup', end);
+  canvas.addEventListener('pointercancel', end);
+  canvas.addEventListener('pointerleave', () => {
+    if (!state.drag && !state.pan) {
+      if (state.hover || state.hoverEdge) {
+        state.hover = null;
+        state.hoverEdge = null;
+        canvas.style.cursor = 'grab';
+        state.dirty = true;
+      }
+    }
+  });
+
+  canvas.addEventListener('dblclick', (e) => {
+    const rect = canvas.getBoundingClientRect();
+    const node = hitTest(e.clientX - rect.left, e.clientY - rect.top);
+    if (!node) return;
+    state.view.k = 1.4;
+    state.view.x = W / 2 - node.x * state.view.k;
+    state.view.y = H / 2 - node.y * state.view.k;
+    state.dirty = true;
+  });
+
+  canvas.addEventListener('wheel', (e) => {
+    e.preventDefault();
+    const rect = canvas.getBoundingClientRect();
+    const mx = e.clientX - rect.left, my = e.clientY - rect.top;
+    const before = toWorld(mx, my);
+    const factor = Math.exp(-e.deltaY * 0.0012);
+    state.view.k = Math.max(0.08, Math.min(4, state.view.k * factor));
+    const after = toWorld(mx, my);
+    state.view.x += (after.x - before.x) * state.view.k;
+    state.view.y += (after.y - before.y) * state.view.k;
+    state.dirty = true;
+  }, { passive: false });
+
+  panel.addEventListener('click', (e) => {
+    const el = e.target.closest('[data-id]');
+    if (!el) return;
+    select(el.dataset.id);
+  });
+
+  searchEl.addEventListener('input', () => {
+    state.query = searchEl.value;
+    applySearch();
+  });
+  searchEl.addEventListener('keydown', (e) => {
+    if (e.key === 'Escape') { searchEl.value = ''; state.query = ''; applySearch(); searchEl.blur(); }
+  });
+
+  document.getElementById('fit').addEventListener('click', () => fit());
+  document.getElementById('relayout').addEventListener('click', () => {
+    seed(); updateVisibility(); fit();
+  });
+  document.getElementById('png').addEventListener('click', () => {
+    const a = document.createElement('a');
+    a.download = 'data-flow-map.png';
+    a.href = canvas.toDataURL('image/png');
+    a.click();
+  });
+
+  document.addEventListener('keydown', (e) => {
+    if (e.key === 'Escape') select(null);
+    if (e.key === '/' && document.activeElement !== searchEl) {
+      e.preventDefault(); searchEl.focus();
+    }
+  });
+}
+
+function loop() {
+  if (state.alpha > 0.015 || state.drag) { step(); state.dirty = true; }
+  if (state.dirty) { draw(); state.dirty = false; }
+  requestAnimationFrame(loop);
+}
+
+function boot() {
+  const nodes = DATA.nodes || [];
+  const edges = DATA.edges || [];
+  titleEl.textContent = DATA.title || 'Data flow map';
+  const contracts = nodes.filter((n) => n.kind !== 'field').length;
+  const fields = nodes.filter((n) => n.kind === 'field').length;
+  statsEl.textContent = `${contracts} contracts · ${fields} fields · ${edges.length} edges`;
+  seed();
+  updateVisibility();
+  bindEvents();
+  initControls();
+  resize();
+  fit();
+  renderPanel(null, null);
+  requestAnimationFrame(loop);
+}
+
+new ResizeObserver(resize).observe(wrap);
+boot();
+</script>
+</body>
+</html>

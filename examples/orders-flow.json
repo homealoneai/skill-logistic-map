@@ -1,0 +1,116 @@
+{
+  "nodes": [
+    {
+      "kind": "input",
+      "id": "input:orders.created",
+      "name": "orders.created",
+      "description": "Order created event published by the checkout service.",
+      "entry_point": "queue:orders.created",
+      "channel": "queue",
+      "repo": "github.com/acme/logistics",
+      "commit": "a1b2c3d",
+      "file_path": "services/orders/src/consumer.py",
+      "refs": ["services/orders/src/consumer.py:24", "infra/queues.yaml:12"]
+    },
+    {
+      "kind": "input",
+      "id": "input:shipments.updated",
+      "name": "shipments.updated",
+      "description": "Carrier webhook used by the tracking UI.",
+      "entry_point": "POST /webhooks/shipments",
+      "channel": "http",
+      "repo": "github.com/acme/logistics",
+      "commit": "a1b2c3d",
+      "file_path": "services/tracking/src/webhook.py",
+      "refs": ["services/tracking/src/webhook.py:8"]
+    },
+    {
+      "kind": "entry",
+      "id": "entry:validate-order",
+      "name": "validate-order",
+      "description": "Validates required order fields and normalizes the payload.",
+      "entry_point": "validate_order",
+      "entry_type": "function",
+      "repo": "github.com/acme/logistics",
+      "commit": "a1b2c3d",
+      "file_path": "services/orders/src/validate.py",
+      "refs": ["services/orders/src/validate.py:12"]
+    },
+    {
+      "kind": "entry",
+      "id": "entry:enrich-customer",
+      "name": "enrich-customer",
+      "description": "Adds the customer tier from the CRM before persistence.",
+      "entry_point": "enrich_customer",
+      "entry_type": "worker",
+      "repo": "github.com/acme/logistics",
+      "commit": "a1b2c3d",
+      "file_path": "services/orders/src/enrich.py",
+      "refs": ["services/orders/src/enrich.py:31"]
+    },
+    {
+      "kind": "storage",
+      "id": "storage:orders-db",
+      "name": "orders-db",
+      "description": "PostgreSQL orders table.",
+      "location": "postgres://orders.orders",
+      "store_type": "sql",
+      "repo": "github.com/acme/logistics",
+      "commit": "a1b2c3d",
+      "file_path": "services/orders/src/repository.py",
+      "refs": ["services/orders/src/repository.py:44", "migrations/0007_orders.sql:3"]
+    },
+    {
+      "kind": "storage",
+      "id": "storage:customer-cache",
+      "name": "customer-cache",
+      "description": "Redis cache for customer data.",
+      "location": "redis://customers:6379",
+      "store_type": "redis",
+      "repo": "github.com/acme/logistics",
+      "commit": "a1b2c3d",
+      "file_path": "services/orders/src/cache.py",
+      "refs": ["services/orders/src/cache.py:19"]
+    }
+  ],
+  "fields": [
+    {"owner": "input:orders.created", "path": "order_id", "type": "string", "required": true, "refs": ["services/orders/src/consumer.py:30"]},
+    {"owner": "input:orders.created", "path": "customer", "type": "object"},
+    {"owner": "input:orders.created", "path": "customer.id", "type": "string", "required": true},
+    {"owner": "input:orders.created", "path": "customer.email", "type": "string"},
+    {"owner": "input:orders.created", "path": "items", "type": "array"},
+    {"owner": "input:orders.created", "path": "items.sku", "type": "string"},
+    {"owner": "input:orders.created", "path": "items.quantity", "type": "integer"},
+    {"owner": "input:orders.created", "path": "total", "type": "string", "description": "Legacy: serialized as string by checkout."},
+
+    {"owner": "entry:validate-order", "path": "order_id", "type": "string", "required": true},
+    {"owner": "entry:validate-order", "path": "customer.id", "type": "string", "required": true},
+    {"owner": "entry:validate-order", "path": "customer.email", "type": "string"},
+    {"owner": "entry:validate-order", "path": "items.sku", "type": "string"},
+    {"owner": "entry:validate-order", "path": "items.quantity", "type": "integer"},
+    {"owner": "entry:validate-order", "path": "total", "type": "number", "description": "Parsed to decimal."},
+
+    {"owner": "entry:enrich-customer", "path": "order_id", "type": "string"},
+    {"owner": "entry:enrich-customer", "path": "customer.id", "type": "string"},
+    {"owner": "entry:enrich-customer", "path": "customer.email", "type": "string"},
+    {"owner": "entry:enrich-customer", "path": "customer.tier", "type": "string"},
+    {"owner": "entry:enrich-customer", "path": "total", "type": "number"},
+
+    {"owner": "storage:orders-db", "path": "order_id", "type": "string", "required": true},
+    {"owner": "storage:orders-db", "path": "customer.id", "type": "string", "required": true},
+    {"owner": "storage:orders-db", "path": "total", "type": "number"},
+    {"owner": "storage:orders-db", "path": "status", "type": "string"},
+
+    {"owner": "storage:customer-cache", "path": "customer.id", "type": "string"},
+    {"owner": "storage:customer-cache", "path": "customer.tier", "type": "string"}
+  ],
+  "edges": [
+    {"kind": "compose", "from": "input:orders.created", "to": "entry:validate-order", "refs": ["services/orders/src/consumer.py:41"]},
+    {"kind": "compose", "from": "entry:validate-order", "to": "entry:enrich-customer", "refs": ["services/orders/src/worker.py:18"]},
+    {"kind": "compose", "from": "entry:enrich-customer", "to": "storage:orders-db", "refs": ["services/orders/src/repository.py:52"]},
+    {"kind": "compose", "from": "entry:enrich-customer", "to": "storage:customer-cache", "refs": ["services/orders/src/cache.py:24"]},
+    {"kind": "transform", "from": "input:orders.created", "to": "entry:validate-order",
+     "note": "total: string -> number; email trimmed to lowercase",
+     "refs": ["services/orders/src/validate.py:40"]}
+  ]
+}
