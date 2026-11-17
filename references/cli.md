@@ -223,3 +223,20 @@ Mutation commands print `{"ok": true, "id": "...", "created": true|false}` (or
   ]
 }
 ```
+
+
+## flow
+
+The flow graph lives in a separate Kuzu database (`<db-parent>/flows.kuzu`,
+`--flow-db`, or `DATAFLOW_FLOW_DB`). It is derived from the contract graph and is
+never a second source of truth.
+
+| Command | What it does |
+|---|---|
+| `flow build --from ID [--name NAME] [--id FLOW] [--force]` | Derive one flow, materialize steps and feeds, rebuild if the id exists |
+| `flow list` | List flows with step/context/feed counts |
+| `flow show ID [--json]` | Print the tree, context inputs and joins |
+| `flow sync` | Rebuild every flow from the current contract graph |
+| `flow remove --id FLOW` | Delete a flow and its steps |
+
+See `flows.md` for the schema, roles, `span=flow|context` and limitations.

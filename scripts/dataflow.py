@@ -29,6 +29,7 @@ from pathlib import Path
 
 SCHEMA_VERSION = 1
 DEFAULT_DB = os.environ.get("DATAFLOW_DB", ".dataflow/graph.kuzu")
+DEFAULT_FLOW_DB = os.environ.get("DATAFLOW_FLOW_DB", "")
 DEFAULT_RENDER = "graph.html"
 
 CONTRACT_KINDS = ("input", "entry", "storage")
@@ -80,6 +81,21 @@ DDL = [
         FROM Entry TO Entry, FROM Entry TO Storage, FROM Entry TO Input,
         FROM Storage TO Entry, FROM Storage TO Storage, FROM Storage TO Input,
         refs STRING[], file_path STRING, note STRING)""",
+]
+
+FLOW_DDL = [
+    """CREATE NODE TABLE IF NOT EXISTS Flow(
+        id STRING, name STRING, description STRING, start_contract STRING,
+        repo STRING, commit_sha STRING, file_path STRING, refs STRING[],
+        created_at STRING,
+        PRIMARY KEY(id))""",
+    """CREATE NODE TABLE IF NOT EXISTS Step(
+        id STRING, flow_id STRING, contract_id STRING, contract_kind STRING,
+        name STRING, role STRING, span STRING, seq INT64,
+        repo STRING, commit_sha STRING, file_path STRING, refs STRING[],
+        PRIMARY KEY(id))""",
+    """CREATE REL TABLE IF NOT EXISTS HAS_STEP(FROM Flow TO Step)""",
+    """CREATE REL TABLE IF NOT EXISTS FEEDS(FROM Step TO Step, kind STRING, note STRING)""",
 ]
 
 TYPE_ALIASES = {
@@ -1267,6 +1283,378 @@ def cmd_stats(args) -> int:
 # CLI
 # --------------------------------------------------------------------------
 
+
+# --------------------------------------------------------------------------
+# derived flow graph
+# --------------------------------------------------------------------------
+
+def flow_db_path(args) -> Path:
+    explicit = getattr(args, "flow_db", None)
+    if explicit:
+        return Path(explicit).expanduser()
+    if DEFAULT_FLOW_DB:
+        return Path(DEFAULT_FLOW_DB).expanduser()
+    return Path(args.db).expanduser().parent / "flows.kuzu"
+
+
+def open_flow_db(args, create: bool = False) -> DB:
+    path = flow_db_path(args)
+    if not create and not path.exists():
+        raise DataflowError(
+            f"no flow database at {path}; run `flow build --from <contract>` first")
+    db = DB(path)
+    if "Flow" not in db.tables():
+        if not create:
+            raise DataflowError(
+                f"{path} exists but has no flow schema; rerun `flow build`")
+        for statement in FLOW_DDL:
+            db.run(statement)
+    return db
+
+
+def get_flow(db: DB, flow_id: str):
+    _, rows = db.run("MATCH (f:Flow {id:$id}) RETURN f", {"id": flow_id})
+    return clean(rows[0][0]) if rows else None
+
+
+def delete_flow(db: DB, flow_id: str) -> None:
+    prefix = flow_id + "/"
+    _, rows = db.run("MATCH (s:Step) RETURN s.id")
+    for (step_id,) in rows:
+        if step_id == flow_id or step_id.startswith(prefix):
+            db.run("MATCH (s:Step {id:$id}) DETACH DELETE s", {"id": step_id})
+    db.run("MATCH (f:Flow {id:$id}) DETACH DELETE f", {"id": flow_id})
+
+
+def _flow_role(nodes, incoming, outgoing, node_id, start):
+    if node_id == start:
+        return "source"
+    kind = nodes[node_id]["kind"]
+    if kind == "entry":
+        return "transform"
+    if kind == "input":
+        return "source"
+    has_in = any(nodes[edge["from"]]["kind"] == "entry"
+                 for edge in incoming.get(node_id, []))
+    has_out = any(nodes[edge["to"]]["kind"] == "entry"
+                  for edge in outgoing.get(node_id, []))
+    if has_in and has_out:
+        return "readwrite"
+    if has_in:
+        return "write"
+    if has_out:
+        return "read"
+    return "artifact"
+
+
+def build_flow(contract_db: DB, flow_db: DB, start: str, flow_id: str,
+               name: str, description: str = "") -> dict:
+    nodes, edges = load_graph(contract_db)
+    if start not in nodes:
+        raise DataflowError(f"start contract {start!r} does not exist")
+    if nodes[start]["kind"] == "field":
+        raise DataflowError("a flow starts at a contract node, not at a field")
+
+    flow_edges = [edge for edge in edges
+                  if edge["kind"] in ("compose", "transform")
+                  and edge["from"] in nodes and edge["to"] in nodes]
+    outgoing, incoming = defaultdict(list), defaultdict(list)
+    for edge in flow_edges:
+        outgoing[edge["from"]].append(edge)
+        incoming[edge["to"]].append(edge)
+
+    reachable, seen, queue = [], {start}, [start]
+    while queue:
+        current = queue.pop(0)
+        reachable.append(current)
+        for edge in outgoing.get(current, []):
+            if edge["to"] not in seen:
+                seen.add(edge["to"])
+                queue.append(edge["to"])
+
+    # context: direct inputs of reachable operations that are outside the forward reach
+    context = {}
+    for node_id in reachable:
+        if nodes[node_id]["kind"] != "entry":
+            continue
+        for edge in incoming.get(node_id, []):
+            source = edge["from"]
+            if source not in seen and source not in context:
+                context[source] = len(reachable) + len(context)
+
+    delete_flow(flow_db, flow_id)
+    repo = nodes[start].get("repo") or git_value("repo")
+    commit_sha = nodes[start].get("commit_sha") or git_value("commit")
+    flow_db.run(
+        "CREATE (f:Flow {id:$id, name:$name, description:$description, "
+        "start_contract:$start, repo:$repo, commit_sha:$commit_sha, "
+        "file_path:$file_path, refs:$refs, created_at:$created_at})",
+        {"id": flow_id, "name": name, "description": description,
+         "start": start, "repo": repo, "commit_sha": commit_sha,
+         "file_path": nodes[start].get("file_path", ""),
+         "refs": nodes[start].get("refs") or [],
+         "created_at": now_iso()})
+
+    def put_step(node_id: str, span: str, seq: int):
+        step_id = f"{flow_id}/{node_id}"
+        node = nodes[node_id]
+        flow_db.run(
+            "MERGE (s:Step {id:$id}) SET s.flow_id=$flow_id, "
+            "s.contract_id=$contract_id, s.contract_kind=$kind, s.name=$name, "
+            "s.role=$role, s.span=$span, s.seq=$seq, s.repo=$repo, "
+            "s.commit_sha=$commit_sha, s.file_path=$file_path, s.refs=$refs",
+            {"id": step_id, "flow_id": flow_id, "contract_id": node_id,
+             "kind": node["kind"], "name": node.get("name") or node_id,
+             "role": _flow_role(nodes, incoming, outgoing, node_id, start),
+             "span": span, "seq": seq, "repo": node.get("repo", ""),
+             "commit_sha": node.get("commit_sha", ""),
+             "file_path": node.get("file_path", ""),
+             "refs": node.get("refs") or []})
+        flow_db.run("MATCH (f:Flow {id:$f}),(s:Step {id:$s}) MERGE (f)-[:HAS_STEP]->(s)",
+                    {"f": flow_id, "s": step_id})
+        return step_id
+
+    for index, node_id in enumerate(reachable):
+        put_step(node_id, "flow", index)
+    for node_id, seq in context.items():
+        put_step(node_id, "context", seq)
+
+    groups = {}
+
+    def group(edge: dict) -> None:
+        groups.setdefault((edge["from"], edge["to"]), []).append(edge)
+
+    for edge in flow_edges:
+        if edge["from"] in seen and edge["to"] in seen:
+            group(edge)
+    for node_id in reachable:
+        if nodes[node_id]["kind"] != "entry":
+            continue
+        for edge in incoming.get(node_id, []):
+            if edge["from"] not in seen:
+                group(edge)
+
+    for (source, target), edges in sorted(groups.items()):
+        kinds = "+".join(sorted({edge["kind"] for edge in edges}))
+        notes = "; ".join(dict.fromkeys(
+            edge["note"] for edge in edges if edge.get("note")))
+        flow_db.run(
+            "MATCH (a:Step {id:$a}),(b:Step {id:$b}) MERGE (a)-[r:FEEDS]->(b) "
+            "SET r.kind=$kind, r.note=$note",
+            {"a": f"{flow_id}/{source}", "b": f"{flow_id}/{target}",
+             "kind": kinds, "note": notes})
+
+    return {"id": flow_id, "steps": len(reachable),
+            "context": len(context), "feeds": len(groups),
+            "start": start}
+
+
+def _flow_rows(db: DB):
+    _, flow_rows = db.run("MATCH (f:Flow) RETURN f")
+    _, step_rows = db.run("MATCH (s:Step) RETURN s")
+    _, feed_rows = db.run("MATCH (a:Step)-[r:FEEDS]->(b:Step) "
+                          "RETURN a.id, b.id, r.kind, r.note")
+    flows = [clean(row[0]) for row in flow_rows]
+    steps = [clean(row[0]) for row in step_rows]
+    feeds = [{"from": a, "to": b, "kind": kind or "", "note": note or ""}
+             for a, b, kind, note in feed_rows]
+    return flows, steps, feeds
+
+
+def cmd_flow_build(args) -> int:
+    if not args.start:
+        raise DataflowError("--from is required")
+    contract_db = open_db(args)
+    flow_db = open_flow_db(args, create=True)
+    nodes, _ = load_graph(contract_db)
+    if args.start not in nodes:
+        raise DataflowError(f"start contract {args.start!r} does not exist")
+    if nodes[args.start]["kind"] == "field":
+        raise DataflowError("a flow starts at a contract node, not at a field")
+
+    flow_id = args.id
+    if not flow_id:
+        flow_id = "flow:" + slugify(args.name or args.start)
+    if not re.match(r"^flow:[^\s#]+$", flow_id):
+        raise DataflowError(f"invalid flow id {flow_id!r}; use flow:<slug>")
+
+    existing = get_flow(flow_db, flow_id)
+    if existing and existing.get("start_contract") != args.start and not args.force:
+        raise DataflowError(
+            f"{flow_id} already exists from {existing.get('start_contract')}; "
+            "use --id or --force")
+
+    name = (args.name or (existing or {}).get("name")
+            or f"{nodes[args.start].get('name') or args.start} flow")
+    description = (args.description if args.description is not None
+                   else (existing or {}).get("description", ""))
+    result = build_flow(contract_db, flow_db, args.start, flow_id, name, description)
+    result["ok"] = True
+    if args.json:
+        print(json.dumps(result, indent=2))
+    else:
+        print(f"built {flow_id}: {result['steps']} steps "
+              f"({result['context']} context), {result['feeds']} feeds")
+    return 0
+
+
+def cmd_flow_list(args) -> int:
+    flow_db = open_flow_db(args)
+    flows, steps, feeds = _flow_rows(flow_db)
+    by_flow = Counter(step.get("flow_id") for step in steps
+                      if step.get("span") != "context")
+    context = Counter(step.get("flow_id") for step in steps
+                      if step.get("span") == "context")
+    feed_count = Counter()
+    step_flow = {step["id"]: step.get("flow_id") for step in steps}
+    for feed in feeds:
+        feed_count[step_flow.get(feed["from"])] += 1
+    rows = []
+    for flow in sorted(flows, key=lambda item: item["id"]):
+        rows.append({
+            "id": flow["id"], "name": flow.get("name", ""),
+            "start": flow.get("start_contract", ""),
+            "steps": by_flow.get(flow["id"], 0),
+            "context": context.get(flow["id"], 0),
+            "feeds": feed_count.get(flow["id"], 0),
+        })
+    if args.json:
+        print(json.dumps(rows, indent=2, ensure_ascii=False))
+        return 0
+    if not rows:
+        print("no flows; run flow build --from <contract>")
+        return 0
+    for row in rows:
+        print(f"{row['id']:<34} {row['name'][:28]:<28} "
+              f"start={row['start']:<28} steps={row['steps']} "
+              f"ctx={row['context']} feeds={row['feeds']}")
+    print(f"\n{len(rows)} flow(s)")
+    return 0
+
+
+def cmd_flow_show(args) -> int:
+    flow_db = open_flow_db(args)
+    flow = get_flow(flow_db, args.id)
+    if not flow:
+        raise DataflowError(f"flow {args.id!r} does not exist")
+    flows, steps, feeds = _flow_rows(flow_db)
+    steps = [step for step in steps if step.get("flow_id") == args.id]
+    step_ids = {step["id"] for step in steps}
+    feeds = [feed for feed in feeds
+             if feed["from"] in step_ids and feed["to"] in step_ids]
+    by_id = {step["id"]: step for step in steps}
+    outgoing, incoming = defaultdict(list), defaultdict(list)
+    for feed in feeds:
+        outgoing[feed["from"]].append(feed)
+        incoming[feed["to"]].append(feed)
+    joins = []
+    for step in steps:
+        sources = [feed["from"] for feed in incoming.get(step["id"], [])]
+        if len(sources) > 1:
+            joins.append({"step": step["contract_id"], "sources": sources})
+
+    if args.json:
+        print(json.dumps({"flow": flow, "steps": steps, "feeds": feeds,
+                          "joins": joins}, indent=2, ensure_ascii=False))
+        return 0
+
+    print(f"Flow {flow['id']} — {flow.get('name', '')}")
+    print(f"start: {flow.get('start_contract')}")
+    flow_steps = sum(1 for step in steps if step.get("span") != "context")
+    context_steps = len(steps) - flow_steps
+    print(f"steps: {flow_steps} (+{context_steps} context)  "
+          f"feeds: {len(feeds)}  joins: {len(joins)}")
+    print()
+    print("TREE")
+    root = next((step for step in steps
+                 if step.get("contract_id") == flow.get("start_contract")
+                 and step.get("span") == "flow"), None)
+    printed, stack = set(), set()
+
+    def walk(step_id: str, depth: int):
+        if step_id in stack:
+            print("  " * depth + "... (cycle)")
+            return
+        if step_id in printed:
+            print("  " * depth + "... (already shown)")
+            return
+        printed.add(step_id)
+        stack.add(step_id)
+        step = by_id[step_id]
+        label = f"{step['contract_id']} [{step.get('role', '')}]"
+        inputs = incoming.get(step_id, [])
+        if len(inputs) > 1:
+            label += f"  (join: {len(inputs)})"
+        print("  " * depth + label)
+        for feed in outgoing.get(step_id, []):
+            if by_id.get(feed["to"], {}).get("span") == "flow":
+                walk(feed["to"], depth + 1)
+        stack.discard(step_id)
+
+    if root:
+        walk(root["id"], 0)
+    else:
+        print("  (start step not found)")
+
+    contexts = [step for step in steps if step.get("span") == "context"]
+    if contexts:
+        print()
+        print("CONTEXT")
+        for step in contexts:
+            outs = ", ".join(feed["to"].split("/", 1)[-1]
+                             for feed in outgoing.get(step["id"], []))
+            print(f"  {step['contract_id']} [{step.get('role', '')}] -> {outs}")
+
+    if joins:
+        print()
+        print("JOINS")
+        for join in joins:
+            sources = ", ".join(source.split("/", 1)[-1] for source in join["sources"])
+            print(f"  {join['step']} <- {sources}")
+    return 0
+
+
+def cmd_flow_sync(args) -> int:
+    flow_db = open_flow_db(args)
+    contract_db = open_db(args)
+    flows, _, _ = _flow_rows(flow_db)
+    if not flows:
+        print("no flows to sync")
+        return 0
+    results, errors = [], []
+    for flow in flows:
+        try:
+            result = build_flow(
+                contract_db, flow_db, flow["start_contract"], flow["id"],
+                flow.get("name", ""), flow.get("description", ""))
+            results.append(result)
+        except DataflowError as exc:
+            errors.append({"id": flow["id"], "error": str(exc)})
+    payload = {"ok": not errors, "synced": results, "errors": errors}
+    if args.json:
+        print(json.dumps(payload, indent=2))
+    else:
+        for result in results:
+            print(f"synced {result['id']}: {result['steps']} steps, "
+                  f"{result['context']} context, {result['feeds']} feeds")
+        for error in errors:
+            print(f"error {error['id']}: {error['error']}", file=sys.stderr)
+    return 0 if not errors else 1
+
+
+def cmd_flow_remove(args) -> int:
+    flow_db = open_flow_db(args)
+    if not get_flow(flow_db, args.id):
+        raise DataflowError(f"flow {args.id!r} does not exist")
+    delete_flow(flow_db, args.id)
+    payload = {"ok": True, "id": args.id}
+    if args.json:
+        print(json.dumps(payload, indent=2))
+    else:
+        print(f"removed {args.id}")
+    return 0
+
+
 def build_parser() -> argparse.ArgumentParser:
     common = argparse.ArgumentParser(add_help=False)
     common.add_argument("--db", default=argparse.SUPPRESS,
@@ -1382,6 +1770,44 @@ def build_parser() -> argparse.ArgumentParser:
 
     stats = sub.add_parser("stats", parents=[common], help="print graph counters")
     stats.set_defaults(func=cmd_stats)
+
+    flow_common = argparse.ArgumentParser(add_help=False)
+    flow_common.add_argument(
+        "--flow-db", default=None,
+        help="flow database path (default: <db-dir>/flows.kuzu)")
+
+    flow = sub.add_parser("flow", help="derive and inspect flow graphs")
+    flow_sub = flow.add_subparsers(dest="flow_command", required=True)
+
+    flow_build = flow_sub.add_parser(
+        "build", parents=[common, flow_common],
+        help="derive a flow from a contract and materialize its steps")
+    flow_build.add_argument("--from", dest="start", required=True,
+                            help="start contract id, e.g. input:orders.created")
+    flow_build.add_argument("--name", help="flow display name")
+    flow_build.add_argument("--id", help="explicit flow id, e.g. flow:orders")
+    flow_build.add_argument("--description")
+    flow_build.add_argument("--force", action="store_true",
+                            help="rebuild even if the id belongs to another start")
+    flow_build.set_defaults(func=cmd_flow_build)
+
+    flow_list = flow_sub.add_parser("list", parents=[common, flow_common],
+                                    help="list flows")
+    flow_list.set_defaults(func=cmd_flow_list)
+
+    flow_show = flow_sub.add_parser("show", parents=[common, flow_common],
+                                    help="show one flow as a tree")
+    flow_show.add_argument("id")
+    flow_show.set_defaults(func=cmd_flow_show)
+
+    flow_sync = flow_sub.add_parser("sync", parents=[common, flow_common],
+                                    help="rebuild every flow from the contract graph")
+    flow_sync.set_defaults(func=cmd_flow_sync)
+
+    flow_remove = flow_sub.add_parser("remove", parents=[common, flow_common],
+                                      help="delete a flow and its steps")
+    flow_remove.add_argument("--id", required=True)
+    flow_remove.set_defaults(func=cmd_flow_remove)
 
     return parser
 

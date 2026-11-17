@@ -115,6 +115,25 @@ For a full bootstrap of a known flow, write one JSON file and apply it in a
 transaction: `apply --file flow.json`. The format matches `export`, so a
 snapshot can be edited and re-applied. See `examples/orders-flow.json`.
 
+## Flows (derived)
+
+When the map includes procedures, a contract path lies by omission: a procedure
+with three inputs is a join, not a chain. Derive a second, read-only flow graph
+from the contract graph — the contract graph itself is not changed:
+
+```sh
+"$PY" "$SKILL_DIR/scripts/dataflow.py" flow build \
+  --from storage:orders --name "Orders to notifications"
+"$PY" "$SKILL_DIR/scripts/dataflow.py" flow list
+"$PY" "$SKILL_DIR/scripts/dataflow.py" flow show flow:orders-to-notifications
+"$PY" "$SKILL_DIR/scripts/dataflow.py" flow sync   # after contract changes
+```
+
+Each flow materializes `Step` occurrences and `FEEDS` edges. A step with several
+incoming feeds is a join; inputs outside the forward reach are kept as
+`span=context`, so the tree never hides a co-input. Rebuild flows after editing
+the contract graph. Details in `references/flows.md`.
+
 ## Rules
 
 - **CLI is the only writer.** `query` is guarded read-only; never edit the Kuzu
@@ -141,6 +160,7 @@ Read only what the task needs:
 | `references/cli.md` | Every command, flag, output shape and exit code |
 | `references/modeling.md` | How to decide what is a node/field/edge; multi-service and shared-field cases |
 | `references/report-rules.md` | Every finding code, its severity and how to act on it |
+| `references/flows.md` | Derived flow graph: steps, joins, context, commands |
 
 ## Failure modes
 

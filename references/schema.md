@@ -122,3 +122,6 @@ processes contracts before fields, so field owners always exist.
 `init` never alters existing tables. If a future schema changes, export the
 graph, initialize a new database at a new path, and `apply` the snapshot with
 the matching CLI version.
+
+The derived flow graph is a separate database with its own `Flow`, `Step` and
+`FEEDS` tables; it is not part of this contract schema. See `flows.md`.

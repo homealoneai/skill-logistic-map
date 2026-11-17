@@ -119,6 +119,23 @@ A batch seed is available at `examples/orders-flow.json`:
 | `export` | JSON snapshot for review and re-apply |
 | `render` | Standalone interactive HTML map |
 | `stats` | Counters by kind and channel |
+| `flow build` / `flow list` / `flow show` / `flow sync` | Derive and inspect flow graphs with explicit joins |
+
+## Flows
+
+A procedure with several inputs is a join, and a linear path through the contract
+graph hides that. `flow build` derives a second, read-only graph of steps and
+feeds from the contract graph:
+
+```sh
+"$PY" "$SKILL_DIR/scripts/dataflow.py" flow build \
+  --from storage:orders --name "Orders to notifications"
+"$PY" "$SKILL_DIR/scripts/dataflow.py" flow show flow:orders-to-notifications
+```
+
+A step with multiple incoming `FEEDS` is a join; inputs outside the forward
+reach are kept as `context`, so the tree does not pretend one table is the only
+source. The contract graph is never modified; rerun `flow sync` after changes.
 
 `SKILL.md` is the agent-facing guide. Detailed references:
 
@@ -126,6 +143,7 @@ A batch seed is available at `examples/orders-flow.json`:
 - `references/cli.md` — every command, flag and output shape
 - `references/modeling.md` — what should become a node, field or edge
 - `references/report-rules.md` — finding codes, severities and fixes
+- `references/flows.md` — derived flow graph: steps, joins, context and limits
 
 ## HTML map
 
@@ -139,7 +157,7 @@ outside its downstream reach and list affected contracts and paths.
 ```
 SKILL.md               agent instructions
 README.md              repository and install guide
-references/            schema, CLI, modeling and report rules
+references/            schema, CLI, modeling, report and flow rules
 scripts/dataflow.py    CLI: schema, writes, queries, reports, export, render
 scripts/bootstrap.sh   venv + Kuzu + init
 assets/graph.html      self-contained visualization template
