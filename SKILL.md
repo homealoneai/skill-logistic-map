@@ -1,17 +1,22 @@
 ---
-name: data-flow-map
-description: Build, query and audit a Kuzu graph of how data moves through an application's contracts (Input, Entry, Storage, Field). Use when asked to map or document data flow between services, queues, endpoints, jobs and storages; to find contract mismatches between producer and consumer; to trace where a field comes from or goes; or to query, report on, or render an existing data-flow graph.
+name: logistic-map
+description: Build, query and audit a Kuzu graph of application data flow as a logistics process — Input, Entry, Storage and Field contracts, joins, and the paths data takes. Use when asked to map data movement between services, queues, endpoints, jobs and storages; to find contract mismatches between producer and consumer; to trace a field; or to query, report on, or render the graph.
 ---
 
-# Data flow map
+# Logistic map
 
-A repository-local graph database (Kuzu) that records **which component receives
+Data flow as a logistics process: **Input** contracts are origins, **Entry**
+points are handling steps, **Storage** locations are warehouses, and **Field**
+trees are the cargo manifest. Procedures are the places where cargo is merged
+(a join) or split.
+
+A repository-local graph database (Kuzu) records **which component receives
 data, which code transforms it, where it is stored, and which fields exist at
 each step**. The point is contract visibility: a field that the producer sends
 but the consumer never reads, or a field whose type disagrees between two
 contracts, becomes a query result instead of a production surprise.
 
-All writes go through `scripts/dataflow.py`. The graph is disposable: rebuild it
+All writes go through `scripts/logistic_map.py`. The graph is disposable: rebuild it
 from the JSON snapshot or re-run the mapping, it is not a source of truth by
 itself.
 
@@ -22,18 +27,18 @@ Run from the repository root. `SKILL_DIR` is the directory that contains this
 skill was cloned.
 
 ```sh
-SKILL_DIR=/path/to/data-flow-map   # directory containing SKILL.md
-PY=.dataflow/.venv/bin/python
+SKILL_DIR=/path/to/logistic-map   # directory containing SKILL.md
+PY=.logistic-map/.venv/bin/python
 
 # one-time: venv + kuzu + schema (idempotent)
 bash "$SKILL_DIR/scripts/bootstrap.sh"
 
 # later sessions: just confirm the database
-"$PY" "$SKILL_DIR/scripts/dataflow.py" doctor
+"$PY" "$SKILL_DIR/scripts/logistic_map.py" doctor
 ```
 
-The database lives at `.dataflow/graph.kuzu`; the venv at `.dataflow/.venv`.
-Override with `--db PATH` or `DATAFLOW_DB`. Kuzu is installed with pip inside
+The database lives at `.logistic-map/graph.kuzu`; the venv at `.logistic-map/.venv`.
+Override with `--db PATH` or `LOGISTIC_MAP_DB`. Kuzu is installed with pip inside
 the project venv, so nothing global changes. Nothing here depends on a specific
 agent harness: the CLI is plain Python and `render` produces a static HTML file.
 
@@ -89,26 +94,26 @@ names.
    on **Impact** to highlight everything downstream.
 
 ```sh
-"$PY" "$SKILL_DIR/scripts/dataflow.py" add-node --kind input \
+"$PY" "$SKILL_DIR/scripts/logistic_map.py" add-node --kind input \
   --id input:orders.created --name orders.created \
   --entry-point queue:orders.created --channel queue \
   --file services/orders/src/consumer.py \
   --ref services/orders/src/consumer.py:24 --ref infra/queues.yaml:12
 
-"$PY" "$SKILL_DIR/scripts/dataflow.py" add-field \
+"$PY" "$SKILL_DIR/scripts/logistic_map.py" add-field \
   --owner input:orders.created --path customer.email --type string \
   --file services/orders/src/consumer.py --ref services/orders/src/consumer.py:30
 
-"$PY" "$SKILL_DIR/scripts/dataflow.py" add-node --kind entry \
+"$PY" "$SKILL_DIR/scripts/logistic_map.py" add-node --kind entry \
   --id entry:validate-order --name validate-order \
   --entry-point validate_order --entry-type function \
   --file services/orders/src/validate.py
 
-"$PY" "$SKILL_DIR/scripts/dataflow.py" add-edge --kind compose \
+"$PY" "$SKILL_DIR/scripts/logistic_map.py" add-edge --kind compose \
   --from input:orders.created --to entry:validate-order
 
-"$PY" "$SKILL_DIR/scripts/dataflow.py" report
-"$PY" "$SKILL_DIR/scripts/dataflow.py" render
+"$PY" "$SKILL_DIR/scripts/logistic_map.py" report
+"$PY" "$SKILL_DIR/scripts/logistic_map.py" render
 ```
 
 For a full bootstrap of a known flow, write one JSON file and apply it in a
@@ -122,11 +127,11 @@ with three inputs is a join, not a chain. Derive a second, read-only flow graph
 from the contract graph — the contract graph itself is not changed:
 
 ```sh
-"$PY" "$SKILL_DIR/scripts/dataflow.py" flow build \
+"$PY" "$SKILL_DIR/scripts/logistic_map.py" flow build \
   --from storage:orders --name "Orders to notifications"
-"$PY" "$SKILL_DIR/scripts/dataflow.py" flow list
-"$PY" "$SKILL_DIR/scripts/dataflow.py" flow show flow:orders-to-notifications
-"$PY" "$SKILL_DIR/scripts/dataflow.py" flow sync   # after contract changes
+"$PY" "$SKILL_DIR/scripts/logistic_map.py" flow list
+"$PY" "$SKILL_DIR/scripts/logistic_map.py" flow show flow:orders-to-notifications
+"$PY" "$SKILL_DIR/scripts/logistic_map.py" flow sync   # after contract changes
 ```
 
 Each flow materializes `Step` occurrences and `FEEDS` edges. A step with several
@@ -147,7 +152,7 @@ the contract graph. Details in `references/flows.md`.
   outgoing `compose`; fan-out uses `transform` (the report flags violations).
 - **Run `report` after every mapping session.** Use `--fail-on warn` in CI or
   before a large review; default exit code is 0.
-- **Keep the snapshot.** `export --out .dataflow/exports/graph.json` and commit
+- **Keep the snapshot.** `export --out .logistic-map/exports/graph.json` and commit
   it when the team wants the map in review; the database itself stays ignored.
 
 ## Reference files
@@ -167,7 +172,7 @@ Read only what the task needs:
 | Symptom | Fix |
 |---|---|
 | `kuzu is not installed` | `bash "$SKILL_DIR/scripts/bootstrap.sh"` |
-| `no data-flow database` | `"$PY" .../dataflow.py init` |
+| `no logistic-map database` | `"$PY" .../logistic_map.py init` |
 | database lock / IO error | another process holds the DB; close it and retry |
 | report floods `missing_field` | storage edges are projections (info); narrow the graph instead of adding fields you do not know |
 | `field ... has no contains edge` | delete/re-add the field; the owner link is missing |

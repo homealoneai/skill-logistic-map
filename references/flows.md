@@ -11,7 +11,7 @@ but one input. In the flow graph that procedure is a **step with three incoming
 feeds**, and the join is explicit.
 
 Nothing in the contract graph changes. The flow graph lives in its own Kuzu
-database (default `.dataflow/flows.kuzu`) and is rebuilt from the contract graph
+database (default `.logistic-map/flows.kuzu`) and is rebuilt from the contract graph
 with `flow build` / `flow sync`.
 
 ## Schema
@@ -75,32 +75,32 @@ separate flow if you need it.
 ## Commands
 
 ```sh
-PY=.dataflow/.venv/bin/python
-SKILL_DIR=/path/to/data-flow-map
+PY=.logistic-map/.venv/bin/python
+SKILL_DIR=/path/to/logistic-map
 
 # derive one flow (id defaults to flow:<slug of name or start>)
-"$PY" "$SKILL_DIR/scripts/dataflow.py" flow build \
+"$PY" "$SKILL_DIR/scripts/logistic_map.py" flow build \
   --from storage:orders --name "Orders to notifications"
 
 # or pick the id explicitly
-"$PY" "$SKILL_DIR/scripts/dataflow.py" flow build \
+"$PY" "$SKILL_DIR/scripts/logistic_map.py" flow build \
   --from storage:orders --id flow:orders --name "Orders to notifications"
 
-"$PY" "$SKILL_DIR/scripts/dataflow.py" flow list
-"$PY" "$SKILL_DIR/scripts/dataflow.py" flow show flow:orders-to-notifications
-"$PY" "$SKILL_DIR/scripts/dataflow.py" flow show flow:orders-to-notifications --json
+"$PY" "$SKILL_DIR/scripts/logistic_map.py" flow list
+"$PY" "$SKILL_DIR/scripts/logistic_map.py" flow show flow:orders-to-notifications
+"$PY" "$SKILL_DIR/scripts/logistic_map.py" flow show flow:orders-to-notifications --json
 
 # after changing the contract graph, rebuild every flow
-"$PY" "$SKILL_DIR/scripts/dataflow.py" flow sync
+"$PY" "$SKILL_DIR/scripts/logistic_map.py" flow sync
 
-"$PY" "$SKILL_DIR/scripts/dataflow.py" flow remove --id flow:orders-to-notifications
+"$PY" "$SKILL_DIR/scripts/logistic_map.py" flow remove --id flow:orders-to-notifications
 ```
 
 Flow database location:
 
-- default: `<db-parent>/flows.kuzu` (normally `.dataflow/flows.kuzu`);
+- default: `<db-parent>/flows.kuzu` (normally `.logistic-map/flows.kuzu`);
 - `--flow-db PATH` per command;
-- `DATAFLOW_FLOW_DB` environment variable.
+- `LOGISTIC_MAP_FLOW_DB` environment variable.
 
 `flow build` is idempotent: rebuilding an id deletes its previous flow and steps
 first. Rebuilding an id that belongs to a different start contract is refused

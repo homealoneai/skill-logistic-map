@@ -1,8 +1,12 @@
-# data-flow-map
+# logistic-map
 
-A portable agent skill that keeps a [Kuzu](https://kuzudb.com/) graph of how data
-moves through an application, then answers the questions a contract review
-usually misses:
+A portable agent skill that treats application data flow as a **logistics
+process**: inputs are origins, entries are handling steps, storages are
+warehouses, fields are the cargo, and procedures are where cargo is merged (a
+join) or split.
+
+It keeps a [Kuzu](https://kuzudb.com/) graph of those contracts and answers the
+questions a contract review usually misses:
 
 - Which input does this field come from, and what changes it on the way?
 - Which fields does the producer send that the consumer never reads?
@@ -12,7 +16,7 @@ usually misses:
 It records **Input** contracts (queues, HTTP routes, files, cron jobs), **Entry**
 transformation points, **Storage** locations and the **Field** tree of each
 contract. A CLI writes the graph and produces reports; `render` turns it into a
-standalone interactive HTML map with an **Impact** mode.
+standalone interactive **logistic map** with **Contracts** and **Flows** tabs.
 
 Everything runs on plain Python plus a static HTML file: no server, no cloud
 service, no harness-specific runtime.
@@ -33,10 +37,10 @@ repository wherever your harness looks for skills:
 
 ```sh
 mkdir -p .agents/skills
-git clone git@github.com:homealoneai/skill-logistic-map.git .agents/skills/data-flow-map
+git clone git@github.com:homealoneai/skill-logistic-map.git .agents/skills/logistic-map
 ```
 
-The directory must be named `data-flow-map`, matching the `name` in `SKILL.md`.
+The directory must be named `logistic-map`, matching the `name` in `SKILL.md`.
 
 Common skill directories:
 
@@ -48,26 +52,30 @@ Common skill directories:
 | Claude Code, user | `~/.claude/skills/` |
 
 Other harnesses use their own directory; the requirement is that the harness
-discovers `SKILL.md` inside a directory named `data-flow-map`. Keeping the
+discovers `SKILL.md` inside a directory named `logistic-map`. Keeping the
 checkout elsewhere and symlinking it works too:
 
 ```sh
-git clone git@github.com:homealoneai/skill-logistic-map.git ~/src/data-flow-map
+git clone git@github.com:homealoneai/skill-logistic-map.git ~/src/logistic-map
 mkdir -p ~/.agents/skills
-ln -s ~/src/data-flow-map ~/.agents/skills/data-flow-map
+ln -s ~/src/logistic-map ~/.agents/skills/logistic-map
 ```
 
 Any harness that follows the common skill layout (YAML frontmatter in
 `SKILL.md`, plus `scripts/`, `references/` and `assets/`) can load it as-is.
+
+If you used the pre-rename version of this skill, rename the runtime directory
+`.dataflow/` to `.logistic-map/` (or point `--db` at the old file). New runs use
+`.logistic-map/graph.kuzu` and `.logistic-map/flows.kuzu`.
 
 ### Use without a harness
 
 The CLI has no agent dependency:
 
 ```sh
-python3 -m venv .dataflow/.venv
-.dataflow/.venv/bin/pip install "kuzu>=0.11,<0.12"
-.dataflow/.venv/bin/python /path/to/data-flow-map/scripts/dataflow.py init
+python3 -m venv .logistic-map/.venv
+.logistic-map/.venv/bin/pip install "kuzu>=0.11,<0.12"
+.logistic-map/.venv/bin/python /path/to/logistic-map/scripts/logistic_map.py init
 ```
 
 ## Quick start
@@ -75,34 +83,34 @@ python3 -m venv .dataflow/.venv
 Run from the root of the repository being mapped:
 
 ```sh
-SKILL_DIR=/path/to/data-flow-map
-PY=.dataflow/.venv/bin/python
+SKILL_DIR=/path/to/logistic-map
+PY=.logistic-map/.venv/bin/python
 
 bash "$SKILL_DIR/scripts/bootstrap.sh"
 
-"$PY" "$SKILL_DIR/scripts/dataflow.py" add-node --kind input \
+"$PY" "$SKILL_DIR/scripts/logistic_map.py" add-node --kind input \
   --id input:orders.created --entry-point queue:orders.created --channel queue \
   --file services/orders/src/consumer.py \
   --ref services/orders/src/consumer.py:24
 
-"$PY" "$SKILL_DIR/scripts/dataflow.py" add-field \
+"$PY" "$SKILL_DIR/scripts/logistic_map.py" add-field \
   --owner input:orders.created --path customer.email --type string
 
-"$PY" "$SKILL_DIR/scripts/dataflow.py" add-node --kind entry \
+"$PY" "$SKILL_DIR/scripts/logistic_map.py" add-node --kind entry \
   --id entry:validate-order --entry-point validate_order --entry-type function \
   --file services/orders/src/validate.py
 
-"$PY" "$SKILL_DIR/scripts/dataflow.py" add-edge --kind compose \
+"$PY" "$SKILL_DIR/scripts/logistic_map.py" add-edge --kind compose \
   --from input:orders.created --to entry:validate-order
 
-"$PY" "$SKILL_DIR/scripts/dataflow.py" report
-"$PY" "$SKILL_DIR/scripts/dataflow.py" render
+"$PY" "$SKILL_DIR/scripts/logistic_map.py" report
+"$PY" "$SKILL_DIR/scripts/logistic_map.py" render
 ```
 
 A batch seed is available at `examples/orders-flow.json`:
 
 ```sh
-"$PY" "$SKILL_DIR/scripts/dataflow.py" apply --file "$SKILL_DIR/examples/orders-flow.json"
+"$PY" "$SKILL_DIR/scripts/logistic_map.py" apply --file "$SKILL_DIR/examples/orders-flow.json"
 ```
 
 ## Commands
@@ -128,9 +136,9 @@ graph hides that. `flow build` derives a second, read-only graph of steps and
 feeds from the contract graph:
 
 ```sh
-"$PY" "$SKILL_DIR/scripts/dataflow.py" flow build \
+"$PY" "$SKILL_DIR/scripts/logistic_map.py" flow build \
   --from storage:orders --name "Orders to notifications"
-"$PY" "$SKILL_DIR/scripts/dataflow.py" flow show flow:orders-to-notifications
+"$PY" "$SKILL_DIR/scripts/logistic_map.py" flow show flow:orders-to-notifications
 ```
 
 A step with multiple incoming `FEEDS` is a join; inputs outside the forward
@@ -148,7 +156,7 @@ source. The contract graph is never modified; rerun `flow sync` after changes.
 
 ## HTML map
 
-`render` writes `.dataflow/graph.html` (or `--out PATH`). It is self-contained:
+`render` writes `.logistic-map/graph.html` (or `--out PATH`). It is self-contained:
 no CDN, no server, and it has two tabs. **Contracts** is the field-aware map:
 click nodes or edges, enable **Fields**, or enable **Impact** to dim everything
 outside the selected contract's reach. **Flows** shows the derived step graph:
@@ -163,7 +171,7 @@ its contract details (with a link back to the Contracts tab).
 SKILL.md               agent instructions
 README.md              repository and install guide
 references/            schema, CLI, modeling, report and flow rules
-scripts/dataflow.py    CLI: schema, writes, queries, reports, export, render
+scripts/logistic_map.py    CLI: schema, writes, queries, reports, export, render
 scripts/bootstrap.sh   venv + Kuzu + init
 assets/graph.html      self-contained visualization template
 assets/preview.png     example rendering

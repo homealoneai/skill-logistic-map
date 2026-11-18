@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Data flow map</title>
+<title>Logistic map</title>
 <style>
   :root {
     --bg: #080d19;
@@ -148,7 +148,7 @@
 </head>
 <body>
 <header>
-  <div class="brand"><span class="dot"></span><h1 id="title">Data flow map</h1></div>
+  <div class="brand"><span class="dot"></span><h1 id="title">Logistic map</h1></div>
   <div class="stats" id="stats"></div>
   <div class="tabs">
     <button class="tab active" id="tabContracts">Contracts</button>
@@ -1089,7 +1089,7 @@ function updateHeader() {
     }
     searchEl.placeholder = 'Search step or contract';
   } else {
-    titleEl.textContent = DATA.title || 'Data flow map';
+    titleEl.textContent = DATA.title || 'Logistic map';
     const nodes = DATA.nodes || [];
     const contracts = nodes.filter((n) => n.kind !== 'field').length;
     const fields = nodes.filter((n) => n.kind === 'field').length;
@@ -1279,7 +1279,7 @@ function bindEvents() {
   });
   document.getElementById('png').addEventListener('click', () => {
     const a = document.createElement('a');
-    a.download = 'data-flow-map.png';
+    a.download = 'logistic-map.png';
     a.href = canvas.toDataURL('image/png');
     a.click();
   });

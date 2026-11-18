@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Kuzu-backed data-flow map for application contracts.
+"""Kuzu-backed logistic map for application data flow.
 
 Schema v1
 ---------
@@ -28,8 +28,8 @@ from functools import lru_cache
 from pathlib import Path
 
 SCHEMA_VERSION = 1
-DEFAULT_DB = os.environ.get("DATAFLOW_DB", ".dataflow/graph.kuzu")
-DEFAULT_FLOW_DB = os.environ.get("DATAFLOW_FLOW_DB", "")
+DEFAULT_DB = os.environ.get("LOGISTIC_MAP_DB", ".logistic-map/graph.kuzu")
+DEFAULT_FLOW_DB = os.environ.get("LOGISTIC_MAP_FLOW_DB", "")
 DEFAULT_RENDER = "graph.html"
 
 CONTRACT_KINDS = ("input", "entry", "storage")
@@ -113,7 +113,7 @@ TYPE_ALIASES = {
 SEVERITY_RANK = {"error": 0, "warn": 1, "info": 2}
 
 
-class DataflowError(Exception):
+class LogisticMapError(Exception):
     pass
 
 
@@ -167,10 +167,10 @@ def kind_of(node_id: str) -> str:
         # Field ids are <contract-id>#<path>; the contract id contains a colon.
         return "field"
     if ":" not in node_id:
-        raise DataflowError(f"invalid id {node_id!r}: expected <kind>:<slug>")
+        raise LogisticMapError(f"invalid id {node_id!r}: expected <kind>:<slug>")
     kind = node_id.split(":", 1)[0]
     if kind not in ALL_KINDS:
-        raise DataflowError(f"invalid id {node_id!r}: unknown kind {kind!r}")
+        raise LogisticMapError(f"invalid id {node_id!r}: unknown kind {kind!r}")
     return kind
 
 
@@ -180,17 +180,17 @@ def owner_of(field_id: str) -> str:
 
 def validate_node_id(node_id: str, kind: str) -> None:
     if kind_of(node_id) != kind:
-        raise DataflowError(f"id {node_id!r} does not start with {kind}:")
+        raise LogisticMapError(f"id {node_id!r} does not start with {kind}:")
     if not re.match(r"^[a-z]+:[^\s#]+$", node_id):
-        raise DataflowError(
+        raise LogisticMapError(
             f"invalid id {node_id!r}: use lowercase <kind>:<slug> without spaces or '#'")
 
 
 def validate_path(path: str) -> None:
     if not path or "#" in path or re.search(r"\s", path):
-        raise DataflowError(f"invalid field path {path!r}")
+        raise LogisticMapError(f"invalid field path {path!r}")
     if path.startswith(".") or path.endswith(".") or ".." in path:
-        raise DataflowError(f"invalid field path {path!r}")
+        raise LogisticMapError(f"invalid field path {path!r}")
 
 
 def norm_type(value: str) -> str:
@@ -210,10 +210,10 @@ def load_kuzu():
     try:
         import kuzu  # noqa: F401
     except Exception as exc:  # pragma: no cover - depends on environment
-        raise DataflowError(
+        raise LogisticMapError(
             "kuzu is not installed for this Python interpreter "
             f"({sys.executable}). Run scripts/bootstrap.sh, or "
-            "`python3 -m venv .dataflow/.venv && .dataflow/.venv/bin/pip install kuzu`."
+            "`python3 -m venv .logistic-map/.venv && .logistic-map/.venv/bin/pip install kuzu`."
         ) from exc
     return kuzu
 
@@ -248,12 +248,12 @@ class DB:
 def open_db(args, initialize: bool = False) -> DB:
     path = Path(args.db).expanduser()
     if not initialize and not path.exists():
-        raise DataflowError(
-            f"no data-flow database at {path}; run `init` first")
+        raise LogisticMapError(
+            f"no logistic-map database at {path}; run `init` first")
     db = DB(path)
     if not initialize and "Field" not in db.tables():
-        raise DataflowError(
-            f"{path} exists but has no data-flow schema; run `init` first")
+        raise LogisticMapError(
+            f"{path} exists but has no logistic-map schema; run `init` first")
     return db
 
 
@@ -290,16 +290,16 @@ def upsert_contract(db: DB, kind: str, node_id=None, name=None, description=None
                     attrs=None, refs=None, repo=None, commit_sha=None,
                     file_path=None) -> dict:
     if kind not in CONTRACT_KINDS:
-        raise DataflowError(f"kind must be one of {CONTRACT_KINDS}")
+        raise LogisticMapError(f"kind must be one of {CONTRACT_KINDS}")
     attrs = dict(attrs or {})
     unknown = [key for key in attrs if key not in NODE_PROPS[kind]]
     if unknown:
-        raise DataflowError(f"unknown attributes for {kind}: {', '.join(unknown)}")
+        raise LogisticMapError(f"unknown attributes for {kind}: {', '.join(unknown)}")
     if node_id:
         validate_node_id(node_id, kind)
     else:
         if not name:
-            raise DataflowError("--name or --id is required")
+            raise LogisticMapError("--name or --id is required")
         node_id = f"{kind}:{slugify(name)}"
         validate_node_id(node_id, kind)
 
@@ -352,9 +352,9 @@ def upsert_field(db: DB, owner: str, path: str, name=None, field_type=None,
                  commit_sha=None, file_path=None, source=None) -> dict:
     owner_kind = kind_of(owner)
     if owner_kind not in CONTRACT_KINDS:
-        raise DataflowError(f"field owner must be a contract node, got {owner!r}")
+        raise LogisticMapError(f"field owner must be a contract node, got {owner!r}")
     if not get_node(db, owner_kind, owner):
-        raise DataflowError(f"owner {owner!r} does not exist; add the contract node first")
+        raise LogisticMapError(f"owner {owner!r} does not exist; add the contract node first")
     validate_path(path)
 
     segments = path.split(".")
@@ -423,25 +423,25 @@ def upsert_field(db: DB, owner: str, path: str, name=None, field_type=None,
 def upsert_edge(db: DB, kind: str, src: str, dst: str, refs=None,
                 file_path=None, note=None) -> dict:
     if kind not in RELS:
-        raise DataflowError(f"edge kind must be one of {tuple(RELS)}")
+        raise LogisticMapError(f"edge kind must be one of {tuple(RELS)}")
     src_kind, dst_kind = kind_of(src), kind_of(dst)
 
     if kind in ("compose", "transform"):
         if src_kind not in CONTRACT_KINDS or dst_kind not in CONTRACT_KINDS:
-            raise DataflowError(f"{kind} edges connect contract nodes only")
+            raise LogisticMapError(f"{kind} edges connect contract nodes only")
     else:
         allowed = ((src_kind in CONTRACT_KINDS and dst_kind == "field") or
                    (src_kind == "field" and dst_kind == "field"))
         if not allowed:
-            raise DataflowError("contains edges go from a contract or Field to a Field")
+            raise LogisticMapError("contains edges go from a contract or Field to a Field")
         if src_kind == "field" and owner_of(src) != owner_of(dst):
-            raise DataflowError("nested contains edges must stay inside the same contract")
+            raise LogisticMapError("nested contains edges must stay inside the same contract")
 
     for node_id in (src, dst):
         if not get_node(db, kind_of(node_id), node_id):
-            raise DataflowError(f"node {node_id!r} does not exist")
+            raise LogisticMapError(f"node {node_id!r} does not exist")
     if src == dst:
-        raise DataflowError("self edges are not allowed")
+        raise LogisticMapError("self edges are not allowed")
 
     _, rows = db.run(
         f"MATCH (a:{LABELS[src_kind]} {{id:$from}})-[r:{RELS[kind]}]->"
@@ -463,7 +463,7 @@ def upsert_edge(db: DB, kind: str, src: str, dst: str, refs=None,
 def remove_node(db: DB, node_id: str) -> dict:
     kind = kind_of(node_id)
     if not get_node(db, kind, node_id):
-        raise DataflowError(f"node {node_id!r} does not exist")
+        raise LogisticMapError(f"node {node_id!r} does not exist")
     removed_fields = 0
     if kind in CONTRACT_KINDS:
         _, rows = db.run("MATCH (f:Field) RETURN f.id")
@@ -477,7 +477,7 @@ def remove_node(db: DB, node_id: str) -> dict:
 
 def remove_edge(db: DB, kind: str, src: str, dst: str) -> dict:
     if kind not in RELS:
-        raise DataflowError(f"edge kind must be one of {tuple(RELS)}")
+        raise LogisticMapError(f"edge kind must be one of {tuple(RELS)}")
     src_kind, dst_kind = kind_of(src), kind_of(dst)
     _, rows = db.run(
         f"MATCH (a:{LABELS[src_kind]} {{id:$from}})-[r:{RELS[kind]}]->"
@@ -485,7 +485,7 @@ def remove_edge(db: DB, kind: str, src: str, dst: str) -> dict:
         {"from": src, "to": dst})
     count = rows[0][0] if rows else 0
     if not count:
-        raise DataflowError(f"edge {src} -[{kind}]-> {dst} does not exist")
+        raise LogisticMapError(f"edge {src} -[{kind}]-> {dst} does not exist")
     db.run(
         f"MATCH (a:{LABELS[src_kind]} {{id:$from}})-[r:{RELS[kind]}]->"
         f"(b:{LABELS[dst_kind]} {{id:$to}}) DELETE r",
@@ -776,7 +776,7 @@ def build_report(db: DB, check_files: bool = False) -> dict:
 def format_report_text(report: dict) -> str:
     summary = report["summary"]
     lines = [
-        f"Data flow map: {summary['contracts']} contracts, {summary['fields']} fields, "
+        f"Logistic map: {summary['contracts']} contracts, {summary['fields']} fields, "
         f"{summary['edges']} edges",
         f"DB: {report['db']}",
         "",
@@ -840,7 +840,7 @@ def format_report_markdown(report: dict) -> str:
 def render_html(db: DB, out_path: Path, title: str, flows=None) -> Path:
     template_path = Path(__file__).resolve().parent.parent / "assets" / "graph.html"
     if not template_path.exists():
-        raise DataflowError(f"visualization template not found: {template_path}")
+        raise LogisticMapError(f"visualization template not found: {template_path}")
     payload = graph_payload(db)
     payload["title"] = title
     payload["flows"] = flows or []
@@ -867,7 +867,7 @@ def write_meta(db: DB) -> None:
         "schema_version": SCHEMA_VERSION,
         "updated_at": now_iso(),
         "kuzu": kuzu_version,
-        "tool": "data-flow-map",
+        "tool": "logistic-map",
     }
     db.meta_path().write_text(json.dumps(meta, indent=2) + "\n", encoding="utf-8")
 
@@ -948,7 +948,7 @@ def cmd_doctor(args) -> int:
 
 def cmd_add_node(args) -> int:
     if args.kind not in CONTRACT_KINDS:
-        raise DataflowError("kind must be input, entry or storage")
+        raise LogisticMapError("kind must be input, entry or storage")
     attrs = {}
     for key in ("entry_point", "channel", "location", "store_type", "entry_type"):
         value = getattr(args, key)
@@ -1025,13 +1025,13 @@ def cmd_remove_edge(args) -> int:
 def cmd_apply(args) -> int:
     path = Path(args.file)
     if not path.exists():
-        raise DataflowError(f"file not found: {path}")
+        raise LogisticMapError(f"file not found: {path}")
     try:
         payload = json.loads(path.read_text(encoding="utf-8"))
     except json.JSONDecodeError as exc:
-        raise DataflowError(f"invalid JSON in {path}: {exc}") from exc
+        raise LogisticMapError(f"invalid JSON in {path}: {exc}") from exc
     if not isinstance(payload, dict):
-        raise DataflowError("apply expects a JSON object with nodes/fields/edges")
+        raise LogisticMapError("apply expects a JSON object with nodes/fields/edges")
 
     db = open_db(args)
     counts = {"nodes": 0, "fields": 0, "edges": 0}
@@ -1044,7 +1044,7 @@ def cmd_apply(args) -> int:
                 continue
             kind = item.get("kind")
             if kind not in CONTRACT_KINDS:
-                raise DataflowError(f"invalid node kind in apply: {kind!r}")
+                raise LogisticMapError(f"invalid node kind in apply: {kind!r}")
             attrs = {key: item.get(key) for key in
                      ("entry_point", "channel", "location", "store_type", "entry_type")
                      if item.get(key) is not None}
@@ -1063,7 +1063,7 @@ def cmd_apply(args) -> int:
             path = item.get("path") or (
                 field_id.split("#", 1)[1] if "#" in field_id else "")
             if not owner or not path:
-                raise DataflowError("field nodes need owner and path")
+                raise LogisticMapError("field nodes need owner and path")
             upsert_field(
                 db, owner, path, name=item.get("name"),
                 field_type=item.get("type"), description=item.get("description"),
@@ -1075,7 +1075,7 @@ def cmd_apply(args) -> int:
             counts["fields"] += 1
         for item in payload.get("fields", []):
             if not item.get("owner") or not item.get("path"):
-                raise DataflowError("each field needs owner and path")
+                raise LogisticMapError("each field needs owner and path")
             upsert_field(
                 db, item["owner"], item["path"], name=item.get("name"),
                 field_type=item.get("type"), description=item.get("description"),
@@ -1086,7 +1086,7 @@ def cmd_apply(args) -> int:
             counts["fields"] += 1
         for item in payload.get("edges", []):
             if not item.get("kind") or not item.get("from") or not item.get("to"):
-                raise DataflowError("each edge needs kind, from and to")
+                raise LogisticMapError("each edge needs kind, from and to")
             upsert_edge(
                 db, item["kind"], item["from"], item["to"],
                 refs=item.get("refs"), file_path=item.get("file_path"),
@@ -1111,7 +1111,7 @@ def cmd_apply(args) -> int:
 def cmd_list(args) -> int:
     db = open_db(args)
     if args.kind and args.kind not in ALL_KINDS:
-        raise DataflowError(f"kind must be one of {ALL_KINDS}")
+        raise LogisticMapError(f"kind must be one of {ALL_KINDS}")
     nodes, _ = load_graph(db)
     selected = []
     for node_id, node in nodes.items():
@@ -1157,7 +1157,7 @@ def assert_read_only(cypher: str) -> None:
     stripped = SAFE_CALL.sub("CALL safe", cypher)
     match = READ_BLOCKLIST.search(stripped)
     if match:
-        raise DataflowError(
+        raise LogisticMapError(
             f"query is read-only; {match.group(1).upper()} is not allowed")
 
 
@@ -1167,7 +1167,7 @@ def cmd_query(args) -> int:
     params = {}
     for item in args.param or []:
         if "=" not in item:
-            raise DataflowError(f"invalid --param {item!r}; use key=json")
+            raise LogisticMapError(f"invalid --param {item!r}; use key=json")
         key, raw = item.split("=", 1)
         try:
             params[key] = json.loads(raw)
@@ -1301,12 +1301,12 @@ def flow_db_path(args) -> Path:
 def open_flow_db(args, create: bool = False) -> DB:
     path = flow_db_path(args)
     if not create and not path.exists():
-        raise DataflowError(
+        raise LogisticMapError(
             f"no flow database at {path}; run `flow build --from <contract>` first")
     db = DB(path)
     if "Flow" not in db.tables():
         if not create:
-            raise DataflowError(
+            raise LogisticMapError(
                 f"{path} exists but has no flow schema; rerun `flow build`")
         for statement in FLOW_DDL:
             db.run(statement)
@@ -1352,9 +1352,9 @@ def build_flow(contract_db: DB, flow_db: DB, start: str, flow_id: str,
                name: str, description: str = "") -> dict:
     nodes, edges = load_graph(contract_db)
     if start not in nodes:
-        raise DataflowError(f"start contract {start!r} does not exist")
+        raise LogisticMapError(f"start contract {start!r} does not exist")
     if nodes[start]["kind"] == "field":
-        raise DataflowError("a flow starts at a contract node, not at a field")
+        raise LogisticMapError("a flow starts at a contract node, not at a field")
 
     flow_edges = [edge for edge in edges
                   if edge["kind"] in ("compose", "transform")
@@ -1504,24 +1504,24 @@ def render_flows(contract_db: DB, args) -> list:
 
 def cmd_flow_build(args) -> int:
     if not args.start:
-        raise DataflowError("--from is required")
+        raise LogisticMapError("--from is required")
     contract_db = open_db(args)
     flow_db = open_flow_db(args, create=True)
     nodes, _ = load_graph(contract_db)
     if args.start not in nodes:
-        raise DataflowError(f"start contract {args.start!r} does not exist")
+        raise LogisticMapError(f"start contract {args.start!r} does not exist")
     if nodes[args.start]["kind"] == "field":
-        raise DataflowError("a flow starts at a contract node, not at a field")
+        raise LogisticMapError("a flow starts at a contract node, not at a field")
 
     flow_id = args.id
     if not flow_id:
         flow_id = "flow:" + slugify(args.name or args.start)
     if not re.match(r"^flow:[^\s#]+$", flow_id):
-        raise DataflowError(f"invalid flow id {flow_id!r}; use flow:<slug>")
+        raise LogisticMapError(f"invalid flow id {flow_id!r}; use flow:<slug>")
 
     existing = get_flow(flow_db, flow_id)
     if existing and existing.get("start_contract") != args.start and not args.force:
-        raise DataflowError(
+        raise LogisticMapError(
             f"{flow_id} already exists from {existing.get('start_contract')}; "
             "use --id or --force")
 
@@ -1577,7 +1577,7 @@ def cmd_flow_show(args) -> int:
     flow_db = open_flow_db(args)
     flow = get_flow(flow_db, args.id)
     if not flow:
-        raise DataflowError(f"flow {args.id!r} does not exist")
+        raise LogisticMapError(f"flow {args.id!r} does not exist")
     flows, steps, feeds = _flow_rows(flow_db)
     steps = [step for step in steps if step.get("flow_id") == args.id]
     step_ids = {step["id"] for step in steps}
@@ -1669,7 +1669,7 @@ def cmd_flow_sync(args) -> int:
                 contract_db, flow_db, flow["start_contract"], flow["id"],
                 flow.get("name", ""), flow.get("description", ""))
             results.append(result)
-        except DataflowError as exc:
+        except LogisticMapError as exc:
             errors.append({"id": flow["id"], "error": str(exc)})
     payload = {"ok": not errors, "synced": results, "errors": errors}
     if args.json:
@@ -1686,7 +1686,7 @@ def cmd_flow_sync(args) -> int:
 def cmd_flow_remove(args) -> int:
     flow_db = open_flow_db(args)
     if not get_flow(flow_db, args.id):
-        raise DataflowError(f"flow {args.id!r} does not exist")
+        raise LogisticMapError(f"flow {args.id!r} does not exist")
     delete_flow(flow_db, args.id)
     payload = {"ok": True, "id": args.id}
     if args.json:
@@ -1704,8 +1704,8 @@ def build_parser() -> argparse.ArgumentParser:
                         help="machine-readable output")
 
     parser = argparse.ArgumentParser(
-        prog="dataflow.py",
-        description="Kuzu-backed data-flow map for application contracts.")
+        prog="logistic_map.py",
+        description="Kuzu-backed logistic map for application data flow.")
     # Global forms are accepted before the subcommand; the per-command
     # duplicates in `common` accept the same options after it.
     parser.add_argument("--db", default=None,
@@ -1801,12 +1801,12 @@ def build_parser() -> argparse.ArgumentParser:
     report.set_defaults(func=cmd_report)
 
     export = sub.add_parser("export", parents=[common], help="write a JSON snapshot")
-    export.add_argument("--out", default=".dataflow/exports/graph.json")
+    export.add_argument("--out", default=".logistic-map/exports/graph.json")
     export.set_defaults(func=cmd_export)
 
     render = sub.add_parser("render", parents=[common], help="write a standalone HTML graph")
     render.add_argument("--out")
-    render.add_argument("--title", default="Data flow map")
+    render.add_argument("--title", default="Logistic map")
     render.add_argument("--flow-db", default=None,
                         help="flow database to embed in the Flows tab")
     render.set_defaults(func=cmd_render)
@@ -1864,7 +1864,7 @@ def main(argv=None) -> int:
         args.json = False
     try:
         return args.func(args)
-    except DataflowError as exc:
+    except LogisticMapError as exc:
         if getattr(args, "json", False):
             print(json.dumps({"ok": False, "error": str(exc)}))
         else:

@@ -5,15 +5,15 @@
 #
 # Environment overrides:
 #   PYTHON        interpreter used to create the venv (default: python3)
-#   DATAFLOW_VENV venv directory (default: <cwd>/.dataflow/.venv)
-#   DATAFLOW_DB   database path (default: <cwd>/.dataflow/graph.kuzu)
+#   LOGISTIC_MAP_VENV venv directory (default: <cwd>/.logistic-map/.venv)
+#   LOGISTIC_MAP_DB   database path (default: <cwd>/.logistic-map/graph.kuzu)
 set -euo pipefail
 
 SKILL_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 PROJECT_ROOT="${PROJECT_ROOT:-$(pwd)}"
 PYTHON="${PYTHON:-python3}"
-VENV="${DATAFLOW_VENV:-$PROJECT_ROOT/.dataflow/.venv}"
-DB="${DATAFLOW_DB:-$PROJECT_ROOT/.dataflow/graph.kuzu}"
+VENV="${LOGISTIC_MAP_VENV:-$PROJECT_ROOT/.logistic-map/.venv}"
+DB="${LOGISTIC_MAP_DB:-$PROJECT_ROOT/.logistic-map/graph.kuzu}"
 RUN_INIT=1
 for arg in "$@"; do
   case "$arg" in
@@ -34,7 +34,7 @@ if ! "$PYTHON" -c 'import sys; raise SystemExit(0 if sys.version_info >= (3, 8) 
   exit 1
 fi
 
-mkdir -p "$PROJECT_ROOT/.dataflow"
+mkdir -p "$PROJECT_ROOT/.logistic-map"
 if [ ! -x "$VENV/bin/python" ]; then
   echo "creating venv at $VENV"
   "$PYTHON" -m venv "$VENV"
@@ -48,15 +48,15 @@ KUZU_VERSION="$("$VENV/bin/python" -c 'from importlib.metadata import version; p
 echo "kuzu $KUZU_VERSION installed in $VENV"
 
 if [ "$RUN_INIT" -eq 1 ]; then
-  "$VENV/bin/python" "$SKILL_DIR/scripts/dataflow.py" --db "$DB" init
+  "$VENV/bin/python" "$SKILL_DIR/scripts/logistic_map.py" --db "$DB" init
 fi
 
 cat <<EOF
 
 next steps (run from the project root):
   PY=$VENV/bin/python
-  \$PY $SKILL_DIR/scripts/dataflow.py report
-  \$PY $SKILL_DIR/scripts/dataflow.py render
+  \$PY $SKILL_DIR/scripts/logistic_map.py report
+  \$PY $SKILL_DIR/scripts/logistic_map.py render
 
 database: $DB
 EOF

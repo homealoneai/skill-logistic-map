@@ -1,9 +1,9 @@
 # CLI reference
 
-All commands: `python "$SKILL_DIR/scripts/dataflow.py" <command>`, where
+All commands: `python "$SKILL_DIR/scripts/logistic_map.py" <command>`, where
 `SKILL_DIR` is the directory containing `SKILL.md`.
 Global options `--db PATH` and `--json` are accepted before or after the
-command. `--db` defaults to `$DATAFLOW_DB` or `.dataflow/graph.kuzu`.
+command. `--db` defaults to `$LOGISTIC_MAP_DB` or `.logistic-map/graph.kuzu`.
 
 Exit codes: `0` success (and report under its threshold), `1` report threshold
 crossed, `2` usage or runtime error. With `--json`, failures print
@@ -13,10 +13,10 @@ crossed, `2` usage or runtime error. With `--json`, failures print
 
 | Command | What it does |
 |---|---|
-| `init` | Create the four node tables and three relationship tables, write `meta.json` and `.dataflow/.gitignore`. Idempotent. |
+| `init` | Create the four node tables and three relationship tables, write `meta.json` and `.logistic-map/.gitignore`. Idempotent. |
 | `doctor` | Print Python, Kuzu version, DB path, tables, node/edge counts, detected git repo/commit. Exits 1 only when Kuzu is missing. |
 
-`scripts/bootstrap.sh` creates `.dataflow/.venv`, installs `kuzu>=0.11,<0.12`
+`scripts/bootstrap.sh` creates `.logistic-map/.venv`, installs `kuzu>=0.11,<0.12`
 and runs `init`. Use `--no-init` to skip initialization.
 
 ## writing
@@ -177,7 +177,7 @@ contracts with the most fields.
 ### export
 
 ```
-export [--out PATH]        # default: .dataflow/exports/graph.json
+export [--out PATH]        # default: .logistic-map/exports/graph.json
 ```
 
 Writes the snapshot described in `schema.md`. Commit it when the team wants the
@@ -186,7 +186,7 @@ map reviewed with code changes; the Kuzu directory stays ignored.
 ### render
 
 ```
-render [--out PATH] [--title TEXT] [--flow-db PATH]   # default: .dataflow/graph.html
+render [--out PATH] [--title TEXT] [--flow-db PATH]   # default: .logistic-map/graph.html
 ```
 
 Writes a standalone HTML file (no network, no CDN) with two tabs.
@@ -235,7 +235,7 @@ Mutation commands print `{"ok": true, "id": "...", "created": true|false}` (or
 ## flow
 
 The flow graph lives in a separate Kuzu database (`<db-parent>/flows.kuzu`,
-`--flow-db`, or `DATAFLOW_FLOW_DB`). It is derived from the contract graph and is
+`--flow-db`, or `LOGISTIC_MAP_FLOW_DB`). It is derived from the contract graph and is
 never a second source of truth.
 
 | Command | What it does |
