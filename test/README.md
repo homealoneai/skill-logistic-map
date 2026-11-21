@@ -71,6 +71,7 @@ eval environment (`./eval/bootstrap.sh`) because it reads Inspect logs.
 - authored flows: USE membership, passages, path and joins (compose is not followed)
 - Markdown documentation export (entities, entrypoints, flows, index, stale-page cleanup)
 - standalone HTML rendering with EntryPoint/Flow/Rule lanes, `related` focus, cluster filter and rule panels
+- linear branches: isolation from master, apply, stale propagation and no branch-of-branch
 
 `test_samples.py` checks every fixture:
 

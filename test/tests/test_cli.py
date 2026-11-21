@@ -847,5 +847,96 @@ class RenderTests(GraphTestCase):
         self.assertNotIn("__DATA__", html)
 
 
+class BranchTests(GraphTestCase):
+    def setUp(self) -> None:
+        super().setUp()
+        self.cli("add-node", "--kind", "input", "--id", "input:base",
+                 "--name", "base")
+
+    def node_ids(self) -> set:
+        return {node["id"] for node in self.export()["nodes"]}
+
+    def branch_rows(self) -> dict:
+        proc = self.cli("branch", "list", "--json")
+        payload = json.loads(proc.stdout)
+        return {row["name"]: row for row in payload["branches"]}
+
+    def test_branch_is_isolated_and_applied_to_master(self) -> None:
+        self.cli("branch", "create", "feat-a")
+        self.cli("add-node", "--kind", "input", "--id", "input:from-a",
+                 "--name", "A")
+        self.assertEqual(self.node_ids(), {"input:base", "input:from-a"})
+        self.cli("branch", "use", "master")
+        self.assertEqual(self.node_ids(), {"input:base"})
+        self.cli("branch", "use", "feat-a")
+        self.assertIn("input:from-a", self.node_ids())
+
+        result = self.cli("branch", "apply", "feat-a")
+        self.assertIn("applied feat-a", result.stdout)
+        self.assertEqual(self.node_ids(), {"input:base", "input:from-a"})
+        self.assertFalse((self.tmp / "graph.kuzu.feat-a").exists())
+        rows = self.branch_rows()
+        self.assertEqual(rows["feat-a"]["status"], "applied")
+        status = json.loads(self.cli("branch", "status", "--json").stdout)
+        self.assertEqual(status["active"], "master")
+        self.assertEqual(status["revision"], 1)
+
+    def test_applying_one_branch_stales_the_others(self) -> None:
+        self.cli("branch", "create", "feat-a")
+        self.cli("add-node", "--kind", "input", "--id", "input:only-a",
+                 "--name", "A")
+        self.cli("branch", "create", "feat-b")
+        self.assertEqual(self.node_ids(), {"input:base"})
+        self.cli("branch", "apply", "feat-a")
+
+        rows = self.branch_rows()
+        self.assertEqual(rows["feat-a"]["status"], "applied")
+        self.assertEqual(rows["feat-b"]["status"], "stale")
+        self.assertIn("stale", rows["feat-b"]["reason"])
+
+        blocked = self.cli("branch", "apply", "feat-b", expect=2)
+        self.assertIn("stale", blocked.stderr)
+        blocked = self.cli("branch", "use", "feat-b", expect=2)
+        self.assertIn("cannot be used", blocked.stderr)
+
+        self.cli("branch", "create", "feat-c")
+        self.cli("add-node", "--kind", "input", "--id", "input:only-c",
+                 "--name", "C")
+        self.cli("branch", "apply", "feat-c")
+        self.assertEqual(self.node_ids(),
+                         {"input:base", "input:only-a", "input:only-c"})
+
+    def test_branch_always_starts_from_master(self) -> None:
+        self.cli("branch", "create", "feat-a")
+        self.cli("add-node", "--kind", "input", "--id", "input:only-a",
+                 "--name", "A")
+        self.cli("branch", "create", "feat-b")
+        self.assertEqual(self.node_ids(), {"input:base"})
+        rows = self.branch_rows()
+        self.assertEqual(rows["feat-a"]["base_revision"],
+                         rows["feat-b"]["base_revision"])
+
+    def test_editing_master_invalidates_open_branches(self) -> None:
+        self.cli("branch", "create", "feat-a")
+        self.cli("branch", "use", "master")
+        self.cli("add-node", "--kind", "input", "--id", "input:on-master",
+                 "--name", "master edit")
+        blocked = self.cli("branch", "apply", "feat-a", expect=2)
+        self.assertIn("stale", blocked.stderr)
+        self.assertEqual(self.branch_rows()["feat-a"]["status"], "stale")
+
+    def test_drop_and_reserved_names(self) -> None:
+        self.cli("branch", "create", "feat-a")
+        dropped = self.cli("branch", "drop", "feat-a")
+        self.assertIn("feat-a", dropped.stdout)
+        self.assertEqual(self.branch_rows(), {})
+        self.assertFalse((self.tmp / "graph.kuzu.feat-a").exists())
+
+        self.cli("branch", "create", "master", expect=2)
+        self.cli("branch", "create", "Bad Name", expect=2)
+        missing = self.cli("branch", "apply", "nope", expect=2)
+        self.assertIn("does not exist", missing.stderr)
+
+
 if __name__ == "__main__":
     unittest.main()

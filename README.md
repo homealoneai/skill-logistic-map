@@ -182,6 +182,8 @@ A batch seed is available at `examples/orders-flow.json`:
 | `export-md` | Markdown docs for entrypoints, entities and flows, aimed at coding agents |
 | `render` | Standalone interactive HTML map |
 | `stats` | Counters by node and edge kind |
+| `branch create` / `branch use` / `branch apply` | Work on an isolated copy of the graph and apply it to master |
+| `branch list` / `branch status` / `branch drop` | Inspect or discard branches |
 | `flow list` / `flow show` / `flow remove` | Inspect or delete authored flows |
 
 ## Flows
@@ -222,6 +224,29 @@ behaviour in the graph instead of a separate document.
 - `references/modeling.md` — what should become a node, field or edge
 - `references/report-rules.md` — finding codes, severities and fixes
 - `references/flows.md` — EntryPoints, TRIGGER/RELATED, USE, passages and rendering
+
+## Branches
+
+Branches are local, linear copies of the graph. Every branch starts from
+`master`; there is no merge, rebase or branch-of-a-branch.
+
+```sh
+"$PY" "$SKILL_DIR/scripts/logistic_map.py" branch create checkout-rules
+"$PY" "$SKILL_DIR/scripts/logistic_map.py" add-rule --id rule:limit ...
+"$PY" "$SKILL_DIR/scripts/logistic_map.py" branch apply checkout-rules
+```
+
+- `branch create NAME` copies `master` and switches to the new branch.
+- `branch use NAME` switches between `master` and an open branch.
+- `branch apply NAME` copies the branch over `master` and bumps the master
+  revision.
+- Applying one branch marks every other open branch **stale**; stale branches
+  cannot be used or applied and must be recreated from the current master.
+- `branch list`, `branch status` and `branch drop` inspect or discard branches.
+- Editing `master` while a branch is open also makes that branch stale, so the
+  apply never discards master edits.
+- Branch databases live next to the graph as `<db>.<branch>` with a
+  `<db>.branches.json` status file; they are local and ignored by Git.
 
 ## Markdown docs
 

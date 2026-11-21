@@ -4,6 +4,8 @@ All commands: `python "$SKILL_DIR/scripts/logistic_map.py" <command>`, where
 `SKILL_DIR` is the directory containing `SKILL.md`.
 Global options `--db PATH` and `--json` are accepted before or after the
 command. `--db` defaults to `$LOGISTIC_MAP_DB` or `.logistic-map/graph.kuzu`.
+When a branch is active, `--db` still names the master database; graph commands
+are routed to the branch automatically (see `branch`).
 
 Exit codes: `0` success (and report under its threshold), `1` report threshold
 crossed, `2` usage or runtime error. With `--json`, failures print
@@ -402,3 +404,42 @@ edges. A flow's path is the set of `flow`/`transform` passages carrying its
 | `flow remove --id FLOW` | Delete the flow and its passages (entities stay) |
 
 See `flows.md` for the model, roles, joins and report rules.
+
+
+## branch
+
+Branches are isolated local copies of the graph, used to prepare a set of
+changes and apply them to `master` in one go. There is **no merge**: a branch
+either applies as a whole or is rejected because the master moved.
+
+```sh
+branch create NAME
+branch use NAME            # or: branch use master
+branch list [--json]
+branch status [--json]
+branch apply NAME
+branch drop NAME
+```
+
+| Command | What it does |
+|---|---|
+| `branch create NAME` | Copy `master` to a new branch, record its base revision and fingerprint, and switch to it |
+| `branch use NAME` | Switch to an open branch; `master` switches back to the main line |
+| `branch list` | Revision, active branch and every branch with status `open`, `applied` or `stale` |
+| `branch status` | Active branch, master revision and node/edge counts |
+| `branch apply NAME` | Replace `master` with the branch and bump the master revision |
+| `branch drop NAME` | Delete the branch and its database |
+
+Rules:
+
+- Every branch starts from `master`; a branch can never start from another
+  branch.
+- Only open branches can be used or applied.
+- `apply` verifies that the branch still matches the master it started from.
+- Applying a branch marks every other open branch `stale`.
+- Editing `master` directly while branches are open also marks them `stale`, so
+  applying an old branch cannot drop newer master edits.
+- Names must match `[a-z0-9][a-z0-9._-]*` (at most 60 characters); `master` is
+  reserved.
+- State lives in `<db>.branches.json`; branch databases are `<db>.<name>` and are
+  local, untracked files. `--db` still points at the master path in every command.

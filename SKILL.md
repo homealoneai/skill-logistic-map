@@ -251,6 +251,24 @@ share `file_path`/`refs` — that is evidence, not identity. Details in
   --ref controller/controller.go:58
 ```
 
+## Branches
+
+Use a branch when the graph change must be reviewed or applied as one unit:
+
+```sh
+"$PY" "$SKILL_DIR/scripts/logistic_map.py" branch create checkout-rules
+# ... edits run against the active branch ...
+"$PY" "$SKILL_DIR/scripts/logistic_map.py" branch apply checkout-rules
+```
+
+- Every branch starts from `master`, never from another branch.
+- `branch apply` replaces `master` with the branch; there is no merge.
+- Applying a branch marks every other open branch `stale`.
+- Editing `master` while branches are open also marks them `stale`.
+- Stale or applied branches cannot be used or applied; create a new branch from
+  the current master instead.
+- `branch list`, `branch status` and `branch drop` inspect or discard branches.
+
 ## Rules
 
 - **CLI is the only writer.** `query` is guarded read-only; never edit the Kuzu

@@ -34,9 +34,11 @@ attributes, and never invents an EntryPoint, TRIGGER, RELATED or cluster.
 from __future__ import annotations
 
 import argparse
+import hashlib
 import json
 import os
 import re
+import shutil
 import subprocess
 import sys
 from collections import Counter, defaultdict
@@ -292,6 +294,13 @@ class DB:
         except Exception:
             return set()
 
+    def close(self) -> None:
+        for target in (getattr(self, "conn", None), getattr(self, "_db", None)):
+            try:
+                target.close()
+            except Exception:
+                pass
+
     def meta_path(self) -> Path:
         return self.path.parent / "meta.json"
 
@@ -333,6 +342,174 @@ def open_db(args, initialize: bool = False, allow_old: bool = False) -> DB:
                 "Input activation attributes are dropped without inventing "
                 "EntryPoints or triggers.")
     return db
+
+
+# --------------------------------------------------------------------------
+# branches
+# --------------------------------------------------------------------------
+
+BRANCH_MASTER = "master"
+BRANCH_OPEN = "open"
+BRANCH_APPLIED = "applied"
+BRANCH_STALE = "stale"
+BRANCH_NAME_RE = re.compile(r"^[a-z0-9][a-z0-9._-]{0,59}$")
+
+
+def branch_state_path(master: Path) -> Path:
+    return master.parent / f"{master.name}.branches.json"
+
+
+def branch_db_path(master: Path, name: str) -> Path:
+    return master.parent / f"{master.name}.{name}"
+
+
+def read_branch_state(master: Path) -> dict:
+    path = branch_state_path(master)
+    state = {"version": 1, "revision": 0, "active": BRANCH_MASTER,
+             "branches": {}}
+    if not path.exists():
+        return state
+    try:
+        data = json.loads(path.read_text(encoding="utf-8"))
+    except (json.JSONDecodeError, OSError):
+        return state
+    if not isinstance(data, dict):
+        return state
+    state.update({key: data[key] for key in state if key in data})
+    if not isinstance(state.get("branches"), dict):
+        state["branches"] = {}
+    return state
+
+
+def write_branch_state(master: Path, state: dict) -> None:
+    path = branch_state_path(master)
+    path.parent.mkdir(parents=True, exist_ok=True)
+    tmp = path.with_suffix(path.suffix + ".tmp")
+    tmp.write_text(json.dumps(state, indent=2, ensure_ascii=False) + "\n",
+                   encoding="utf-8")
+    tmp.replace(path)
+
+
+def branch_name(value: str) -> str:
+    name = str(value or "").strip()
+    if name == BRANCH_MASTER:
+        raise LogisticMapError(
+            "master is the main line; use `branch use master` instead")
+    if not BRANCH_NAME_RE.fullmatch(name):
+        raise LogisticMapError(
+            "branch names must match [a-z0-9][a-z0-9._-]* "
+            "and be at most 60 characters")
+    return name
+
+
+def graph_fingerprint(db: DB) -> str:
+    nodes, edges = load_graph(db)
+    node_list = [dict(nodes[node_id])
+                 for node_id in sorted(nodes, key=lambda key: (nodes[key]["kind"], key))]
+    edge_list = sorted(
+        (dict(edge) for edge in edges),
+        key=lambda edge: json.dumps(edge, sort_keys=True, default=str))
+    payload = {"nodes": node_list, "edges": edge_list}
+    return hashlib.sha256(
+        json.dumps(payload, sort_keys=True, default=str).encode("utf-8")).hexdigest()
+
+
+def master_fingerprint(master: Path) -> str:
+    db = DB(master)
+    try:
+        return graph_fingerprint(db)
+    finally:
+        db.close()
+
+
+def refresh_stale_branches(master: Path, state: dict) -> bool:
+    """Mark open branches whose base no longer matches the master line."""
+    if not master.exists():
+        return False
+    fingerprint = None
+    changed = False
+    for branch in state.get("branches", {}).values():
+        if branch.get("status") != BRANCH_OPEN:
+            continue
+        if fingerprint is None:
+            fingerprint = master_fingerprint(master)
+        if branch.get("base_fingerprint") != fingerprint:
+            branch["status"] = BRANCH_STALE
+            branch["stale_reason"] = (
+                "stale: master changed after this branch was created; "
+                "create a new branch from the current master")
+            changed = True
+    return changed
+
+
+def resolve_active_db(master: Path) -> Path:
+    state = read_branch_state(master)
+    active = state.get("active") or BRANCH_MASTER
+    if active == BRANCH_MASTER:
+        return master
+    branch = state.get("branches", {}).get(active)
+    if not branch or branch.get("status") != BRANCH_OPEN:
+        raise LogisticMapError(
+            f"active branch {active!r} is not open; run `branch use master`")
+    path = branch_db_path(master, active)
+    if not path.exists():
+        raise LogisticMapError(
+            f"active branch {active!r} is missing its database at {path}; "
+            "run `branch use master`")
+    return path
+
+
+def _branch_rows(state: dict) -> list:
+    rows = []
+    for name in sorted(state.get("branches", {})):
+        branch = state["branches"][name]
+        rows.append({
+            "name": name,
+            "status": branch.get("status", BRANCH_OPEN),
+            "base_revision": branch.get("base_revision", 0),
+            "created_at": branch.get("created_at", ""),
+            "applied_at": branch.get("applied_at", ""),
+            "reason": branch.get("stale_reason", ""),
+        })
+    return rows
+
+
+def copy_db(src: Path, dst: Path) -> None:
+    """Copy a Kuzu database, whether it is a single file or a directory."""
+    if src.is_dir():
+        shutil.copytree(src, dst)
+    else:
+        shutil.copy2(src, dst)
+    for suffix in (".wal", ".lock"):
+        sidecar = Path(str(src) + suffix)
+        if sidecar.exists():
+            shutil.copy2(sidecar, Path(str(dst) + suffix))
+
+
+def remove_db(path: Path) -> None:
+    if path.is_dir():
+        shutil.rmtree(path)
+    elif path.exists():
+        path.unlink()
+    for suffix in (".wal", ".lock"):
+        sidecar = Path(str(path) + suffix)
+        if sidecar.exists():
+            sidecar.unlink()
+
+
+def _print_branch_list(state: dict) -> None:
+    print(f"revision: {state.get('revision', 0)}  "
+          f"active: {state.get('active', BRANCH_MASTER)}")
+    rows = _branch_rows(state)
+    if not rows:
+        print("no branches")
+        return
+    for row in rows:
+        line = (f"{row['name']:<28} {row['status']:<8} "
+                f"base r{row['base_revision']}")
+        if row["reason"]:
+            line += f"  {row['reason']}"
+        print(line)
 
 
 # --------------------------------------------------------------------------
@@ -2951,6 +3128,214 @@ def cmd_flow_remove(args) -> int:
     return 0
 
 
+def cmd_branch_create(args) -> int:
+    master = Path(args.db).expanduser()
+    if not master.exists():
+        raise LogisticMapError(
+            f"no logistic-map database at {master}; run `init` first")
+    state = read_branch_state(master)
+    refresh_stale_branches(master, state)
+    name = branch_name(args.name)
+    if name in state["branches"]:
+        raise LogisticMapError(
+            f"branch {name!r} already exists; drop it before reusing the name")
+    target = branch_db_path(master, name)
+    if target.exists():
+        raise LogisticMapError(
+            f"{target} already exists but is not recorded as a branch")
+    fingerprint = master_fingerprint(master)
+    copy_db(master, target)
+    state["branches"][name] = {
+        "status": BRANCH_OPEN,
+        "base_revision": state.get("revision", 0),
+        "base_fingerprint": fingerprint,
+        "created_at": now_iso(),
+    }
+    state["active"] = name
+    write_branch_state(master, state)
+    result = {"ok": True, "branch": name, "status": BRANCH_OPEN,
+              "base_revision": state["branches"][name]["base_revision"]}
+    if args.json:
+        print(json.dumps(result, indent=2))
+    else:
+        print(f"created branch {name} from master r{result['base_revision']}; "
+              f"now active")
+    return 0
+
+
+def cmd_branch_use(args) -> int:
+    master = Path(args.db).expanduser()
+    if not master.exists():
+        raise LogisticMapError(
+            f"no logistic-map database at {master}; run `init` first")
+    state = read_branch_state(master)
+    if refresh_stale_branches(master, state):
+        write_branch_state(master, state)
+    name = str(args.name or "").strip()
+    if name == BRANCH_MASTER:
+        state["active"] = BRANCH_MASTER
+        write_branch_state(master, state)
+        print("switched to master" if not args.json
+              else json.dumps({"ok": True, "active": BRANCH_MASTER}, indent=2))
+        return 0
+    branch = state["branches"].get(name)
+    if not branch:
+        raise LogisticMapError(f"branch {name!r} does not exist")
+    if branch.get("status") != BRANCH_OPEN:
+        reason = branch.get("stale_reason") or f"status is {branch.get('status')}"
+        raise LogisticMapError(f"branch {name!r} cannot be used: {reason}")
+    state["active"] = name
+    write_branch_state(master, state)
+    if args.json:
+        print(json.dumps({"ok": True, "active": name}, indent=2))
+    else:
+        print(f"switched to branch {name}")
+    return 0
+
+
+def cmd_branch_list(args) -> int:
+    master = Path(args.db).expanduser()
+    state = read_branch_state(master)
+    if refresh_stale_branches(master, state):
+        write_branch_state(master, state)
+    if args.json:
+        print(json.dumps({
+            "ok": True,
+            "revision": state.get("revision", 0),
+            "active": state.get("active", BRANCH_MASTER),
+            "branches": _branch_rows(state),
+        }, indent=2))
+    else:
+        _print_branch_list(state)
+    return 0
+
+
+def cmd_branch_status(args) -> int:
+    master = Path(args.db).expanduser()
+    state = read_branch_state(master)
+    if refresh_stale_branches(master, state):
+        write_branch_state(master, state)
+    active = state.get("active", BRANCH_MASTER)
+    counts = {"nodes": 0, "edges": 0}
+    try:
+        db_path = resolve_active_db(master)
+    except LogisticMapError:
+        db_path = None
+    if db_path and db_path.exists():
+        db = DB(db_path)
+        try:
+            nodes, edges = load_graph(db)
+            counts = {"nodes": len(nodes), "edges": len(edges)}
+        finally:
+            db.close()
+    payload = {"ok": True, "revision": state.get("revision", 0),
+               "active": active, "counts": counts,
+               "branches": _branch_rows(state)}
+    if args.json:
+        print(json.dumps(payload, indent=2))
+    else:
+        print(f"revision: {payload['revision']}")
+        print(f"active:   {active}")
+        print(f"graph:    {counts['nodes']} nodes, {counts['edges']} edges")
+        rows = [row for row in payload["branches"] if row["name"] == active]
+        for row in rows:
+            print(f"branch:   {row['name']} ({row['status']}, "
+                  f"base r{row['base_revision']})")
+    return 0
+
+
+def cmd_branch_apply(args) -> int:
+    master = Path(args.db).expanduser()
+    if not master.exists():
+        raise LogisticMapError(
+            f"no logistic-map database at {master}; run `init` first")
+    state = read_branch_state(master)
+    refresh_stale_branches(master, state)
+    name = str(args.name or "").strip()
+    branch = state["branches"].get(name)
+    if not branch:
+        raise LogisticMapError(f"branch {name!r} does not exist")
+    if branch.get("status") == BRANCH_APPLIED:
+        raise LogisticMapError(f"branch {name!r} was already applied")
+    if branch.get("status") != BRANCH_OPEN:
+        reason = branch.get("stale_reason") or f"status is {branch.get('status')}"
+        raise LogisticMapError(f"branch {name!r} cannot be applied: {reason}")
+    target = branch_db_path(master, name)
+    if not target.exists():
+        raise LogisticMapError(
+            f"branch {name!r} is missing its database at {target}")
+    current = master_fingerprint(master)
+    if branch.get("base_fingerprint") != current:
+        branch["status"] = BRANCH_STALE
+        branch["stale_reason"] = (
+            "stale: master is no longer at the revision this branch started from")
+        write_branch_state(master, state)
+        raise LogisticMapError(
+            f"branch {name!r} is stale: master changed after it was created; "
+            "create a new branch from the current master")
+
+    backup = master.parent / f".{master.name}.applying-{os.getpid()}"
+    if backup.exists():
+        remove_db(backup)
+    os.replace(master, backup)
+    try:
+        copy_db(target, master)
+    except Exception:
+        if master.exists():
+            remove_db(master)
+        os.replace(backup, master)
+        raise
+    remove_db(backup)
+    remove_db(target)
+
+    revision = int(state.get("revision", 0)) + 1
+    state["revision"] = revision
+    branch["status"] = BRANCH_APPLIED
+    branch["applied_at"] = now_iso()
+    branch["applied_revision"] = revision
+    stale = []
+    for other_name, other in state["branches"].items():
+        if other_name == name or other.get("status") != BRANCH_OPEN:
+            continue
+        other["status"] = BRANCH_STALE
+        other["stale_reason"] = (
+            f"stale: master advanced to r{revision} when {name} was applied")
+        stale.append(other_name)
+    state["active"] = BRANCH_MASTER
+    write_branch_state(master, state)
+    payload = {"ok": True, "branch": name, "status": BRANCH_APPLIED,
+               "revision": revision, "stale": sorted(stale)}
+    if args.json:
+        print(json.dumps(payload, indent=2))
+    else:
+        print(f"applied {name} to master (revision {revision})")
+        if stale:
+            print(f"stale branches: {', '.join(sorted(stale))}")
+    return 0
+
+
+def cmd_branch_drop(args) -> int:
+    master = Path(args.db).expanduser()
+    state = read_branch_state(master)
+    name = str(args.name or "").strip()
+    branch = state["branches"].get(name)
+    if not branch:
+        raise LogisticMapError(f"branch {name!r} does not exist")
+    target = branch_db_path(master, name)
+    if target.exists():
+        remove_db(target)
+    del state["branches"][name]
+    if state.get("active") == name:
+        state["active"] = BRANCH_MASTER
+    write_branch_state(master, state)
+    payload = {"ok": True, "branch": name, "removed": True}
+    if args.json:
+        print(json.dumps(payload, indent=2))
+    else:
+        print(f"dropped branch {name}")
+    return 0
+
+
 def build_parser() -> argparse.ArgumentParser:
     common = argparse.ArgumentParser(add_help=False)
     common.add_argument("--db", default=argparse.SUPPRESS,
@@ -3167,6 +3552,41 @@ def build_parser() -> argparse.ArgumentParser:
     flow_remove.add_argument("--id", required=True)
     flow_remove.set_defaults(func=cmd_flow_remove)
 
+    branch = sub.add_parser(
+        "branch", help="work on isolated copies of the graph and apply them")
+    branch_sub = branch.add_subparsers(dest="branch_command", required=True)
+
+    branch_create = branch_sub.add_parser(
+        "create", parents=[common],
+        help="copy master into a new branch and switch to it")
+    branch_create.add_argument("name")
+    branch_create.set_defaults(func=cmd_branch_create)
+
+    branch_use = branch_sub.add_parser(
+        "use", parents=[common],
+        help="switch to a branch, or back to master")
+    branch_use.add_argument("name")
+    branch_use.set_defaults(func=cmd_branch_use)
+
+    branch_list = branch_sub.add_parser(
+        "list", parents=[common], help="list branches and their status")
+    branch_list.set_defaults(func=cmd_branch_list)
+
+    branch_status = branch_sub.add_parser(
+        "status", parents=[common], help="show the active branch")
+    branch_status.set_defaults(func=cmd_branch_status)
+
+    branch_apply = branch_sub.add_parser(
+        "apply", parents=[common],
+        help="copy a branch onto master (no merge)")
+    branch_apply.add_argument("name")
+    branch_apply.set_defaults(func=cmd_branch_apply)
+
+    branch_drop = branch_sub.add_parser(
+        "drop", parents=[common], help="discard a branch")
+    branch_drop.add_argument("name")
+    branch_drop.set_defaults(func=cmd_branch_drop)
+
     return parser
 
 
@@ -3177,6 +3597,9 @@ def main(argv=None) -> int:
         args.db = DEFAULT_DB
     if getattr(args, "json", None) is None:
         args.json = False
+    master_commands = {"init", "migrate", "doctor", "branch"}
+    if args.command not in master_commands:
+        args.db = str(resolve_active_db(Path(args.db).expanduser()))
     try:
         return args.func(args)
     except LogisticMapError as exc:
