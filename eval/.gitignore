@@ -1,0 +1,10 @@
+.venv/
+logs/
+reports/
+.work/
+__pycache__/
+*.pyc
+.env
+
+# unused local fixture kept out of the repo
+code-sample/monorepo/

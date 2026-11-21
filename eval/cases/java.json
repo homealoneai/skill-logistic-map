@@ -1,0 +1,38 @@
+{
+  "id": "java",
+  "title": "Java orders API",
+  "path": "code-sample/java",
+  "scope": "The orders HTTP API and its write path: OrderController, OrderService, the JPA entities/repository and the order-created event published through the messaging provider. /chaos and /topology are out of scope.",
+  "hints": [
+    "OrderController maps GET and POST /orders.",
+    "OrderService persists through OrderRepository (Spring Data / JPA table orders).",
+    "OrderCreatedEvent is published by OrdersEventHandler; the provider is in-memory by default and SQS or RabbitMQ when configured.",
+    "Payload classes under web/payload are the wire contract; entities under entities are the storage shape."
+  ],
+  "context_files": [
+    "openapi.yml",
+    "src/main/java/com/amazon/sample/orders/web/OrderController.java",
+    "src/main/java/com/amazon/sample/orders/services/OrderService.java",
+    "src/main/java/com/amazon/sample/orders/repositories/OrderRepository.java",
+    "src/main/java/com/amazon/sample/orders/messaging/OrdersEventHandler.java",
+    "src/main/resources/application.yml"
+  ],
+  "expect": {
+    "entry_points": [
+      "/orders"
+    ],
+    "min_inputs": 2,
+    "min_entries": 2,
+    "min_storages": 1,
+    "min_fields": 8,
+    "min_edges": 3,
+    "files": [
+      "src/main/java/com/amazon/sample/orders/web/OrderController.java",
+      "src/main/java/com/amazon/sample/orders/services/OrderService.java",
+      "src/main/java/com/amazon/sample/orders/repositories/OrderRepository.java"
+    ],
+    "min_flows": 1,
+    "min_entrypoints": 1
+  },
+  "rubric": "GET and POST /orders are separate input contracts. The orders table is storage; the published order-created event is a queue boundary. The in-memory messaging and persistence providers are defaults, so describing SQS or PostgreSQL as always-on is inaccurate."
+}

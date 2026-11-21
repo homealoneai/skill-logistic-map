@@ -1,0 +1,370 @@
+{
+  "generated_at": "2026-11-21T00:16:39+00:00",
+  "samples": {
+    "android": {
+      "title": "Android users feature",
+      "case_path": "code-sample/android",
+      "source_log": "2026-11-21T00-13-10-00-00_logistic-extraction_62x7JKaYfBC2KjzFDZftgN.eval",
+      "counts": {
+        "nodes": 104,
+        "contracts": 11,
+        "flows": 2,
+        "entrypoints": 2,
+        "related": 1,
+        "rules": 7,
+        "clusters": 2,
+        "fields": 82,
+        "edges": 116,
+        "kinds": {
+          "entry": 7,
+          "entrypoint": 2,
+          "flow": 2,
+          "input": 2,
+          "rule": 7,
+          "storage": 2
+        },
+        "edge_kinds": {
+          "contains": 82,
+          "flow": 3,
+          "related": 1,
+          "rule": 9,
+          "transform": 7,
+          "trigger": 2,
+          "use": 12
+        }
+      },
+      "report": {
+        "error": 0,
+        "warn": 0,
+        "info": 2
+      },
+      "by_code": {
+        "entry_dead_end": 2
+      },
+      "stats": {
+        "nodes": 104,
+        "edges": 116,
+        "kinds": {
+          "input": 2,
+          "entry": 7,
+          "storage": 2,
+          "flow": 2,
+          "entrypoint": 2,
+          "rule": 7,
+          "field": 82
+        },
+        "edge_kinds": {
+          "contains": 82,
+          "transform": 7,
+          "flow": 3,
+          "use": 12,
+          "trigger": 2,
+          "related": 1,
+          "rule": 9
+        }
+      }
+    },
+    "go": {
+      "title": "Go catalog API",
+      "case_path": "code-sample/go",
+      "source_log": "2026-11-21T00-13-10-00-00_logistic-extraction_62x7JKaYfBC2KjzFDZftgN.eval",
+      "counts": {
+        "nodes": 87,
+        "contracts": 16,
+        "flows": 7,
+        "entrypoints": 7,
+        "related": 0,
+        "rules": 5,
+        "clusters": 1,
+        "fields": 52,
+        "edges": 111,
+        "kinds": {
+          "entry": 7,
+          "entrypoint": 7,
+          "flow": 7,
+          "input": 6,
+          "rule": 5,
+          "storage": 3
+        },
+        "edge_kinds": {
+          "contains": 52,
+          "flow": 9,
+          "rule": 8,
+          "transform": 9,
+          "trigger": 7,
+          "use": 26
+        }
+      },
+      "report": {
+        "error": 0,
+        "warn": 0,
+        "info": 3
+      },
+      "by_code": {
+        "entry_dead_end": 3
+      },
+      "stats": {
+        "nodes": 87,
+        "edges": 111,
+        "kinds": {
+          "input": 6,
+          "entry": 7,
+          "storage": 3,
+          "flow": 7,
+          "entrypoint": 7,
+          "rule": 5,
+          "field": 52
+        },
+        "edge_kinds": {
+          "contains": 52,
+          "transform": 9,
+          "flow": 9,
+          "use": 26,
+          "trigger": 7,
+          "rule": 8
+        }
+      }
+    },
+    "java": {
+      "title": "Java orders API",
+      "case_path": "code-sample/java",
+      "source_log": "2026-11-21T00-13-10-00-00_logistic-extraction_62x7JKaYfBC2KjzFDZftgN.eval",
+      "counts": {
+        "nodes": 101,
+        "contracts": 6,
+        "flows": 2,
+        "entrypoints": 2,
+        "related": 0,
+        "rules": 6,
+        "clusters": 1,
+        "fields": 85,
+        "edges": 108,
+        "kinds": {
+          "entry": 4,
+          "entrypoint": 2,
+          "flow": 2,
+          "input": 1,
+          "rule": 6,
+          "storage": 1
+        },
+        "edge_kinds": {
+          "contains": 85,
+          "flow": 3,
+          "rule": 7,
+          "transform": 3,
+          "trigger": 2,
+          "use": 8
+        }
+      },
+      "report": {
+        "error": 0,
+        "warn": 0,
+        "info": 2
+      },
+      "by_code": {
+        "entry_dead_end": 2
+      },
+      "stats": {
+        "nodes": 101,
+        "edges": 108,
+        "kinds": {
+          "input": 1,
+          "entry": 4,
+          "storage": 1,
+          "flow": 2,
+          "entrypoint": 2,
+          "rule": 6,
+          "field": 85
+        },
+        "edge_kinds": {
+          "contains": 85,
+          "transform": 3,
+          "flow": 3,
+          "use": 8,
+          "trigger": 2,
+          "rule": 7
+        }
+      }
+    },
+    "node": {
+      "title": "Node checkout API",
+      "case_path": "code-sample/node",
+      "source_log": "2026-11-21T00-13-10-00-00_logistic-extraction_62x7JKaYfBC2KjzFDZftgN.eval",
+      "counts": {
+        "nodes": 79,
+        "contracts": 8,
+        "flows": 3,
+        "entrypoints": 3,
+        "related": 0,
+        "rules": 5,
+        "clusters": 3,
+        "fields": 60,
+        "edges": 95,
+        "kinds": {
+          "entry": 5,
+          "entrypoint": 3,
+          "flow": 3,
+          "input": 2,
+          "rule": 5,
+          "storage": 1
+        },
+        "edge_kinds": {
+          "contains": 60,
+          "rule": 6,
+          "transform": 12,
+          "trigger": 3,
+          "use": 14
+        }
+      },
+      "report": {
+        "error": 0,
+        "warn": 0,
+        "info": 1
+      },
+      "by_code": {
+        "entry_dead_end": 1
+      },
+      "stats": {
+        "nodes": 79,
+        "edges": 95,
+        "kinds": {
+          "input": 2,
+          "entry": 5,
+          "storage": 1,
+          "flow": 3,
+          "entrypoint": 3,
+          "rule": 5,
+          "field": 60
+        },
+        "edge_kinds": {
+          "contains": 60,
+          "transform": 12,
+          "use": 14,
+          "trigger": 3,
+          "rule": 6
+        }
+      }
+    },
+    "otel": {
+      "title": "OpenTelemetry demo checkout",
+      "case_path": "code-sample/opentelemetry-demo",
+      "source_log": "2026-11-21T00-13-10-00-00_logistic-extraction_62x7JKaYfBC2KjzFDZftgN.eval",
+      "counts": {
+        "nodes": 231,
+        "contracts": 24,
+        "flows": 3,
+        "entrypoints": 3,
+        "related": 2,
+        "rules": 9,
+        "clusters": 7,
+        "fields": 192,
+        "edges": 262,
+        "kinds": {
+          "entry": 18,
+          "entrypoint": 3,
+          "flow": 3,
+          "input": 4,
+          "rule": 9,
+          "storage": 2
+        },
+        "edge_kinds": {
+          "contains": 192,
+          "related": 2,
+          "rule": 9,
+          "transform": 31,
+          "trigger": 3,
+          "use": 25
+        }
+      },
+      "report": {
+        "error": 0,
+        "warn": 0,
+        "info": 5
+      },
+      "by_code": {
+        "entry_dead_end": 4,
+        "inferred_fields": 1
+      },
+      "stats": {
+        "nodes": 231,
+        "edges": 262,
+        "kinds": {
+          "input": 4,
+          "entry": 18,
+          "storage": 2,
+          "flow": 3,
+          "entrypoint": 3,
+          "rule": 9,
+          "field": 192
+        },
+        "edge_kinds": {
+          "contains": 192,
+          "transform": 31,
+          "use": 25,
+          "trigger": 3,
+          "related": 2,
+          "rule": 9
+        }
+      }
+    },
+    "web": {
+      "title": "Web character viewer data",
+      "case_path": "code-sample/web",
+      "source_log": "2026-11-21T00-13-10-00-00_logistic-extraction_62x7JKaYfBC2KjzFDZftgN.eval",
+      "counts": {
+        "nodes": 21,
+        "contracts": 6,
+        "flows": 2,
+        "entrypoints": 4,
+        "related": 2,
+        "rules": 2,
+        "clusters": 1,
+        "fields": 7,
+        "edges": 24,
+        "kinds": {
+          "entry": 4,
+          "entrypoint": 4,
+          "flow": 2,
+          "input": 2,
+          "rule": 2
+        },
+        "edge_kinds": {
+          "contains": 7,
+          "related": 2,
+          "rule": 3,
+          "transform": 4,
+          "trigger": 2,
+          "use": 6
+        }
+      },
+      "report": {
+        "error": 0,
+        "warn": 0,
+        "info": 2
+      },
+      "by_code": {
+        "entry_dead_end": 2
+      },
+      "stats": {
+        "nodes": 21,
+        "edges": 24,
+        "kinds": {
+          "input": 2,
+          "entry": 4,
+          "flow": 2,
+          "entrypoint": 4,
+          "rule": 2,
+          "field": 7
+        },
+        "edge_kinds": {
+          "contains": 7,
+          "transform": 4,
+          "use": 6,
+          "trigger": 2,
+          "related": 2,
+          "rule": 3
+        }
+      }
+    }
+  }
+}

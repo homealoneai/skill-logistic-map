@@ -1,22 +1,24 @@
 # logistic-map
 
 A portable agent skill that treats application data flow as a **logistics
-process**: inputs are origins, entries are handling steps, storages are
-warehouses, fields are the cargo, and procedures are where cargo is merged (a
-join) or split.
+process**: inputs are cargo arriving, entries are the intermediate shapes cargo
+takes inside the application, storages are warehouses, fields are the cargo
+manifest, and procedures are where cargo is merged (a join) or split.
 
-It keeps a [Kuzu](https://kuzudb.com/) graph of those contracts and answers the
-questions a contract review usually misses:
+It keeps a [Kuzu](https://kuzudb.com/) graph of those **data entities** and
+answers the questions a contract review usually misses:
 
 - Which input does this field come from, and what changes it on the way?
 - Which fields does the producer send that the consumer never reads?
 - Where does a type disagree between two contracts?
 - What does an input affect downstream, and by which paths?
 
-It records **Input** contracts (queues, HTTP routes, files, cron jobs), **Entry**
-transformation points, **Storage** locations and the **Field** tree of each
-contract. A CLI writes the graph and produces reports; `render` turns it into a
-standalone interactive **logistic map** with **Contracts** and **Flows** tabs.
+It records **EntryPoint** activations (routes, consumers, jobs, UI actions),
+**Input** data contracts, **Entry** intermediate entities (validated, normalized
+or enriched payloads), **Storage** locations and the **Field** tree of each
+entity. A CLI writes the graph and produces reports; `render` turns it into a
+standalone **logistic map** where entrypoints, flows and entities share a single
+interactive view.
 
 Everything runs on plain Python plus a static HTML file: no server, no cloud
 service, no harness-specific runtime.
@@ -66,7 +68,8 @@ Any harness that follows the common skill layout (YAML frontmatter in
 
 If you used the pre-rename version of this skill, rename the runtime directory
 `.dataflow/` to `.logistic-map/` (or point `--db` at the old file). New runs use
-`.logistic-map/graph.kuzu` and `.logistic-map/flows.kuzu`.
+only `.logistic-map/graph.kuzu`; the old `flows.kuzu` database is obsolete and
+its flows now live in the main graph.
 
 ### Use without a harness
 
@@ -88,8 +91,15 @@ PY=.logistic-map/.venv/bin/python
 
 bash "$SKILL_DIR/scripts/bootstrap.sh"
 
+"$PY" "$SKILL_DIR/scripts/logistic_map.py" add-entrypoint \
+  --id entrypoint:orders-created --name "orders.created consumer" \
+  --description "Consumes the orders.created queue" \
+  --cluster orders-service \
+  --file services/orders/src/consumer.py \
+  --ref services/orders/src/consumer.py:24
+
 "$PY" "$SKILL_DIR/scripts/logistic_map.py" add-node --kind input \
-  --id input:orders.created --entry-point queue:orders.created --channel queue \
+  --id input:orders.created --cluster orders-service \
   --file services/orders/src/consumer.py \
   --ref services/orders/src/consumer.py:24
 
@@ -97,11 +107,51 @@ bash "$SKILL_DIR/scripts/bootstrap.sh"
   --owner input:orders.created --path customer.email --type string
 
 "$PY" "$SKILL_DIR/scripts/logistic_map.py" add-node --kind entry \
-  --id entry:validate-order --entry-point validate_order --entry-type function \
-  --file services/orders/src/validate.py
+  --id entry:order-validated --name order-validated --stage validated \
+  --cluster orders-service \
+  --file services/orders/src/validate.py \
+  --ref services/orders/src/validate.py:40
 
-"$PY" "$SKILL_DIR/scripts/logistic_map.py" add-edge --kind compose \
-  --from input:orders.created --to entry:validate-order
+"$PY" "$SKILL_DIR/scripts/logistic_map.py" add-node --kind storage \
+  --id storage:orders --location postgres://orders.orders --store-type sql \
+  --cluster orders-service \
+  --file services/orders/src/repository.py
+
+"$PY" "$SKILL_DIR/scripts/logistic_map.py" add-flow \
+  --id flow:create-order --name "Create order" \
+  --description "Receive, validate and persist an order" \
+  --cluster orders-service
+for entity in input:orders.created entry:order-validated storage:orders; do
+  "$PY" "$SKILL_DIR/scripts/logistic_map.py" flow use \
+    --id flow:create-order --entity "$entity"
+done
+
+"$PY" "$SKILL_DIR/scripts/logistic_map.py" add-edge --kind trigger \
+  --from entrypoint:orders-created --to flow:create-order
+
+"$PY" "$SKILL_DIR/scripts/logistic_map.py" add-rule \
+  --id rule:order-item-limit --name "Order item limit" \
+  --description "An order may contain at most 20 items" \
+  --cluster orders-service --ref services/orders/src/validate.py:18
+"$PY" "$SKILL_DIR/scripts/logistic_map.py" add-edge --kind rule \
+  --from flow:create-order --to rule:order-item-limit
+
+"$PY" "$SKILL_DIR/scripts/logistic_map.py" add-entrypoint \
+  --id entrypoint:orders-screen --name "Orders screen" \
+  --description "Screen that submits the order form" \
+  --cluster checkout-ui --ref ui/orders.tsx:12
+"$PY" "$SKILL_DIR/scripts/logistic_map.py" add-edge --kind related \
+  --from entrypoint:orders-screen --to entrypoint:orders-created \
+  --description "screen starts order creation" --ref ui/orders.tsx:42
+
+"$PY" "$SKILL_DIR/scripts/logistic_map.py" add-edge --kind transform \
+  --flow flow:create-order \
+  --from input:orders.created --to entry:order-validated \
+  --note "email lowercased; total: string -> number"
+
+"$PY" "$SKILL_DIR/scripts/logistic_map.py" add-edge --kind flow \
+  --flow flow:create-order \
+  --from entry:order-validated --to storage:orders
 
 "$PY" "$SKILL_DIR/scripts/logistic_map.py" report
 "$PY" "$SKILL_DIR/scripts/logistic_map.py" render
@@ -118,33 +168,52 @@ A batch seed is available at `examples/orders-flow.json`:
 | Command | Purpose |
 |---|---|
 | `init` | Create the graph schema |
+| `migrate` | Convert a v1-v6 database to v7 |
 | `doctor` | Check Python/Kuzu/database/git |
-| `add-node` / `add-field` / `add-edge` | Register contracts, fields and relationships |
+| `add-node` / `add-field` / `add-edge` | Register entities, fields and relationships |
+| `add-entrypoint` | Register an outer activation that triggers or relates to other entrypoints |
+| `add-rule` | Register a limit or condition followed by a flow or entrypoint |
+| `add-flow` / `flow use` | Register a flow and the entities it uses |
 | `apply --file` | Transactional batch upsert (same shape as `export`) |
 | `remove-node` / `remove-edge` | Remove nodes (with owned fields) or edges |
 | `list` / `query` | Inspect nodes, run read-only Cypher |
-| `report` | Missing fields, type conflicts, cycles, orphans, shape problems |
+| `report` | Missing fields, type conflicts, cycles, orphans, flow problems |
 | `export` | JSON snapshot for review and re-apply |
+| `export-md` | Markdown docs for entrypoints, entities and flows, aimed at coding agents |
 | `render` | Standalone interactive HTML map |
-| `stats` | Counters by kind and channel |
-| `flow build` / `flow list` / `flow show` / `flow sync` | Derive and inspect flow graphs with explicit joins |
+| `stats` | Counters by node and edge kind |
+| `flow list` / `flow show` / `flow remove` | Inspect or delete authored flows |
 
 ## Flows
 
-A procedure with several inputs is a join, and a linear path through the contract
-graph hides that. `flow build` derives a second, read-only graph of steps and
-feeds from the contract graph:
+A flow is explicit: a `Flow` node with a description and `use` relations to the
+data entities that participate in it. Its path is made of `flow` and `transform`
+passages carrying its `flow_id` (`compose` is containment and never a path):
 
 ```sh
-"$PY" "$SKILL_DIR/scripts/logistic_map.py" flow build \
-  --from storage:orders --name "Orders to notifications"
-"$PY" "$SKILL_DIR/scripts/logistic_map.py" flow show flow:orders-to-notifications
+"$PY" "$SKILL_DIR/scripts/logistic_map.py" add-flow \
+  --id flow:create-order --name "Create order"
+"$PY" "$SKILL_DIR/scripts/logistic_map.py" flow use \
+  --id flow:create-order --entity input:orders.created
+"$PY" "$SKILL_DIR/scripts/logistic_map.py" flow show flow:create-order
 ```
 
-A step with multiple incoming `FEEDS` is a join; inputs outside the forward
-reach are kept as `context`, so the tree does not pretend one table is the only
-source. The contract graph is never modified; rerun `flow sync` after changes.
-`render` embeds every flow in a **Flows** tab next to the contract map.
+An entity may participate in several flows; a passage is identified by
+`(kind, from, to, flow)`, so the same pair can appear in more than one flow.
+Different entities may share the same `file_path`/`refs` — they are still
+different positions on the path. `render` draws EntryPoints and flows in their
+own lanes, links entrypoints to flows with `trigger`, entrypoints to entrypoints
+with the directional `related`, and flows to entities with `use`. Selecting an
+entrypoint follows outgoing `related` edges and highlights the flows those
+entrypoints reach, including entities, rules and passages; the entity panel lists
+the flows that use it. The cluster dropdown filters the graph to one service,
+repository or other grouping label.
+
+Contracts, flows, entrypoints and rules can carry `--cluster` (a service,
+repository, module or deployable boundary); fields inherit their owner's cluster.
+Rules are nodes with a required description, attached to a flow or entrypoint
+with `add-edge --kind rule`; they keep limits, timeouts, pagination and similar
+behaviour in the graph instead of a separate document.
 
 `SKILL.md` is the agent-facing guide. Detailed references:
 
@@ -152,18 +221,90 @@ source. The contract graph is never modified; rerun `flow sync` after changes.
 - `references/cli.md` — every command, flag and output shape
 - `references/modeling.md` — what should become a node, field or edge
 - `references/report-rules.md` — finding codes, severities and fixes
-- `references/flows.md` — derived flow graph: steps, joins, context and limits
+- `references/flows.md` — EntryPoints, TRIGGER/RELATED, USE, passages and rendering
+
+## Markdown docs
+
+`export-md` writes a managed directory of Markdown files that a coding agent can
+read without the graph database:
+
+```sh
+"$PY" "$SKILL_DIR/scripts/logistic_map.py" export-md \
+  --out docs/logistic-map --title "Orders map"
+```
+
+```text
+docs/logistic-map/
+├── README.md              # relation semantics and indexes
+├── entities/<kind>/<slug>.md
+├── entrypoints/<slug>.md
+├── rules/<slug>.md
+└── flows/<slug>.md
+```
+
+Each entity page lists attributes, every field with type/required/source and
+references, data entering and leaving (with the flow id), composition, code
+evidence and the flows that use it. EntryPoint pages list triggered flows and
+directional related entrypoints. Rule pages list their description, cluster,
+references and the flows/entrypoints they constrain. Each flow page shows its
+description, path,
+passages and joins, with links back to the entities. Pages state the registered
+facts only: a missing field is explicitly marked as "not mapped", not as absent
+from the payload.
+
+The directory is regenerated as a whole: stale generated pages are removed.
+`compose` appears only as composition, never as a step in a flow.
+
+## Evaluation
+
+`eval/` validates the skill against real repositories: one model reads a code
+slice and builds the map with the CLI, then a second model judges the result.
+Both models come from a LiteLLM gateway, and the harness uses
+[Inspect AI](https://inspect.aisi.org.uk/) for the agent runtime, logs and
+viewer.
+
+```sh
+cd eval
+cp .env.example .env       # LiteLLM URL, key, extractor and judge models
+./bootstrap.sh
+./run.sh                   # or ./run.sh --cases go,node
+.venv/bin/inspect view --log-dir logs
+```
+
+Scoring combines deterministic structural checks on the exported graph with an
+LLM judge that reads the referenced code. Each run writes a Markdown/JSON report
+under `eval/reports/` in addition to the Inspect logs. See `eval/README.md` for
+the case format, thresholds, report contents and isolation rules.
+
+## Tests
+
+`test/` is a deterministic test suite for the CLI itself: no model or gateway
+involved. It exercises schema creation and migration, fields, edges, reports,
+batch apply, flows, rendering and the exported graphs from the evaluation runs.
+
+```sh
+make setup                              # .logistic-map/.venv with Kuzu
+make test
+make sample SAMPLE=node                 # import a sample and open its HTML
+make sample-no-open SAMPLE=web          # render without opening a browser
+```
+
+The fixtures live in `test/sample/` and are regenerated from the newest eval
+logs with `make samples`. See `test/README.md` for what is covered.
 
 ## HTML map
 
 `render` writes `.logistic-map/graph.html` (or `--out PATH`). It is self-contained:
-no CDN, no server, and it has two tabs. **Contracts** is the field-aware map:
-click nodes or edges, enable **Fields**, or enable **Impact** to dim everything
-outside the selected contract's reach. **Flows** shows the derived step graph:
-dashed steps are context inputs, pink badges are joins, and clicking a step opens
-its contract details (with a link back to the Contracts tab).
+no CDN and no server. Nodes sit in horizontal lanes: **EntryPoints** above
+**Flows**, with **Rules** beside both in a column spanning their two lanes; then
+Input, Entry and one lane per `store_type`. `use` links a flow to an entity,
+`compose` means whole → part, `transform` means the data changes shape and `flow`
+means it passes unchanged. Click nodes or edges, enable **Fields**, or enable
+**Impact** to dim everything outside the selected entity's data reach (impact
+follows `flow`/`transform` only). Selecting a flow keeps its entities, its `use`
+edges and its passages lit and dims the rest; the flow panel lists them.
 
-![Flows tab](assets/preview-flows.png)
+![Flow lane](assets/preview-flows.png)
 
 ## Layout
 
@@ -176,6 +317,8 @@ scripts/bootstrap.sh   venv + Kuzu + init
 assets/graph.html      self-contained visualization template
 assets/preview.png     example rendering
 examples/              seed graphs
+eval/                  Inspect AI evaluation harness and code samples
+test/                  deterministic CLI tests and sample graphs
 ```
 
 ## License

@@ -1,0 +1,588 @@
+{
+  "schema_version": 7,
+  "generated_at": "2026-11-21T00:14:25+00:00",
+  "repo": "https://github.com/homealoneai/skill-logistic-map.git",
+  "commit": "77ff12d",
+  "nodes": [
+    {
+      "id": "entry:character-blob-url",
+      "name": "character object URL",
+      "description": "Object URL string for a Blob wrapping the decrypted GLB bytes, handed to GLTFLoader",
+      "stage": "blob-url",
+      "cluster": "web",
+      "repo": "https://github.com/homealoneai/skill-logistic-map.git",
+      "commit_sha": "77ff12d",
+      "file_path": "src/components/Character/utils/character.ts",
+      "refs": [
+        "src/components/Character/utils/character.ts:24",
+        "src/components/Character/utils/character.ts:27",
+        "src/components/Character/utils/character.ts:28"
+      ],
+      "kind": "entry"
+    },
+    {
+      "id": "entry:character-decrypted-glb",
+      "name": "decrypted GLB bytes",
+      "description": "ArrayBuffer returned by decryptFile after AES-CBC decryption",
+      "stage": "decrypted",
+      "cluster": "web",
+      "repo": "https://github.com/homealoneai/skill-logistic-map.git",
+      "commit_sha": "77ff12d",
+      "file_path": "src/components/Character/utils/decrypt.ts",
+      "refs": [
+        "src/components/Character/utils/decrypt.ts:24",
+        "src/components/Character/utils/character.ts:22"
+      ],
+      "kind": "entry"
+    },
+    {
+      "id": "entry:character-gltf-scene",
+      "name": "parsed character scene",
+      "description": "gltf.scene parsed from the GLB at the object URL by GLTFLoader",
+      "stage": "parsed",
+      "cluster": "web",
+      "repo": "https://github.com/homealoneai/skill-logistic-map.git",
+      "commit_sha": "77ff12d",
+      "file_path": "src/components/Character/utils/character.ts",
+      "refs": [
+        "src/components/Character/utils/character.ts:29",
+        "src/components/Character/utils/character.ts:30",
+        "src/components/Character/utils/character.ts:41"
+      ],
+      "kind": "entry"
+    },
+    {
+      "id": "entry:work-video-blob-url",
+      "name": "video object URL",
+      "description": "Object URL created from the fetched video Blob and assigned as the video element src",
+      "stage": "blob-url",
+      "cluster": "web",
+      "repo": "https://github.com/homealoneai/skill-logistic-map.git",
+      "commit_sha": "77ff12d",
+      "file_path": "src/components/WorkImage.tsx",
+      "refs": [
+        "src/components/WorkImage.tsx:23",
+        "src/components/WorkImage.tsx:24",
+        "src/components/WorkImage.tsx:44"
+      ],
+      "kind": "entry"
+    },
+    {
+      "id": "entrypoint:app-character-lazy",
+      "name": "App lazy-loads character viewer",
+      "description": "App lazy-imports ./components/Character and renders CharacterModel; the thin wrapper renders Scene",
+      "cluster": "web",
+      "repo": "https://github.com/homealoneai/skill-logistic-map.git",
+      "commit_sha": "77ff12d",
+      "file_path": "src/App.tsx",
+      "refs": [
+        "src/App.tsx:9",
+        "src/App.tsx:20",
+        "src/components/Character/index.tsx:6"
+      ],
+      "kind": "entrypoint"
+    },
+    {
+      "id": "entrypoint:character-scene-mount",
+      "name": "Character Scene mount effect",
+      "description": "Scene's mount useEffect calls setCharacter(...).loadCharacter(), which starts the encrypted model fetch",
+      "cluster": "web",
+      "repo": "https://github.com/homealoneai/skill-logistic-map.git",
+      "commit_sha": "77ff12d",
+      "file_path": "src/components/Character/Scene.tsx",
+      "refs": [
+        "src/components/Character/Scene.tsx:29",
+        "src/components/Character/Scene.tsx:61",
+        "src/components/Character/Scene.tsx:63"
+      ],
+      "kind": "entrypoint"
+    },
+    {
+      "id": "entrypoint:work-gallery-screen",
+      "name": "Work gallery screen",
+      "description": "Work section renders WorkImage items whose link exposes the hover video activation",
+      "cluster": "web",
+      "repo": "https://github.com/homealoneai/skill-logistic-map.git",
+      "commit_sha": "77ff12d",
+      "file_path": "src/components/Work.tsx",
+      "refs": [
+        "src/components/Work.tsx:51",
+        "src/components/Work.tsx:86"
+      ],
+      "kind": "entrypoint"
+    },
+    {
+      "id": "entrypoint:work-image-hover",
+      "name": "Work image hover",
+      "description": "WorkImage onMouseEnter fetches the optional video asset and turns it into a Blob URL",
+      "cluster": "web",
+      "repo": "https://github.com/homealoneai/skill-logistic-map.git",
+      "commit_sha": "77ff12d",
+      "file_path": "src/components/WorkImage.tsx",
+      "refs": [
+        "src/components/WorkImage.tsx:18",
+        "src/components/WorkImage.tsx:19",
+        "src/components/WorkImage.tsx:33"
+      ],
+      "kind": "entrypoint"
+    },
+    {
+      "id": "entry:character-blob-url#url",
+      "name": "url",
+      "path": "url",
+      "type": "string",
+      "required": false,
+      "source": "declared",
+      "repo": "https://github.com/homealoneai/skill-logistic-map.git",
+      "commit_sha": "77ff12d",
+      "file_path": "src/components/Character/utils/character.ts",
+      "refs": [
+        "src/components/Character/utils/character.ts:24",
+        "src/components/Character/utils/character.ts:28"
+      ],
+      "kind": "field",
+      "owner": "entry:character-blob-url"
+    },
+    {
+      "id": "entry:character-decrypted-glb#bytes",
+      "name": "bytes",
+      "path": "bytes",
+      "type": "ArrayBuffer",
+      "required": false,
+      "source": "declared",
+      "repo": "https://github.com/homealoneai/skill-logistic-map.git",
+      "commit_sha": "77ff12d",
+      "file_path": "src/components/Character/utils/decrypt.ts",
+      "refs": [
+        "src/components/Character/utils/decrypt.ts:24"
+      ],
+      "kind": "field",
+      "owner": "entry:character-decrypted-glb"
+    },
+    {
+      "id": "entry:character-gltf-scene#scene",
+      "name": "scene",
+      "path": "scene",
+      "type": "THREE.Group",
+      "required": false,
+      "source": "declared",
+      "repo": "https://github.com/homealoneai/skill-logistic-map.git",
+      "commit_sha": "77ff12d",
+      "file_path": "src/components/Character/utils/character.ts",
+      "refs": [
+        "src/components/Character/utils/character.ts:30",
+        "src/components/Character/utils/character.ts:41"
+      ],
+      "kind": "field",
+      "owner": "entry:character-gltf-scene"
+    },
+    {
+      "id": "entry:work-video-blob-url#url",
+      "name": "url",
+      "path": "url",
+      "type": "string",
+      "required": false,
+      "source": "declared",
+      "repo": "https://github.com/homealoneai/skill-logistic-map.git",
+      "commit_sha": "77ff12d",
+      "file_path": "src/components/WorkImage.tsx",
+      "refs": [
+        "src/components/WorkImage.tsx:23",
+        "src/components/WorkImage.tsx:24",
+        "src/components/WorkImage.tsx:44"
+      ],
+      "kind": "field",
+      "owner": "entry:work-video-blob-url"
+    },
+    {
+      "id": "input:character-encrypted-file#ciphertext",
+      "name": "ciphertext",
+      "path": "ciphertext",
+      "type": "ArrayBuffer",
+      "required": false,
+      "source": "declared",
+      "repo": "https://github.com/homealoneai/skill-logistic-map.git",
+      "commit_sha": "77ff12d",
+      "file_path": "src/components/Character/utils/decrypt.ts",
+      "refs": [
+        "src/components/Character/utils/decrypt.ts:22"
+      ],
+      "kind": "field",
+      "owner": "input:character-encrypted-file"
+    },
+    {
+      "id": "input:character-encrypted-file#iv",
+      "name": "iv",
+      "path": "iv",
+      "type": "Uint8Array(16)",
+      "required": false,
+      "source": "declared",
+      "repo": "https://github.com/homealoneai/skill-logistic-map.git",
+      "commit_sha": "77ff12d",
+      "file_path": "src/components/Character/utils/decrypt.ts",
+      "refs": [
+        "src/components/Character/utils/decrypt.ts:21"
+      ],
+      "kind": "field",
+      "owner": "input:character-encrypted-file"
+    },
+    {
+      "id": "input:work-video-asset#blob",
+      "name": "blob",
+      "path": "blob",
+      "type": "Blob",
+      "required": false,
+      "source": "declared",
+      "repo": "https://github.com/homealoneai/skill-logistic-map.git",
+      "commit_sha": "77ff12d",
+      "file_path": "src/components/WorkImage.tsx",
+      "refs": [
+        "src/components/WorkImage.tsx:22"
+      ],
+      "kind": "field",
+      "owner": "input:work-video-asset"
+    },
+    {
+      "id": "flow:load-character",
+      "name": "Load encrypted character model",
+      "description": "Fetch /models/character.enc, split IV/ciphertext, decrypt with AES-CBC, wrap in a Blob URL and parse with GLTFLoader",
+      "cluster": "web",
+      "repo": "https://github.com/homealoneai/skill-logistic-map.git",
+      "commit_sha": "77ff12d",
+      "file_path": "src/components/Character/utils/character.ts",
+      "refs": [
+        "src/components/Character/utils/character.ts:21",
+        "src/components/Character/utils/character.ts:22",
+        "src/components/Character/utils/character.ts:24",
+        "src/components/Character/utils/character.ts:27"
+      ],
+      "kind": "flow"
+    },
+    {
+      "id": "flow:load-work-video",
+      "name": "Load work item video on hover",
+      "description": "On hover, fetch the optional video asset from src/assets and turn the Blob into a URL for the video element",
+      "cluster": "web",
+      "repo": "https://github.com/homealoneai/skill-logistic-map.git",
+      "commit_sha": "77ff12d",
+      "file_path": "src/components/WorkImage.tsx",
+      "refs": [
+        "src/components/WorkImage.tsx:18",
+        "src/components/WorkImage.tsx:21",
+        "src/components/WorkImage.tsx:23"
+      ],
+      "kind": "flow"
+    },
+    {
+      "id": "input:character-encrypted-file",
+      "name": "/models/character.enc bytes",
+      "description": "Fetched encrypted GLB: 16-byte IV prefix followed by AES-CBC ciphertext",
+      "cluster": "web",
+      "repo": "https://github.com/homealoneai/skill-logistic-map.git",
+      "commit_sha": "77ff12d",
+      "file_path": "src/components/Character/utils/decrypt.ts",
+      "refs": [
+        "src/components/Character/utils/decrypt.ts:19",
+        "src/components/Character/utils/decrypt.ts:20",
+        "src/components/Character/utils/character.ts:22"
+      ],
+      "kind": "input"
+    },
+    {
+      "id": "input:work-video-asset",
+      "name": "work video Blob",
+      "description": "Blob returned by fetching src/assets/<video> on hover",
+      "cluster": "web",
+      "repo": "https://github.com/homealoneai/skill-logistic-map.git",
+      "commit_sha": "77ff12d",
+      "file_path": "src/components/WorkImage.tsx",
+      "refs": [
+        "src/components/WorkImage.tsx:21",
+        "src/components/WorkImage.tsx:22"
+      ],
+      "kind": "input"
+    },
+    {
+      "id": "rule:aes-cbc-file-format",
+      "name": "Encrypted model file format",
+      "description": "character.enc is AES-256-CBC: first 16 bytes are the IV, the rest is ciphertext; the key is the first 32 bytes of SHA-256 of the hard-coded password 'Character3D#@' supplied by character.ts",
+      "cluster": "web",
+      "repo": "https://github.com/homealoneai/skill-logistic-map.git",
+      "commit_sha": "77ff12d",
+      "file_path": "src/components/Character/utils/decrypt.ts",
+      "refs": [
+        "src/components/Character/utils/decrypt.ts:1",
+        "src/components/Character/utils/decrypt.ts:4",
+        "src/components/Character/utils/decrypt.ts:7",
+        "src/components/Character/utils/decrypt.ts:21",
+        "src/components/Character/utils/decrypt.ts:22",
+        "src/components/Character/utils/decrypt.ts:24",
+        "src/components/Character/utils/character.ts:22",
+        "public/models/encrypt.cjs:5",
+        "public/models/encrypt.cjs:12"
+      ],
+      "kind": "rule"
+    },
+    {
+      "id": "rule:video-hover-gate",
+      "name": "Video fetch guard",
+      "description": "The video asset is fetched only inside the mouse-enter handler and only when WorkImage receives a truthy video prop",
+      "cluster": "web",
+      "repo": "https://github.com/homealoneai/skill-logistic-map.git",
+      "commit_sha": "77ff12d",
+      "file_path": "src/components/WorkImage.tsx",
+      "refs": [
+        "src/components/WorkImage.tsx:18",
+        "src/components/WorkImage.tsx:19",
+        "src/components/WorkImage.tsx:21",
+        "src/components/WorkImage.tsx:33"
+      ],
+      "kind": "rule"
+    }
+  ],
+  "edges": [
+    {
+      "kind": "contains",
+      "from": "entry:character-blob-url",
+      "to": "entry:character-blob-url#url",
+      "refs": [
+        "src/components/Character/utils/character.ts:24",
+        "src/components/Character/utils/character.ts:28"
+      ],
+      "file_path": "src/components/Character/utils/character.ts"
+    },
+    {
+      "kind": "contains",
+      "from": "entry:character-decrypted-glb",
+      "to": "entry:character-decrypted-glb#bytes",
+      "refs": [
+        "src/components/Character/utils/decrypt.ts:24"
+      ],
+      "file_path": "src/components/Character/utils/decrypt.ts"
+    },
+    {
+      "kind": "contains",
+      "from": "entry:character-gltf-scene",
+      "to": "entry:character-gltf-scene#scene",
+      "refs": [
+        "src/components/Character/utils/character.ts:30",
+        "src/components/Character/utils/character.ts:41"
+      ],
+      "file_path": "src/components/Character/utils/character.ts"
+    },
+    {
+      "kind": "contains",
+      "from": "entry:work-video-blob-url",
+      "to": "entry:work-video-blob-url#url",
+      "refs": [
+        "src/components/WorkImage.tsx:23",
+        "src/components/WorkImage.tsx:24",
+        "src/components/WorkImage.tsx:44"
+      ],
+      "file_path": "src/components/WorkImage.tsx"
+    },
+    {
+      "kind": "contains",
+      "from": "input:character-encrypted-file",
+      "to": "input:character-encrypted-file#ciphertext",
+      "refs": [
+        "src/components/Character/utils/decrypt.ts:22"
+      ],
+      "file_path": "src/components/Character/utils/decrypt.ts"
+    },
+    {
+      "kind": "contains",
+      "from": "input:character-encrypted-file",
+      "to": "input:character-encrypted-file#iv",
+      "refs": [
+        "src/components/Character/utils/decrypt.ts:21"
+      ],
+      "file_path": "src/components/Character/utils/decrypt.ts"
+    },
+    {
+      "kind": "contains",
+      "from": "input:work-video-asset",
+      "to": "input:work-video-asset#blob",
+      "refs": [
+        "src/components/WorkImage.tsx:22"
+      ],
+      "file_path": "src/components/WorkImage.tsx"
+    },
+    {
+      "kind": "related",
+      "from": "entrypoint:app-character-lazy",
+      "to": "entrypoint:character-scene-mount",
+      "description": "The lazy-loaded CharacterModel renders Scene, whose mount effect starts the model fetch",
+      "refs": [
+        "src/App.tsx:20",
+        "src/components/Character/index.tsx:7",
+        "src/components/Character/Scene.tsx:29"
+      ]
+    },
+    {
+      "kind": "related",
+      "from": "entrypoint:work-gallery-screen",
+      "to": "entrypoint:work-image-hover",
+      "description": "The Work section renders each WorkImage link; hovering it starts that item's video fetch",
+      "refs": [
+        "src/components/Work.tsx:86",
+        "src/components/WorkImage.tsx:33"
+      ]
+    },
+    {
+      "kind": "rule",
+      "from": "entrypoint:work-image-hover",
+      "to": "rule:video-hover-gate",
+      "refs": [
+        "src/components/WorkImage.tsx:18",
+        "src/components/WorkImage.tsx:19"
+      ],
+      "file_path": "src/components/WorkImage.tsx"
+    },
+    {
+      "kind": "rule",
+      "from": "flow:load-character",
+      "to": "rule:aes-cbc-file-format",
+      "refs": [
+        "src/components/Character/utils/decrypt.ts:21",
+        "src/components/Character/utils/decrypt.ts:22",
+        "src/components/Character/utils/decrypt.ts:24"
+      ],
+      "file_path": "src/components/Character/utils/decrypt.ts"
+    },
+    {
+      "kind": "rule",
+      "from": "flow:load-work-video",
+      "to": "rule:video-hover-gate",
+      "refs": [
+        "src/components/WorkImage.tsx:19",
+        "src/components/WorkImage.tsx:21"
+      ],
+      "file_path": "src/components/WorkImage.tsx"
+    },
+    {
+      "kind": "transform",
+      "from": "entry:character-blob-url",
+      "to": "entry:character-gltf-scene",
+      "flow_id": "flow:load-character",
+      "refs": [
+        "src/components/Character/utils/character.ts:27",
+        "src/components/Character/utils/character.ts:29",
+        "src/components/Character/utils/character.ts:30"
+      ],
+      "file_path": "src/components/Character/utils/character.ts",
+      "note": "GLTFLoader with DRACO parses the GLB from the object URL into gltf.scene"
+    },
+    {
+      "kind": "transform",
+      "from": "entry:character-decrypted-glb",
+      "to": "entry:character-blob-url",
+      "flow_id": "flow:load-character",
+      "refs": [
+        "src/components/Character/utils/character.ts:24"
+      ],
+      "file_path": "src/components/Character/utils/character.ts",
+      "note": "decrypted ArrayBuffer wrapped in a Blob then converted to an object URL string"
+    },
+    {
+      "kind": "transform",
+      "from": "input:character-encrypted-file",
+      "to": "entry:character-decrypted-glb",
+      "flow_id": "flow:load-character",
+      "refs": [
+        "src/components/Character/utils/decrypt.ts:21",
+        "src/components/Character/utils/decrypt.ts:22",
+        "src/components/Character/utils/decrypt.ts:24"
+      ],
+      "file_path": "src/components/Character/utils/decrypt.ts",
+      "note": "iv = first 16 bytes, ciphertext = remainder; decrypt AES-CBC with key = SHA-256(password)[0:32]"
+    },
+    {
+      "kind": "transform",
+      "from": "input:work-video-asset",
+      "to": "entry:work-video-blob-url",
+      "flow_id": "flow:load-work-video",
+      "refs": [
+        "src/components/WorkImage.tsx:22",
+        "src/components/WorkImage.tsx:23",
+        "src/components/WorkImage.tsx:24",
+        "src/components/WorkImage.tsx:44"
+      ],
+      "file_path": "src/components/WorkImage.tsx",
+      "note": "response.blob() converted with URL.createObjectURL and set as the video src"
+    },
+    {
+      "kind": "trigger",
+      "from": "entrypoint:character-scene-mount",
+      "to": "flow:load-character",
+      "refs": [
+        "src/components/Character/Scene.tsx:63"
+      ],
+      "file_path": "src/components/Character/Scene.tsx"
+    },
+    {
+      "kind": "trigger",
+      "from": "entrypoint:work-image-hover",
+      "to": "flow:load-work-video",
+      "refs": [
+        "src/components/WorkImage.tsx:18",
+        "src/components/WorkImage.tsx:21"
+      ],
+      "file_path": "src/components/WorkImage.tsx"
+    },
+    {
+      "kind": "use",
+      "from": "flow:load-character",
+      "to": "entry:character-blob-url",
+      "refs": [
+        "src/components/Character/utils/character.ts:24"
+      ],
+      "file_path": "src/components/Character/utils/character.ts"
+    },
+    {
+      "kind": "use",
+      "from": "flow:load-character",
+      "to": "entry:character-decrypted-glb",
+      "refs": [
+        "src/components/Character/utils/decrypt.ts:24"
+      ],
+      "file_path": "src/components/Character/utils/decrypt.ts"
+    },
+    {
+      "kind": "use",
+      "from": "flow:load-character",
+      "to": "entry:character-gltf-scene",
+      "refs": [
+        "src/components/Character/utils/character.ts:30"
+      ],
+      "file_path": "src/components/Character/utils/character.ts"
+    },
+    {
+      "kind": "use",
+      "from": "flow:load-character",
+      "to": "input:character-encrypted-file",
+      "refs": [
+        "src/components/Character/utils/decrypt.ts:19"
+      ],
+      "file_path": "src/components/Character/utils/decrypt.ts"
+    },
+    {
+      "kind": "use",
+      "from": "flow:load-work-video",
+      "to": "entry:work-video-blob-url",
+      "refs": [
+        "src/components/WorkImage.tsx:23"
+      ],
+      "file_path": "src/components/WorkImage.tsx"
+    },
+    {
+      "kind": "use",
+      "from": "flow:load-work-video",
+      "to": "input:work-video-asset",
+      "refs": [
+        "src/components/WorkImage.tsx:21"
+      ],
+      "file_path": "src/components/WorkImage.tsx"
+    }
+  ]
+}

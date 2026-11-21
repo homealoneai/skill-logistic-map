@@ -1,0 +1,4 @@
+inspect-ai>=0.3.291,<0.4
+openai>=1.40
+kuzu>=0.11,<0.12
+python-dotenv>=1.0

@@ -1,0 +1,5768 @@
+{
+  "schema_version": 7,
+  "generated_at": "2026-11-21T00:16:09+00:00",
+  "repo": "https://github.com/homealoneai/skill-logistic-map.git",
+  "commit": "77ff12d",
+  "nodes": [
+    {
+      "id": "entry:cart-get-request",
+      "name": "GetCartRequest",
+      "description": "gRPC request selecting the user's cart in the cart service.",
+      "stage": "request",
+      "cluster": "cart-service",
+      "repo": "https://github.com/homealoneai/skill-logistic-map.git",
+      "commit_sha": "77ff12d",
+      "file_path": "src/checkout/main.go",
+      "refs": [
+        "src/checkout/main.go:528",
+        "pb/demo.proto:43"
+      ],
+      "kind": "entry"
+    },
+    {
+      "id": "entry:cart-items",
+      "name": "Cart returned by CartService.GetCart",
+      "description": "Cart returned to checkout with the user's product ids and quantities.",
+      "stage": "boundary",
+      "cluster": "cart-service",
+      "repo": "https://github.com/homealoneai/skill-logistic-map.git",
+      "commit_sha": "77ff12d",
+      "file_path": "src/checkout/main.go",
+      "refs": [
+        "src/checkout/main.go:527",
+        "src/checkout/main.go:532",
+        "pb/demo.proto:47"
+      ],
+      "kind": "entry"
+    },
+    {
+      "id": "entry:charge-request",
+      "name": "ChargeRequest",
+      "description": "Total and credit card details sent to PaymentService.Charge.",
+      "stage": "request",
+      "cluster": "checkout-service",
+      "repo": "https://github.com/homealoneai/skill-logistic-map.git",
+      "commit_sha": "77ff12d",
+      "file_path": "src/checkout/main.go",
+      "refs": [
+        "src/checkout/main.go:582",
+        "src/checkout/main.go:585",
+        "pb/demo.proto:188"
+      ],
+      "kind": "entry"
+    },
+    {
+      "id": "entry:checkout-response-hydrated",
+      "name": "IProductCheckout response",
+      "description": "Order result with each item's product hydrated from the catalog before being returned as JSON.",
+      "stage": "response",
+      "cluster": "frontend",
+      "repo": "https://github.com/homealoneai/skill-logistic-map.git",
+      "commit_sha": "77ff12d",
+      "file_path": "src/frontend/pages/api/checkout.ts",
+      "refs": [
+        "src/frontend/pages/api/checkout.ts:52",
+        "src/frontend/pages/api/checkout.ts:68",
+        "src/frontend/types/Cart.ts:18"
+      ],
+      "kind": "entry"
+    },
+    {
+      "id": "entry:email-confirmation-payload",
+      "name": "Order confirmation email payload",
+      "description": "JSON {email, order} POSTed to the email service /send_order_confirmation endpoint.",
+      "stage": "request",
+      "cluster": "checkout-service",
+      "repo": "https://github.com/homealoneai/skill-logistic-map.git",
+      "commit_sha": "77ff12d",
+      "file_path": "src/checkout/main.go",
+      "refs": [
+        "src/checkout/main.go:593",
+        "src/checkout/main.go:604"
+      ],
+      "kind": "entry"
+    },
+    {
+      "id": "entry:empty-cart-request",
+      "name": "EmptyCartRequest",
+      "description": "gRPC request checkout sends to empty the user's cart after shipping.",
+      "stage": "request",
+      "cluster": "cart-service",
+      "repo": "https://github.com/homealoneai/skill-logistic-map.git",
+      "commit_sha": "77ff12d",
+      "file_path": "src/checkout/main.go",
+      "refs": [
+        "src/checkout/main.go:535",
+        "src/checkout/main.go:536",
+        "pb/demo.proto:39"
+      ],
+      "kind": "entry"
+    },
+    {
+      "id": "entry:order-items-localized",
+      "name": "OrderItem list",
+      "description": "Each cart item paired with its product price converted to the user's currency.",
+      "stage": "enriched",
+      "cluster": "checkout-service",
+      "repo": "https://github.com/homealoneai/skill-logistic-map.git",
+      "commit_sha": "77ff12d",
+      "file_path": "src/checkout/main.go",
+      "refs": [
+        "src/checkout/main.go:542",
+        "src/checkout/main.go:554",
+        "pb/demo.proto:203"
+      ],
+      "kind": "entry"
+    },
+    {
+      "id": "entry:order-result",
+      "name": "OrderResult",
+      "description": "Assembled order id, tracking id, localized shipping cost, shipping address and order items.",
+      "stage": "assembled",
+      "cluster": "checkout-service",
+      "repo": "https://github.com/homealoneai/skill-logistic-map.git",
+      "commit_sha": "77ff12d",
+      "file_path": "src/checkout/main.go",
+      "refs": [
+        "src/checkout/main.go:383",
+        "src/checkout/main.go:389",
+        "pb/demo.proto:208"
+      ],
+      "kind": "entry"
+    },
+    {
+      "id": "entry:order-total",
+      "name": "Order total Money",
+      "description": "Localized shipping cost plus each item cost multiplied by its quantity.",
+      "stage": "computed",
+      "cluster": "checkout-service",
+      "repo": "https://github.com/homealoneai/skill-logistic-map.git",
+      "commit_sha": "77ff12d",
+      "file_path": "src/checkout/main.go",
+      "refs": [
+        "src/checkout/main.go:350",
+        "src/checkout/main.go:359"
+      ],
+      "kind": "entry"
+    },
+    {
+      "id": "entry:payment-result",
+      "name": "ChargeResponse transaction id",
+      "description": "Transaction id returned by the payment service and recorded on the order span.",
+      "stage": "response",
+      "cluster": "payment-service",
+      "repo": "https://github.com/homealoneai/skill-logistic-map.git",
+      "commit_sha": "77ff12d",
+      "file_path": "src/checkout/main.go",
+      "refs": [
+        "src/checkout/main.go:589",
+        "src/checkout/main.go:367",
+        "pb/demo.proto:193"
+      ],
+      "kind": "entry"
+    },
+    {
+      "id": "entry:place-order-grpc-response",
+      "name": "PlaceOrderResponse (Go)",
+      "description": "PlaceOrderResponse wrapping the assembled OrderResult and returned over gRPC.",
+      "stage": "response",
+      "cluster": "checkout-service",
+      "repo": "https://github.com/homealoneai/skill-logistic-map.git",
+      "commit_sha": "77ff12d",
+      "file_path": "src/checkout/main.go",
+      "refs": [
+        "src/checkout/main.go:423",
+        "src/checkout/main.go:424",
+        "pb/demo.proto:237"
+      ],
+      "kind": "entry"
+    },
+    {
+      "id": "entry:place-order-request",
+      "name": "PlaceOrderRequest body",
+      "description": "Order payload posted to /api/checkout: session user, address, selected currency and card details.",
+      "stage": "request",
+      "cluster": "frontend",
+      "repo": "https://github.com/homealoneai/skill-logistic-map.git",
+      "commit_sha": "77ff12d",
+      "file_path": "src/frontend/gateways/Api.gateway.ts",
+      "refs": [
+        "src/frontend/components/Cart/CartDetail.tsx:38",
+        "src/frontend/gateways/Api.gateway.ts:55",
+        "pb/demo.proto:228"
+      ],
+      "kind": "entry"
+    },
+    {
+      "id": "entry:place-order-response",
+      "name": "PlaceOrderResponse (gRPC)",
+      "description": "OrderResult returned by CheckoutService.PlaceOrder through CheckoutGateway.",
+      "stage": "response",
+      "cluster": "checkout-service",
+      "repo": "https://github.com/homealoneai/skill-logistic-map.git",
+      "commit_sha": "77ff12d",
+      "file_path": "src/frontend/pages/api/checkout.ts",
+      "refs": [
+        "src/frontend/pages/api/checkout.ts:28",
+        "src/frontend/pages/api/checkout.ts:50",
+        "pb/demo.proto:237"
+      ],
+      "kind": "entry"
+    },
+    {
+      "id": "entry:shipping-cost-localized",
+      "name": "Localized shipping cost",
+      "description": "Shipping quote converted to the user's currency via CurrencyService.Convert.",
+      "stage": "converted",
+      "cluster": "checkout-service",
+      "repo": "https://github.com/homealoneai/skill-logistic-map.git",
+      "commit_sha": "77ff12d",
+      "file_path": "src/checkout/main.go",
+      "refs": [
+        "src/checkout/main.go:450",
+        "src/checkout/main.go:562",
+        "src/checkout/main.go:570"
+      ],
+      "kind": "entry"
+    },
+    {
+      "id": "entry:shipping-quote-request",
+      "name": "Shipping quote request",
+      "description": "JSON {address, items} POSTed to the shipping service /get-quote endpoint.",
+      "stage": "request",
+      "cluster": "checkout-service",
+      "repo": "https://github.com/homealoneai/skill-logistic-map.git",
+      "commit_sha": "77ff12d",
+      "file_path": "src/checkout/main.go",
+      "refs": [
+        "src/checkout/main.go:486",
+        "src/checkout/main.go:494"
+      ],
+      "kind": "entry"
+    },
+    {
+      "id": "entry:shipping-quote-usd",
+      "name": "Shipping quote cost_usd",
+      "description": "USD shipping quote returned by the shipping service.",
+      "stage": "response",
+      "cluster": "shipping-service",
+      "repo": "https://github.com/homealoneai/skill-logistic-map.git",
+      "commit_sha": "77ff12d",
+      "file_path": "src/checkout/main.go",
+      "refs": [
+        "src/checkout/main.go:514",
+        "src/checkout/main.go:524",
+        "pb/demo.proto:117"
+      ],
+      "kind": "entry"
+    },
+    {
+      "id": "entry:shipping-request",
+      "name": "Ship-order request",
+      "description": "JSON {address, items} POSTed to the shipping service /ship-order endpoint after payment.",
+      "stage": "request",
+      "cluster": "checkout-service",
+      "repo": "https://github.com/homealoneai/skill-logistic-map.git",
+      "commit_sha": "77ff12d",
+      "file_path": "src/checkout/main.go",
+      "refs": [
+        "src/checkout/main.go:622",
+        "src/checkout/main.go:631"
+      ],
+      "kind": "entry"
+    },
+    {
+      "id": "entry:shipping-tracking",
+      "name": "Ship-order tracking id",
+      "description": "tracking_id returned by the shipping service.",
+      "stage": "response",
+      "cluster": "shipping-service",
+      "repo": "https://github.com/homealoneai/skill-logistic-map.git",
+      "commit_sha": "77ff12d",
+      "file_path": "src/checkout/main.go",
+      "refs": [
+        "src/checkout/main.go:651",
+        "src/checkout/main.go:661",
+        "pb/demo.proto:126"
+      ],
+      "kind": "entry"
+    },
+    {
+      "id": "entrypoint:checkout-form-submit",
+      "name": "Checkout form submit",
+      "description": "CheckoutForm's Place Order submit calls onSubmit with the shipping address and credit card values.",
+      "cluster": "frontend",
+      "repo": "https://github.com/homealoneai/skill-logistic-map.git",
+      "commit_sha": "77ff12d",
+      "file_path": "src/frontend/components/CheckoutForm/CheckoutForm.tsx",
+      "refs": [
+        "src/frontend/components/CheckoutForm/CheckoutForm.tsx:67",
+        "src/frontend/components/CheckoutForm/CheckoutForm.tsx:69",
+        "src/frontend/components/CheckoutForm/CheckoutForm.tsx:196"
+      ],
+      "kind": "entrypoint"
+    },
+    {
+      "id": "entrypoint:grpc-place-order",
+      "name": "CheckoutService.PlaceOrder gRPC method",
+      "description": "gRPC method registered on the Go checkout server that starts the PlaceOrder orchestration.",
+      "cluster": "checkout-service",
+      "repo": "https://github.com/homealoneai/skill-logistic-map.git",
+      "commit_sha": "77ff12d",
+      "file_path": "src/checkout/main.go",
+      "refs": [
+        "src/checkout/main.go:269",
+        "src/checkout/main.go:306"
+      ],
+      "kind": "entrypoint"
+    },
+    {
+      "id": "entrypoint:post-checkout-api",
+      "name": "POST /api/checkout",
+      "description": "Next.js API route that forwards the order to the checkout gRPC service and hydrates the returned items with product catalog data.",
+      "cluster": "frontend",
+      "repo": "https://github.com/homealoneai/skill-logistic-map.git",
+      "commit_sha": "77ff12d",
+      "file_path": "src/frontend/pages/api/checkout.ts",
+      "refs": [
+        "src/frontend/pages/api/checkout.ts:20",
+        "src/frontend/pages/api/checkout.ts:22",
+        "src/frontend/pages/api/checkout.ts:28"
+      ],
+      "kind": "entrypoint"
+    },
+    {
+      "id": "entry:cart-get-request#user_id",
+      "name": "user_id",
+      "path": "user_id",
+      "type": "string",
+      "required": false,
+      "source": "declared",
+      "repo": "https://github.com/homealoneai/skill-logistic-map.git",
+      "commit_sha": "77ff12d",
+      "file_path": "pb/demo.proto",
+      "refs": [
+        "pb/demo.proto:44",
+        "src/checkout/main.go:528"
+      ],
+      "kind": "field",
+      "owner": "entry:cart-get-request"
+    },
+    {
+      "id": "entry:cart-items#items",
+      "name": "items",
+      "path": "items",
+      "required": false,
+      "source": "inferred",
+      "repo": "https://github.com/homealoneai/skill-logistic-map.git",
+      "commit_sha": "77ff12d",
+      "file_path": "pb/demo.proto",
+      "kind": "field",
+      "refs": [],
+      "owner": "entry:cart-items"
+    },
+    {
+      "id": "entry:cart-items#items.product_id",
+      "name": "product_id",
+      "path": "items.product_id",
+      "type": "string",
+      "required": false,
+      "source": "declared",
+      "repo": "https://github.com/homealoneai/skill-logistic-map.git",
+      "commit_sha": "77ff12d",
+      "file_path": "pb/demo.proto",
+      "refs": [
+        "pb/demo.proto:30"
+      ],
+      "kind": "field",
+      "owner": "entry:cart-items"
+    },
+    {
+      "id": "entry:cart-items#items.quantity",
+      "name": "quantity",
+      "path": "items.quantity",
+      "type": "int32",
+      "required": false,
+      "source": "declared",
+      "repo": "https://github.com/homealoneai/skill-logistic-map.git",
+      "commit_sha": "77ff12d",
+      "file_path": "pb/demo.proto",
+      "refs": [
+        "pb/demo.proto:31"
+      ],
+      "kind": "field",
+      "owner": "entry:cart-items"
+    },
+    {
+      "id": "entry:cart-items#user_id",
+      "name": "user_id",
+      "path": "user_id",
+      "type": "string",
+      "required": false,
+      "source": "declared",
+      "repo": "https://github.com/homealoneai/skill-logistic-map.git",
+      "commit_sha": "77ff12d",
+      "file_path": "pb/demo.proto",
+      "refs": [
+        "pb/demo.proto:48"
+      ],
+      "kind": "field",
+      "owner": "entry:cart-items"
+    },
+    {
+      "id": "entry:charge-request#amount",
+      "name": "amount",
+      "path": "amount",
+      "required": false,
+      "source": "inferred",
+      "repo": "https://github.com/homealoneai/skill-logistic-map.git",
+      "commit_sha": "77ff12d",
+      "file_path": "pb/demo.proto",
+      "kind": "field",
+      "refs": [],
+      "owner": "entry:charge-request"
+    },
+    {
+      "id": "entry:charge-request#amount.currency_code",
+      "name": "currency_code",
+      "path": "amount.currency_code",
+      "type": "string",
+      "required": false,
+      "source": "declared",
+      "repo": "https://github.com/homealoneai/skill-logistic-map.git",
+      "commit_sha": "77ff12d",
+      "file_path": "pb/demo.proto",
+      "refs": [
+        "pb/demo.proto:148"
+      ],
+      "kind": "field",
+      "owner": "entry:charge-request"
+    },
+    {
+      "id": "entry:charge-request#amount.nanos",
+      "name": "nanos",
+      "path": "amount.nanos",
+      "type": "int32",
+      "required": false,
+      "source": "declared",
+      "repo": "https://github.com/homealoneai/skill-logistic-map.git",
+      "commit_sha": "77ff12d",
+      "file_path": "pb/demo.proto",
+      "refs": [
+        "pb/demo.proto:160"
+      ],
+      "kind": "field",
+      "owner": "entry:charge-request"
+    },
+    {
+      "id": "entry:charge-request#amount.units",
+      "name": "units",
+      "path": "amount.units",
+      "type": "int64",
+      "required": false,
+      "source": "declared",
+      "repo": "https://github.com/homealoneai/skill-logistic-map.git",
+      "commit_sha": "77ff12d",
+      "file_path": "pb/demo.proto",
+      "refs": [
+        "pb/demo.proto:152"
+      ],
+      "kind": "field",
+      "owner": "entry:charge-request"
+    },
+    {
+      "id": "entry:charge-request#credit_card",
+      "name": "credit_card",
+      "path": "credit_card",
+      "required": false,
+      "source": "inferred",
+      "repo": "https://github.com/homealoneai/skill-logistic-map.git",
+      "commit_sha": "77ff12d",
+      "file_path": "pb/demo.proto",
+      "kind": "field",
+      "refs": [],
+      "owner": "entry:charge-request"
+    },
+    {
+      "id": "entry:charge-request#credit_card.credit_card_cvv",
+      "name": "credit_card_cvv",
+      "path": "credit_card.credit_card_cvv",
+      "type": "int32",
+      "required": false,
+      "source": "declared",
+      "repo": "https://github.com/homealoneai/skill-logistic-map.git",
+      "commit_sha": "77ff12d",
+      "file_path": "pb/demo.proto",
+      "refs": [
+        "pb/demo.proto:183"
+      ],
+      "kind": "field",
+      "owner": "entry:charge-request"
+    },
+    {
+      "id": "entry:charge-request#credit_card.credit_card_expiration_month",
+      "name": "credit_card_expiration_month",
+      "path": "credit_card.credit_card_expiration_month",
+      "type": "int32",
+      "required": false,
+      "source": "declared",
+      "repo": "https://github.com/homealoneai/skill-logistic-map.git",
+      "commit_sha": "77ff12d",
+      "file_path": "pb/demo.proto",
+      "refs": [
+        "pb/demo.proto:185"
+      ],
+      "kind": "field",
+      "owner": "entry:charge-request"
+    },
+    {
+      "id": "entry:charge-request#credit_card.credit_card_expiration_year",
+      "name": "credit_card_expiration_year",
+      "path": "credit_card.credit_card_expiration_year",
+      "type": "int32",
+      "required": false,
+      "source": "declared",
+      "repo": "https://github.com/homealoneai/skill-logistic-map.git",
+      "commit_sha": "77ff12d",
+      "file_path": "pb/demo.proto",
+      "refs": [
+        "pb/demo.proto:184"
+      ],
+      "kind": "field",
+      "owner": "entry:charge-request"
+    },
+    {
+      "id": "entry:charge-request#credit_card.credit_card_number",
+      "name": "credit_card_number",
+      "path": "credit_card.credit_card_number",
+      "type": "string",
+      "required": false,
+      "source": "declared",
+      "repo": "https://github.com/homealoneai/skill-logistic-map.git",
+      "commit_sha": "77ff12d",
+      "file_path": "pb/demo.proto",
+      "refs": [
+        "pb/demo.proto:182"
+      ],
+      "kind": "field",
+      "owner": "entry:charge-request"
+    },
+    {
+      "id": "entry:checkout-response-hydrated#items",
+      "name": "items",
+      "path": "items",
+      "required": false,
+      "source": "inferred",
+      "repo": "https://github.com/homealoneai/skill-logistic-map.git",
+      "commit_sha": "77ff12d",
+      "file_path": "src/frontend/types/Cart.ts",
+      "kind": "field",
+      "refs": [],
+      "owner": "entry:checkout-response-hydrated"
+    },
+    {
+      "id": "entry:checkout-response-hydrated#items.cost",
+      "name": "cost",
+      "path": "items.cost",
+      "required": false,
+      "source": "inferred",
+      "repo": "https://github.com/homealoneai/skill-logistic-map.git",
+      "commit_sha": "77ff12d",
+      "file_path": "pb/demo.proto",
+      "kind": "field",
+      "refs": [],
+      "owner": "entry:checkout-response-hydrated"
+    },
+    {
+      "id": "entry:checkout-response-hydrated#items.cost.currencyCode",
+      "name": "currencyCode",
+      "path": "items.cost.currencyCode",
+      "type": "string",
+      "required": false,
+      "source": "declared",
+      "repo": "https://github.com/homealoneai/skill-logistic-map.git",
+      "commit_sha": "77ff12d",
+      "file_path": "pb/demo.proto",
+      "refs": [
+        "pb/demo.proto:148"
+      ],
+      "kind": "field",
+      "owner": "entry:checkout-response-hydrated"
+    },
+    {
+      "id": "entry:checkout-response-hydrated#items.cost.nanos",
+      "name": "nanos",
+      "path": "items.cost.nanos",
+      "type": "int32",
+      "required": false,
+      "source": "declared",
+      "repo": "https://github.com/homealoneai/skill-logistic-map.git",
+      "commit_sha": "77ff12d",
+      "file_path": "pb/demo.proto",
+      "refs": [
+        "pb/demo.proto:160"
+      ],
+      "kind": "field",
+      "owner": "entry:checkout-response-hydrated"
+    },
+    {
+      "id": "entry:checkout-response-hydrated#items.cost.units",
+      "name": "units",
+      "path": "items.cost.units",
+      "type": "int64",
+      "required": false,
+      "source": "declared",
+      "repo": "https://github.com/homealoneai/skill-logistic-map.git",
+      "commit_sha": "77ff12d",
+      "file_path": "pb/demo.proto",
+      "refs": [
+        "pb/demo.proto:152"
+      ],
+      "kind": "field",
+      "owner": "entry:checkout-response-hydrated"
+    },
+    {
+      "id": "entry:checkout-response-hydrated#items.item",
+      "name": "item",
+      "path": "items.item",
+      "required": false,
+      "source": "inferred",
+      "repo": "https://github.com/homealoneai/skill-logistic-map.git",
+      "commit_sha": "77ff12d",
+      "file_path": "src/frontend/types/Cart.ts",
+      "kind": "field",
+      "refs": [],
+      "owner": "entry:checkout-response-hydrated"
+    },
+    {
+      "id": "entry:checkout-response-hydrated#items.item.product",
+      "name": "product",
+      "path": "items.item.product",
+      "required": false,
+      "source": "inferred",
+      "repo": "https://github.com/homealoneai/skill-logistic-map.git",
+      "commit_sha": "77ff12d",
+      "file_path": "src/frontend/types/Cart.ts",
+      "kind": "field",
+      "refs": [],
+      "owner": "entry:checkout-response-hydrated"
+    },
+    {
+      "id": "entry:checkout-response-hydrated#items.item.product.id",
+      "name": "id",
+      "path": "items.item.product.id",
+      "type": "string",
+      "required": false,
+      "source": "declared",
+      "repo": "https://github.com/homealoneai/skill-logistic-map.git",
+      "commit_sha": "77ff12d",
+      "file_path": "src/frontend/types/Cart.ts",
+      "refs": [
+        "src/frontend/types/Cart.ts:11"
+      ],
+      "kind": "field",
+      "owner": "entry:checkout-response-hydrated"
+    },
+    {
+      "id": "entry:checkout-response-hydrated#items.item.product.name",
+      "name": "name",
+      "path": "items.item.product.name",
+      "type": "string",
+      "required": false,
+      "source": "declared",
+      "repo": "https://github.com/homealoneai/skill-logistic-map.git",
+      "commit_sha": "77ff12d",
+      "file_path": "pb/demo.proto",
+      "refs": [
+        "pb/demo.proto:79"
+      ],
+      "kind": "field",
+      "owner": "entry:checkout-response-hydrated"
+    },
+    {
+      "id": "entry:checkout-response-hydrated#items.item.product.priceUsd",
+      "name": "priceUsd",
+      "path": "items.item.product.priceUsd",
+      "required": false,
+      "source": "inferred",
+      "repo": "https://github.com/homealoneai/skill-logistic-map.git",
+      "commit_sha": "77ff12d",
+      "file_path": "pb/demo.proto",
+      "kind": "field",
+      "refs": [],
+      "owner": "entry:checkout-response-hydrated"
+    },
+    {
+      "id": "entry:checkout-response-hydrated#items.item.product.priceUsd.currencyCode",
+      "name": "currencyCode",
+      "path": "items.item.product.priceUsd.currencyCode",
+      "type": "string",
+      "required": false,
+      "source": "declared",
+      "repo": "https://github.com/homealoneai/skill-logistic-map.git",
+      "commit_sha": "77ff12d",
+      "file_path": "pb/demo.proto",
+      "refs": [
+        "pb/demo.proto:148"
+      ],
+      "kind": "field",
+      "owner": "entry:checkout-response-hydrated"
+    },
+    {
+      "id": "entry:checkout-response-hydrated#items.item.product.priceUsd.nanos",
+      "name": "nanos",
+      "path": "items.item.product.priceUsd.nanos",
+      "type": "int32",
+      "required": false,
+      "source": "declared",
+      "repo": "https://github.com/homealoneai/skill-logistic-map.git",
+      "commit_sha": "77ff12d",
+      "file_path": "pb/demo.proto",
+      "refs": [
+        "pb/demo.proto:160"
+      ],
+      "kind": "field",
+      "owner": "entry:checkout-response-hydrated"
+    },
+    {
+      "id": "entry:checkout-response-hydrated#items.item.product.priceUsd.units",
+      "name": "units",
+      "path": "items.item.product.priceUsd.units",
+      "type": "int64",
+      "required": false,
+      "source": "declared",
+      "repo": "https://github.com/homealoneai/skill-logistic-map.git",
+      "commit_sha": "77ff12d",
+      "file_path": "pb/demo.proto",
+      "refs": [
+        "pb/demo.proto:152"
+      ],
+      "kind": "field",
+      "owner": "entry:checkout-response-hydrated"
+    },
+    {
+      "id": "entry:checkout-response-hydrated#items.item.productId",
+      "name": "productId",
+      "path": "items.item.productId",
+      "type": "string",
+      "required": false,
+      "source": "declared",
+      "repo": "https://github.com/homealoneai/skill-logistic-map.git",
+      "commit_sha": "77ff12d",
+      "file_path": "src/frontend/types/Cart.ts",
+      "refs": [
+        "src/frontend/types/Cart.ts:15"
+      ],
+      "kind": "field",
+      "owner": "entry:checkout-response-hydrated"
+    },
+    {
+      "id": "entry:checkout-response-hydrated#items.item.quantity",
+      "name": "quantity",
+      "path": "items.item.quantity",
+      "type": "int32",
+      "required": false,
+      "source": "declared",
+      "repo": "https://github.com/homealoneai/skill-logistic-map.git",
+      "commit_sha": "77ff12d",
+      "file_path": "pb/demo.proto",
+      "refs": [
+        "pb/demo.proto:31"
+      ],
+      "kind": "field",
+      "owner": "entry:checkout-response-hydrated"
+    },
+    {
+      "id": "entry:checkout-response-hydrated#orderId",
+      "name": "orderId",
+      "path": "orderId",
+      "type": "string",
+      "required": false,
+      "source": "declared",
+      "repo": "https://github.com/homealoneai/skill-logistic-map.git",
+      "commit_sha": "77ff12d",
+      "file_path": "src/frontend/types/Cart.ts",
+      "refs": [
+        "src/frontend/types/Cart.ts:18"
+      ],
+      "kind": "field",
+      "owner": "entry:checkout-response-hydrated"
+    },
+    {
+      "id": "entry:checkout-response-hydrated#shippingCost",
+      "name": "shippingCost",
+      "path": "shippingCost",
+      "required": false,
+      "source": "inferred",
+      "repo": "https://github.com/homealoneai/skill-logistic-map.git",
+      "commit_sha": "77ff12d",
+      "file_path": "pb/demo.proto",
+      "kind": "field",
+      "refs": [],
+      "owner": "entry:checkout-response-hydrated"
+    },
+    {
+      "id": "entry:checkout-response-hydrated#shippingCost.currencyCode",
+      "name": "currencyCode",
+      "path": "shippingCost.currencyCode",
+      "type": "string",
+      "required": false,
+      "source": "declared",
+      "repo": "https://github.com/homealoneai/skill-logistic-map.git",
+      "commit_sha": "77ff12d",
+      "file_path": "pb/demo.proto",
+      "refs": [
+        "pb/demo.proto:148"
+      ],
+      "kind": "field",
+      "owner": "entry:checkout-response-hydrated"
+    },
+    {
+      "id": "entry:checkout-response-hydrated#shippingCost.nanos",
+      "name": "nanos",
+      "path": "shippingCost.nanos",
+      "type": "int32",
+      "required": false,
+      "source": "declared",
+      "repo": "https://github.com/homealoneai/skill-logistic-map.git",
+      "commit_sha": "77ff12d",
+      "file_path": "pb/demo.proto",
+      "refs": [
+        "pb/demo.proto:160"
+      ],
+      "kind": "field",
+      "owner": "entry:checkout-response-hydrated"
+    },
+    {
+      "id": "entry:checkout-response-hydrated#shippingCost.units",
+      "name": "units",
+      "path": "shippingCost.units",
+      "type": "int64",
+      "required": false,
+      "source": "declared",
+      "repo": "https://github.com/homealoneai/skill-logistic-map.git",
+      "commit_sha": "77ff12d",
+      "file_path": "pb/demo.proto",
+      "refs": [
+        "pb/demo.proto:152"
+      ],
+      "kind": "field",
+      "owner": "entry:checkout-response-hydrated"
+    },
+    {
+      "id": "entry:checkout-response-hydrated#shippingTrackingId",
+      "name": "shippingTrackingId",
+      "path": "shippingTrackingId",
+      "type": "string",
+      "required": false,
+      "source": "declared",
+      "repo": "https://github.com/homealoneai/skill-logistic-map.git",
+      "commit_sha": "77ff12d",
+      "file_path": "src/frontend/types/Cart.ts",
+      "refs": [
+        "src/frontend/types/Cart.ts:18"
+      ],
+      "kind": "field",
+      "owner": "entry:checkout-response-hydrated"
+    },
+    {
+      "id": "entry:email-confirmation-payload#email",
+      "name": "email",
+      "path": "email",
+      "type": "string",
+      "required": false,
+      "source": "declared",
+      "repo": "https://github.com/homealoneai/skill-logistic-map.git",
+      "commit_sha": "77ff12d",
+      "file_path": "src/checkout/main.go",
+      "refs": [
+        "src/checkout/main.go:593"
+      ],
+      "kind": "field",
+      "owner": "entry:email-confirmation-payload"
+    },
+    {
+      "id": "entry:email-confirmation-payload#order",
+      "name": "order",
+      "path": "order",
+      "required": false,
+      "source": "inferred",
+      "repo": "https://github.com/homealoneai/skill-logistic-map.git",
+      "commit_sha": "77ff12d",
+      "file_path": "pb/demo.proto",
+      "kind": "field",
+      "refs": [],
+      "owner": "entry:email-confirmation-payload"
+    },
+    {
+      "id": "entry:email-confirmation-payload#order.order_id",
+      "name": "order_id",
+      "path": "order.order_id",
+      "type": "string",
+      "required": false,
+      "source": "declared",
+      "repo": "https://github.com/homealoneai/skill-logistic-map.git",
+      "commit_sha": "77ff12d",
+      "file_path": "pb/demo.proto",
+      "refs": [
+        "pb/demo.proto:209"
+      ],
+      "kind": "field",
+      "owner": "entry:email-confirmation-payload"
+    },
+    {
+      "id": "entry:empty-cart-request#user_id",
+      "name": "user_id",
+      "path": "user_id",
+      "type": "string",
+      "required": false,
+      "source": "declared",
+      "repo": "https://github.com/homealoneai/skill-logistic-map.git",
+      "commit_sha": "77ff12d",
+      "file_path": "pb/demo.proto",
+      "refs": [
+        "pb/demo.proto:40",
+        "src/checkout/main.go:536"
+      ],
+      "kind": "field",
+      "owner": "entry:empty-cart-request"
+    },
+    {
+      "id": "entry:order-items-localized#items",
+      "name": "items",
+      "path": "items",
+      "required": false,
+      "source": "inferred",
+      "repo": "https://github.com/homealoneai/skill-logistic-map.git",
+      "commit_sha": "77ff12d",
+      "file_path": "pb/demo.proto",
+      "kind": "field",
+      "refs": [],
+      "owner": "entry:order-items-localized"
+    },
+    {
+      "id": "entry:order-items-localized#items.cost",
+      "name": "cost",
+      "path": "items.cost",
+      "required": false,
+      "source": "inferred",
+      "repo": "https://github.com/homealoneai/skill-logistic-map.git",
+      "commit_sha": "77ff12d",
+      "file_path": "pb/demo.proto",
+      "kind": "field",
+      "refs": [],
+      "owner": "entry:order-items-localized"
+    },
+    {
+      "id": "entry:order-items-localized#items.cost.currency_code",
+      "name": "currency_code",
+      "path": "items.cost.currency_code",
+      "type": "string",
+      "required": false,
+      "source": "declared",
+      "repo": "https://github.com/homealoneai/skill-logistic-map.git",
+      "commit_sha": "77ff12d",
+      "file_path": "pb/demo.proto",
+      "refs": [
+        "pb/demo.proto:148"
+      ],
+      "kind": "field",
+      "owner": "entry:order-items-localized"
+    },
+    {
+      "id": "entry:order-items-localized#items.cost.nanos",
+      "name": "nanos",
+      "path": "items.cost.nanos",
+      "type": "int32",
+      "required": false,
+      "source": "declared",
+      "repo": "https://github.com/homealoneai/skill-logistic-map.git",
+      "commit_sha": "77ff12d",
+      "file_path": "pb/demo.proto",
+      "refs": [
+        "pb/demo.proto:160"
+      ],
+      "kind": "field",
+      "owner": "entry:order-items-localized"
+    },
+    {
+      "id": "entry:order-items-localized#items.cost.units",
+      "name": "units",
+      "path": "items.cost.units",
+      "type": "int64",
+      "required": false,
+      "source": "declared",
+      "repo": "https://github.com/homealoneai/skill-logistic-map.git",
+      "commit_sha": "77ff12d",
+      "file_path": "pb/demo.proto",
+      "refs": [
+        "pb/demo.proto:152"
+      ],
+      "kind": "field",
+      "owner": "entry:order-items-localized"
+    },
+    {
+      "id": "entry:order-items-localized#items.item",
+      "name": "item",
+      "path": "items.item",
+      "required": false,
+      "source": "inferred",
+      "repo": "https://github.com/homealoneai/skill-logistic-map.git",
+      "commit_sha": "77ff12d",
+      "file_path": "pb/demo.proto",
+      "kind": "field",
+      "refs": [],
+      "owner": "entry:order-items-localized"
+    },
+    {
+      "id": "entry:order-items-localized#items.item.product_id",
+      "name": "product_id",
+      "path": "items.item.product_id",
+      "type": "string",
+      "required": false,
+      "source": "declared",
+      "repo": "https://github.com/homealoneai/skill-logistic-map.git",
+      "commit_sha": "77ff12d",
+      "file_path": "pb/demo.proto",
+      "refs": [
+        "pb/demo.proto:30"
+      ],
+      "kind": "field",
+      "owner": "entry:order-items-localized"
+    },
+    {
+      "id": "entry:order-items-localized#items.item.quantity",
+      "name": "quantity",
+      "path": "items.item.quantity",
+      "type": "int32",
+      "required": false,
+      "source": "declared",
+      "repo": "https://github.com/homealoneai/skill-logistic-map.git",
+      "commit_sha": "77ff12d",
+      "file_path": "pb/demo.proto",
+      "refs": [
+        "pb/demo.proto:31"
+      ],
+      "kind": "field",
+      "owner": "entry:order-items-localized"
+    },
+    {
+      "id": "entry:order-result#items",
+      "name": "items",
+      "path": "items",
+      "required": false,
+      "source": "inferred",
+      "repo": "https://github.com/homealoneai/skill-logistic-map.git",
+      "commit_sha": "77ff12d",
+      "file_path": "pb/demo.proto",
+      "kind": "field",
+      "refs": [],
+      "owner": "entry:order-result"
+    },
+    {
+      "id": "entry:order-result#items.cost",
+      "name": "cost",
+      "path": "items.cost",
+      "required": false,
+      "source": "inferred",
+      "repo": "https://github.com/homealoneai/skill-logistic-map.git",
+      "commit_sha": "77ff12d",
+      "file_path": "pb/demo.proto",
+      "kind": "field",
+      "refs": [],
+      "owner": "entry:order-result"
+    },
+    {
+      "id": "entry:order-result#items.cost.currency_code",
+      "name": "currency_code",
+      "path": "items.cost.currency_code",
+      "type": "string",
+      "required": false,
+      "source": "declared",
+      "repo": "https://github.com/homealoneai/skill-logistic-map.git",
+      "commit_sha": "77ff12d",
+      "file_path": "pb/demo.proto",
+      "refs": [
+        "pb/demo.proto:148"
+      ],
+      "kind": "field",
+      "owner": "entry:order-result"
+    },
+    {
+      "id": "entry:order-result#items.cost.nanos",
+      "name": "nanos",
+      "path": "items.cost.nanos",
+      "type": "int32",
+      "required": false,
+      "source": "declared",
+      "repo": "https://github.com/homealoneai/skill-logistic-map.git",
+      "commit_sha": "77ff12d",
+      "file_path": "pb/demo.proto",
+      "refs": [
+        "pb/demo.proto:160"
+      ],
+      "kind": "field",
+      "owner": "entry:order-result"
+    },
+    {
+      "id": "entry:order-result#items.cost.units",
+      "name": "units",
+      "path": "items.cost.units",
+      "type": "int64",
+      "required": false,
+      "source": "declared",
+      "repo": "https://github.com/homealoneai/skill-logistic-map.git",
+      "commit_sha": "77ff12d",
+      "file_path": "pb/demo.proto",
+      "refs": [
+        "pb/demo.proto:152"
+      ],
+      "kind": "field",
+      "owner": "entry:order-result"
+    },
+    {
+      "id": "entry:order-result#items.item",
+      "name": "item",
+      "path": "items.item",
+      "required": false,
+      "source": "inferred",
+      "repo": "https://github.com/homealoneai/skill-logistic-map.git",
+      "commit_sha": "77ff12d",
+      "file_path": "pb/demo.proto",
+      "kind": "field",
+      "refs": [],
+      "owner": "entry:order-result"
+    },
+    {
+      "id": "entry:order-result#items.item.product_id",
+      "name": "product_id",
+      "path": "items.item.product_id",
+      "type": "string",
+      "required": false,
+      "source": "declared",
+      "repo": "https://github.com/homealoneai/skill-logistic-map.git",
+      "commit_sha": "77ff12d",
+      "file_path": "pb/demo.proto",
+      "refs": [
+        "pb/demo.proto:30"
+      ],
+      "kind": "field",
+      "owner": "entry:order-result"
+    },
+    {
+      "id": "entry:order-result#items.item.quantity",
+      "name": "quantity",
+      "path": "items.item.quantity",
+      "type": "int32",
+      "required": false,
+      "source": "declared",
+      "repo": "https://github.com/homealoneai/skill-logistic-map.git",
+      "commit_sha": "77ff12d",
+      "file_path": "pb/demo.proto",
+      "refs": [
+        "pb/demo.proto:31"
+      ],
+      "kind": "field",
+      "owner": "entry:order-result"
+    },
+    {
+      "id": "entry:order-result#order_id",
+      "name": "order_id",
+      "path": "order_id",
+      "type": "string",
+      "required": false,
+      "source": "declared",
+      "repo": "https://github.com/homealoneai/skill-logistic-map.git",
+      "commit_sha": "77ff12d",
+      "file_path": "pb/demo.proto",
+      "refs": [
+        "pb/demo.proto:209",
+        "src/checkout/main.go:384"
+      ],
+      "kind": "field",
+      "owner": "entry:order-result"
+    },
+    {
+      "id": "entry:order-result#shipping_address",
+      "name": "shipping_address",
+      "path": "shipping_address",
+      "required": false,
+      "source": "inferred",
+      "repo": "https://github.com/homealoneai/skill-logistic-map.git",
+      "commit_sha": "77ff12d",
+      "file_path": "pb/demo.proto",
+      "kind": "field",
+      "refs": [],
+      "owner": "entry:order-result"
+    },
+    {
+      "id": "entry:order-result#shipping_address.city",
+      "name": "city",
+      "path": "shipping_address.city",
+      "type": "string",
+      "required": false,
+      "source": "declared",
+      "repo": "https://github.com/homealoneai/skill-logistic-map.git",
+      "commit_sha": "77ff12d",
+      "file_path": "pb/demo.proto",
+      "refs": [
+        "pb/demo.proto:132"
+      ],
+      "kind": "field",
+      "owner": "entry:order-result"
+    },
+    {
+      "id": "entry:order-result#shipping_address.street_address",
+      "name": "street_address",
+      "path": "shipping_address.street_address",
+      "type": "string",
+      "required": false,
+      "source": "declared",
+      "repo": "https://github.com/homealoneai/skill-logistic-map.git",
+      "commit_sha": "77ff12d",
+      "file_path": "pb/demo.proto",
+      "refs": [
+        "pb/demo.proto:131"
+      ],
+      "kind": "field",
+      "owner": "entry:order-result"
+    },
+    {
+      "id": "entry:order-result#shipping_cost",
+      "name": "shipping_cost",
+      "path": "shipping_cost",
+      "required": false,
+      "source": "inferred",
+      "repo": "https://github.com/homealoneai/skill-logistic-map.git",
+      "commit_sha": "77ff12d",
+      "file_path": "pb/demo.proto",
+      "kind": "field",
+      "refs": [],
+      "owner": "entry:order-result"
+    },
+    {
+      "id": "entry:order-result#shipping_cost.currency_code",
+      "name": "currency_code",
+      "path": "shipping_cost.currency_code",
+      "type": "string",
+      "required": false,
+      "source": "declared",
+      "repo": "https://github.com/homealoneai/skill-logistic-map.git",
+      "commit_sha": "77ff12d",
+      "file_path": "pb/demo.proto",
+      "refs": [
+        "pb/demo.proto:148"
+      ],
+      "kind": "field",
+      "owner": "entry:order-result"
+    },
+    {
+      "id": "entry:order-result#shipping_cost.nanos",
+      "name": "nanos",
+      "path": "shipping_cost.nanos",
+      "type": "int32",
+      "required": false,
+      "source": "declared",
+      "repo": "https://github.com/homealoneai/skill-logistic-map.git",
+      "commit_sha": "77ff12d",
+      "file_path": "pb/demo.proto",
+      "refs": [
+        "pb/demo.proto:160"
+      ],
+      "kind": "field",
+      "owner": "entry:order-result"
+    },
+    {
+      "id": "entry:order-result#shipping_cost.units",
+      "name": "units",
+      "path": "shipping_cost.units",
+      "type": "int64",
+      "required": false,
+      "source": "declared",
+      "repo": "https://github.com/homealoneai/skill-logistic-map.git",
+      "commit_sha": "77ff12d",
+      "file_path": "pb/demo.proto",
+      "refs": [
+        "pb/demo.proto:152"
+      ],
+      "kind": "field",
+      "owner": "entry:order-result"
+    },
+    {
+      "id": "entry:order-result#shipping_tracking_id",
+      "name": "shipping_tracking_id",
+      "path": "shipping_tracking_id",
+      "type": "string",
+      "required": false,
+      "source": "declared",
+      "repo": "https://github.com/homealoneai/skill-logistic-map.git",
+      "commit_sha": "77ff12d",
+      "file_path": "pb/demo.proto",
+      "refs": [
+        "pb/demo.proto:210",
+        "src/checkout/main.go:385"
+      ],
+      "kind": "field",
+      "owner": "entry:order-result"
+    },
+    {
+      "id": "entry:order-total#currency_code",
+      "name": "currency_code",
+      "path": "currency_code",
+      "type": "string",
+      "required": false,
+      "source": "declared",
+      "repo": "https://github.com/homealoneai/skill-logistic-map.git",
+      "commit_sha": "77ff12d",
+      "file_path": "pb/demo.proto",
+      "refs": [
+        "pb/demo.proto:148"
+      ],
+      "kind": "field",
+      "owner": "entry:order-total"
+    },
+    {
+      "id": "entry:order-total#nanos",
+      "name": "nanos",
+      "path": "nanos",
+      "type": "int32",
+      "required": false,
+      "source": "declared",
+      "repo": "https://github.com/homealoneai/skill-logistic-map.git",
+      "commit_sha": "77ff12d",
+      "file_path": "pb/demo.proto",
+      "refs": [
+        "pb/demo.proto:160"
+      ],
+      "kind": "field",
+      "owner": "entry:order-total"
+    },
+    {
+      "id": "entry:order-total#units",
+      "name": "units",
+      "path": "units",
+      "type": "int64",
+      "required": false,
+      "source": "declared",
+      "repo": "https://github.com/homealoneai/skill-logistic-map.git",
+      "commit_sha": "77ff12d",
+      "file_path": "pb/demo.proto",
+      "refs": [
+        "pb/demo.proto:152"
+      ],
+      "kind": "field",
+      "owner": "entry:order-total"
+    },
+    {
+      "id": "entry:payment-result#transaction_id",
+      "name": "transaction_id",
+      "path": "transaction_id",
+      "type": "string",
+      "required": false,
+      "source": "declared",
+      "repo": "https://github.com/homealoneai/skill-logistic-map.git",
+      "commit_sha": "77ff12d",
+      "file_path": "pb/demo.proto",
+      "refs": [
+        "pb/demo.proto:194"
+      ],
+      "kind": "field",
+      "owner": "entry:payment-result"
+    },
+    {
+      "id": "entry:place-order-grpc-response#order",
+      "name": "order",
+      "path": "order",
+      "required": false,
+      "source": "inferred",
+      "repo": "https://github.com/homealoneai/skill-logistic-map.git",
+      "commit_sha": "77ff12d",
+      "file_path": "pb/demo.proto",
+      "kind": "field",
+      "refs": [],
+      "owner": "entry:place-order-grpc-response"
+    },
+    {
+      "id": "entry:place-order-grpc-response#order.items",
+      "name": "items",
+      "path": "order.items",
+      "required": false,
+      "source": "inferred",
+      "repo": "https://github.com/homealoneai/skill-logistic-map.git",
+      "commit_sha": "77ff12d",
+      "file_path": "pb/demo.proto",
+      "kind": "field",
+      "refs": [],
+      "owner": "entry:place-order-grpc-response"
+    },
+    {
+      "id": "entry:place-order-grpc-response#order.items.cost",
+      "name": "cost",
+      "path": "order.items.cost",
+      "required": false,
+      "source": "inferred",
+      "repo": "https://github.com/homealoneai/skill-logistic-map.git",
+      "commit_sha": "77ff12d",
+      "file_path": "pb/demo.proto",
+      "kind": "field",
+      "refs": [],
+      "owner": "entry:place-order-grpc-response"
+    },
+    {
+      "id": "entry:place-order-grpc-response#order.items.cost.currency_code",
+      "name": "currency_code",
+      "path": "order.items.cost.currency_code",
+      "type": "string",
+      "required": false,
+      "source": "declared",
+      "repo": "https://github.com/homealoneai/skill-logistic-map.git",
+      "commit_sha": "77ff12d",
+      "file_path": "pb/demo.proto",
+      "refs": [
+        "pb/demo.proto:148"
+      ],
+      "kind": "field",
+      "owner": "entry:place-order-grpc-response"
+    },
+    {
+      "id": "entry:place-order-grpc-response#order.items.cost.nanos",
+      "name": "nanos",
+      "path": "order.items.cost.nanos",
+      "type": "int32",
+      "required": false,
+      "source": "declared",
+      "repo": "https://github.com/homealoneai/skill-logistic-map.git",
+      "commit_sha": "77ff12d",
+      "file_path": "pb/demo.proto",
+      "refs": [
+        "pb/demo.proto:160"
+      ],
+      "kind": "field",
+      "owner": "entry:place-order-grpc-response"
+    },
+    {
+      "id": "entry:place-order-grpc-response#order.items.cost.units",
+      "name": "units",
+      "path": "order.items.cost.units",
+      "type": "int64",
+      "required": false,
+      "source": "declared",
+      "repo": "https://github.com/homealoneai/skill-logistic-map.git",
+      "commit_sha": "77ff12d",
+      "file_path": "pb/demo.proto",
+      "refs": [
+        "pb/demo.proto:152"
+      ],
+      "kind": "field",
+      "owner": "entry:place-order-grpc-response"
+    },
+    {
+      "id": "entry:place-order-grpc-response#order.items.item",
+      "name": "item",
+      "path": "order.items.item",
+      "required": false,
+      "source": "inferred",
+      "repo": "https://github.com/homealoneai/skill-logistic-map.git",
+      "commit_sha": "77ff12d",
+      "file_path": "pb/demo.proto",
+      "kind": "field",
+      "refs": [],
+      "owner": "entry:place-order-grpc-response"
+    },
+    {
+      "id": "entry:place-order-grpc-response#order.items.item.product_id",
+      "name": "product_id",
+      "path": "order.items.item.product_id",
+      "type": "string",
+      "required": false,
+      "source": "declared",
+      "repo": "https://github.com/homealoneai/skill-logistic-map.git",
+      "commit_sha": "77ff12d",
+      "file_path": "pb/demo.proto",
+      "refs": [
+        "pb/demo.proto:30"
+      ],
+      "kind": "field",
+      "owner": "entry:place-order-grpc-response"
+    },
+    {
+      "id": "entry:place-order-grpc-response#order.items.item.quantity",
+      "name": "quantity",
+      "path": "order.items.item.quantity",
+      "type": "int32",
+      "required": false,
+      "source": "declared",
+      "repo": "https://github.com/homealoneai/skill-logistic-map.git",
+      "commit_sha": "77ff12d",
+      "file_path": "pb/demo.proto",
+      "refs": [
+        "pb/demo.proto:31"
+      ],
+      "kind": "field",
+      "owner": "entry:place-order-grpc-response"
+    },
+    {
+      "id": "entry:place-order-grpc-response#order.order_id",
+      "name": "order_id",
+      "path": "order.order_id",
+      "type": "string",
+      "required": false,
+      "source": "declared",
+      "repo": "https://github.com/homealoneai/skill-logistic-map.git",
+      "commit_sha": "77ff12d",
+      "file_path": "pb/demo.proto",
+      "refs": [
+        "pb/demo.proto:209",
+        "src/checkout/main.go:423"
+      ],
+      "kind": "field",
+      "owner": "entry:place-order-grpc-response"
+    },
+    {
+      "id": "entry:place-order-grpc-response#order.shipping_cost",
+      "name": "shipping_cost",
+      "path": "order.shipping_cost",
+      "required": false,
+      "source": "inferred",
+      "repo": "https://github.com/homealoneai/skill-logistic-map.git",
+      "commit_sha": "77ff12d",
+      "file_path": "pb/demo.proto",
+      "kind": "field",
+      "refs": [],
+      "owner": "entry:place-order-grpc-response"
+    },
+    {
+      "id": "entry:place-order-grpc-response#order.shipping_cost.currency_code",
+      "name": "currency_code",
+      "path": "order.shipping_cost.currency_code",
+      "type": "string",
+      "required": false,
+      "source": "declared",
+      "repo": "https://github.com/homealoneai/skill-logistic-map.git",
+      "commit_sha": "77ff12d",
+      "file_path": "pb/demo.proto",
+      "refs": [
+        "pb/demo.proto:148"
+      ],
+      "kind": "field",
+      "owner": "entry:place-order-grpc-response"
+    },
+    {
+      "id": "entry:place-order-grpc-response#order.shipping_cost.nanos",
+      "name": "nanos",
+      "path": "order.shipping_cost.nanos",
+      "type": "int32",
+      "required": false,
+      "source": "declared",
+      "repo": "https://github.com/homealoneai/skill-logistic-map.git",
+      "commit_sha": "77ff12d",
+      "file_path": "pb/demo.proto",
+      "refs": [
+        "pb/demo.proto:160"
+      ],
+      "kind": "field",
+      "owner": "entry:place-order-grpc-response"
+    },
+    {
+      "id": "entry:place-order-grpc-response#order.shipping_cost.units",
+      "name": "units",
+      "path": "order.shipping_cost.units",
+      "type": "int64",
+      "required": false,
+      "source": "declared",
+      "repo": "https://github.com/homealoneai/skill-logistic-map.git",
+      "commit_sha": "77ff12d",
+      "file_path": "pb/demo.proto",
+      "refs": [
+        "pb/demo.proto:152"
+      ],
+      "kind": "field",
+      "owner": "entry:place-order-grpc-response"
+    },
+    {
+      "id": "entry:place-order-grpc-response#order.shipping_tracking_id",
+      "name": "shipping_tracking_id",
+      "path": "order.shipping_tracking_id",
+      "type": "string",
+      "required": false,
+      "source": "declared",
+      "repo": "https://github.com/homealoneai/skill-logistic-map.git",
+      "commit_sha": "77ff12d",
+      "file_path": "pb/demo.proto",
+      "refs": [
+        "pb/demo.proto:210"
+      ],
+      "kind": "field",
+      "owner": "entry:place-order-grpc-response"
+    },
+    {
+      "id": "entry:place-order-request#address",
+      "name": "address",
+      "path": "address",
+      "required": false,
+      "source": "inferred",
+      "repo": "https://github.com/homealoneai/skill-logistic-map.git",
+      "commit_sha": "77ff12d",
+      "file_path": "pb/demo.proto",
+      "kind": "field",
+      "refs": [],
+      "owner": "entry:place-order-request"
+    },
+    {
+      "id": "entry:place-order-request#address.city",
+      "name": "city",
+      "path": "address.city",
+      "type": "string",
+      "required": false,
+      "source": "declared",
+      "repo": "https://github.com/homealoneai/skill-logistic-map.git",
+      "commit_sha": "77ff12d",
+      "file_path": "pb/demo.proto",
+      "refs": [
+        "pb/demo.proto:132",
+        "src/frontend/components/Cart/CartDetail.tsx:45"
+      ],
+      "kind": "field",
+      "owner": "entry:place-order-request"
+    },
+    {
+      "id": "entry:place-order-request#address.country",
+      "name": "country",
+      "path": "address.country",
+      "type": "string",
+      "required": false,
+      "source": "declared",
+      "repo": "https://github.com/homealoneai/skill-logistic-map.git",
+      "commit_sha": "77ff12d",
+      "file_path": "pb/demo.proto",
+      "refs": [
+        "pb/demo.proto:134",
+        "src/frontend/components/Cart/CartDetail.tsx:44"
+      ],
+      "kind": "field",
+      "owner": "entry:place-order-request"
+    },
+    {
+      "id": "entry:place-order-request#address.state",
+      "name": "state",
+      "path": "address.state",
+      "type": "string",
+      "required": false,
+      "source": "declared",
+      "repo": "https://github.com/homealoneai/skill-logistic-map.git",
+      "commit_sha": "77ff12d",
+      "file_path": "pb/demo.proto",
+      "refs": [
+        "pb/demo.proto:133",
+        "src/frontend/components/Cart/CartDetail.tsx:43"
+      ],
+      "kind": "field",
+      "owner": "entry:place-order-request"
+    },
+    {
+      "id": "entry:place-order-request#address.streetAddress",
+      "name": "streetAddress",
+      "path": "address.streetAddress",
+      "type": "string",
+      "required": false,
+      "source": "declared",
+      "repo": "https://github.com/homealoneai/skill-logistic-map.git",
+      "commit_sha": "77ff12d",
+      "file_path": "pb/demo.proto",
+      "refs": [
+        "pb/demo.proto:131",
+        "src/frontend/components/Cart/CartDetail.tsx:42"
+      ],
+      "kind": "field",
+      "owner": "entry:place-order-request"
+    },
+    {
+      "id": "entry:place-order-request#address.zipCode",
+      "name": "zipCode",
+      "path": "address.zipCode",
+      "type": "string",
+      "required": false,
+      "source": "declared",
+      "repo": "https://github.com/homealoneai/skill-logistic-map.git",
+      "commit_sha": "77ff12d",
+      "file_path": "pb/demo.proto",
+      "refs": [
+        "pb/demo.proto:135",
+        "src/frontend/components/Cart/CartDetail.tsx:46"
+      ],
+      "kind": "field",
+      "owner": "entry:place-order-request"
+    },
+    {
+      "id": "entry:place-order-request#creditCard",
+      "name": "creditCard",
+      "path": "creditCard",
+      "required": false,
+      "source": "inferred",
+      "repo": "https://github.com/homealoneai/skill-logistic-map.git",
+      "commit_sha": "77ff12d",
+      "file_path": "pb/demo.proto",
+      "kind": "field",
+      "refs": [],
+      "owner": "entry:place-order-request"
+    },
+    {
+      "id": "entry:place-order-request#creditCard.creditCardCvv",
+      "name": "creditCardCvv",
+      "path": "creditCard.creditCardCvv",
+      "type": "int32",
+      "required": false,
+      "source": "declared",
+      "repo": "https://github.com/homealoneai/skill-logistic-map.git",
+      "commit_sha": "77ff12d",
+      "file_path": "pb/demo.proto",
+      "refs": [
+        "pb/demo.proto:183",
+        "src/frontend/components/Cart/CartDetail.tsx:50"
+      ],
+      "kind": "field",
+      "owner": "entry:place-order-request"
+    },
+    {
+      "id": "entry:place-order-request#creditCard.creditCardExpirationMonth",
+      "name": "creditCardExpirationMonth",
+      "path": "creditCard.creditCardExpirationMonth",
+      "type": "int32",
+      "required": false,
+      "source": "declared",
+      "repo": "https://github.com/homealoneai/skill-logistic-map.git",
+      "commit_sha": "77ff12d",
+      "file_path": "pb/demo.proto",
+      "refs": [
+        "pb/demo.proto:185",
+        "src/frontend/components/Cart/CartDetail.tsx:51"
+      ],
+      "kind": "field",
+      "owner": "entry:place-order-request"
+    },
+    {
+      "id": "entry:place-order-request#creditCard.creditCardExpirationYear",
+      "name": "creditCardExpirationYear",
+      "path": "creditCard.creditCardExpirationYear",
+      "type": "int32",
+      "required": false,
+      "source": "declared",
+      "repo": "https://github.com/homealoneai/skill-logistic-map.git",
+      "commit_sha": "77ff12d",
+      "file_path": "pb/demo.proto",
+      "refs": [
+        "pb/demo.proto:184",
+        "src/frontend/components/Cart/CartDetail.tsx:52"
+      ],
+      "kind": "field",
+      "owner": "entry:place-order-request"
+    },
+    {
+      "id": "entry:place-order-request#creditCard.creditCardNumber",
+      "name": "creditCardNumber",
+      "path": "creditCard.creditCardNumber",
+      "type": "string",
+      "required": false,
+      "source": "declared",
+      "repo": "https://github.com/homealoneai/skill-logistic-map.git",
+      "commit_sha": "77ff12d",
+      "file_path": "pb/demo.proto",
+      "refs": [
+        "pb/demo.proto:182",
+        "src/frontend/components/Cart/CartDetail.tsx:53"
+      ],
+      "kind": "field",
+      "owner": "entry:place-order-request"
+    },
+    {
+      "id": "entry:place-order-request#email",
+      "name": "email",
+      "path": "email",
+      "type": "string",
+      "required": false,
+      "source": "declared",
+      "repo": "https://github.com/homealoneai/skill-logistic-map.git",
+      "commit_sha": "77ff12d",
+      "file_path": "pb/demo.proto",
+      "refs": [
+        "pb/demo.proto:233",
+        "src/frontend/components/Cart/CartDetail.tsx:40"
+      ],
+      "kind": "field",
+      "owner": "entry:place-order-request"
+    },
+    {
+      "id": "entry:place-order-request#userCurrency",
+      "name": "userCurrency",
+      "path": "userCurrency",
+      "type": "string",
+      "required": false,
+      "source": "declared",
+      "repo": "https://github.com/homealoneai/skill-logistic-map.git",
+      "commit_sha": "77ff12d",
+      "file_path": "pb/demo.proto",
+      "refs": [
+        "pb/demo.proto:230",
+        "src/frontend/components/Cart/CartDetail.tsx:48"
+      ],
+      "kind": "field",
+      "owner": "entry:place-order-request"
+    },
+    {
+      "id": "entry:place-order-request#userId",
+      "name": "userId",
+      "path": "userId",
+      "type": "string",
+      "required": false,
+      "source": "declared",
+      "repo": "https://github.com/homealoneai/skill-logistic-map.git",
+      "commit_sha": "77ff12d",
+      "file_path": "pb/demo.proto",
+      "refs": [
+        "pb/demo.proto:229",
+        "src/frontend/components/Cart/CartDetail.tsx:39"
+      ],
+      "kind": "field",
+      "owner": "entry:place-order-request"
+    },
+    {
+      "id": "entry:place-order-response#order",
+      "name": "order",
+      "path": "order",
+      "required": false,
+      "source": "inferred",
+      "repo": "https://github.com/homealoneai/skill-logistic-map.git",
+      "commit_sha": "77ff12d",
+      "file_path": "pb/demo.proto",
+      "kind": "field",
+      "refs": [],
+      "owner": "entry:place-order-response"
+    },
+    {
+      "id": "entry:place-order-response#order.items",
+      "name": "items",
+      "path": "order.items",
+      "required": false,
+      "source": "inferred",
+      "repo": "https://github.com/homealoneai/skill-logistic-map.git",
+      "commit_sha": "77ff12d",
+      "file_path": "pb/demo.proto",
+      "kind": "field",
+      "refs": [],
+      "owner": "entry:place-order-response"
+    },
+    {
+      "id": "entry:place-order-response#order.items.cost",
+      "name": "cost",
+      "path": "order.items.cost",
+      "required": false,
+      "source": "inferred",
+      "repo": "https://github.com/homealoneai/skill-logistic-map.git",
+      "commit_sha": "77ff12d",
+      "file_path": "pb/demo.proto",
+      "kind": "field",
+      "refs": [],
+      "owner": "entry:place-order-response"
+    },
+    {
+      "id": "entry:place-order-response#order.items.cost.currencyCode",
+      "name": "currencyCode",
+      "path": "order.items.cost.currencyCode",
+      "type": "string",
+      "required": false,
+      "source": "declared",
+      "repo": "https://github.com/homealoneai/skill-logistic-map.git",
+      "commit_sha": "77ff12d",
+      "file_path": "pb/demo.proto",
+      "refs": [
+        "pb/demo.proto:148"
+      ],
+      "kind": "field",
+      "owner": "entry:place-order-response"
+    },
+    {
+      "id": "entry:place-order-response#order.items.cost.nanos",
+      "name": "nanos",
+      "path": "order.items.cost.nanos",
+      "type": "int32",
+      "required": false,
+      "source": "declared",
+      "repo": "https://github.com/homealoneai/skill-logistic-map.git",
+      "commit_sha": "77ff12d",
+      "file_path": "pb/demo.proto",
+      "refs": [
+        "pb/demo.proto:160"
+      ],
+      "kind": "field",
+      "owner": "entry:place-order-response"
+    },
+    {
+      "id": "entry:place-order-response#order.items.cost.units",
+      "name": "units",
+      "path": "order.items.cost.units",
+      "type": "int64",
+      "required": false,
+      "source": "declared",
+      "repo": "https://github.com/homealoneai/skill-logistic-map.git",
+      "commit_sha": "77ff12d",
+      "file_path": "pb/demo.proto",
+      "refs": [
+        "pb/demo.proto:152"
+      ],
+      "kind": "field",
+      "owner": "entry:place-order-response"
+    },
+    {
+      "id": "entry:place-order-response#order.items.item",
+      "name": "item",
+      "path": "order.items.item",
+      "required": false,
+      "source": "inferred",
+      "repo": "https://github.com/homealoneai/skill-logistic-map.git",
+      "commit_sha": "77ff12d",
+      "file_path": "pb/demo.proto",
+      "kind": "field",
+      "refs": [],
+      "owner": "entry:place-order-response"
+    },
+    {
+      "id": "entry:place-order-response#order.items.item.productId",
+      "name": "productId",
+      "path": "order.items.item.productId",
+      "type": "string",
+      "required": false,
+      "source": "declared",
+      "repo": "https://github.com/homealoneai/skill-logistic-map.git",
+      "commit_sha": "77ff12d",
+      "file_path": "pb/demo.proto",
+      "refs": [
+        "pb/demo.proto:30"
+      ],
+      "kind": "field",
+      "owner": "entry:place-order-response"
+    },
+    {
+      "id": "entry:place-order-response#order.items.item.quantity",
+      "name": "quantity",
+      "path": "order.items.item.quantity",
+      "type": "int32",
+      "required": false,
+      "source": "declared",
+      "repo": "https://github.com/homealoneai/skill-logistic-map.git",
+      "commit_sha": "77ff12d",
+      "file_path": "pb/demo.proto",
+      "refs": [
+        "pb/demo.proto:31"
+      ],
+      "kind": "field",
+      "owner": "entry:place-order-response"
+    },
+    {
+      "id": "entry:place-order-response#order.orderId",
+      "name": "orderId",
+      "path": "order.orderId",
+      "type": "string",
+      "required": false,
+      "source": "declared",
+      "repo": "https://github.com/homealoneai/skill-logistic-map.git",
+      "commit_sha": "77ff12d",
+      "file_path": "pb/demo.proto",
+      "refs": [
+        "pb/demo.proto:209",
+        "src/frontend/pages/api/checkout.ts:50"
+      ],
+      "kind": "field",
+      "owner": "entry:place-order-response"
+    },
+    {
+      "id": "entry:place-order-response#order.shippingAddress",
+      "name": "shippingAddress",
+      "path": "order.shippingAddress",
+      "required": false,
+      "source": "inferred",
+      "repo": "https://github.com/homealoneai/skill-logistic-map.git",
+      "commit_sha": "77ff12d",
+      "file_path": "pb/demo.proto",
+      "kind": "field",
+      "refs": [],
+      "owner": "entry:place-order-response"
+    },
+    {
+      "id": "entry:place-order-response#order.shippingAddress.streetAddress",
+      "name": "streetAddress",
+      "path": "order.shippingAddress.streetAddress",
+      "type": "string",
+      "required": false,
+      "source": "declared",
+      "repo": "https://github.com/homealoneai/skill-logistic-map.git",
+      "commit_sha": "77ff12d",
+      "file_path": "pb/demo.proto",
+      "refs": [
+        "pb/demo.proto:131"
+      ],
+      "kind": "field",
+      "owner": "entry:place-order-response"
+    },
+    {
+      "id": "entry:place-order-response#order.shippingCost",
+      "name": "shippingCost",
+      "path": "order.shippingCost",
+      "required": false,
+      "source": "inferred",
+      "repo": "https://github.com/homealoneai/skill-logistic-map.git",
+      "commit_sha": "77ff12d",
+      "file_path": "pb/demo.proto",
+      "kind": "field",
+      "refs": [],
+      "owner": "entry:place-order-response"
+    },
+    {
+      "id": "entry:place-order-response#order.shippingCost.currencyCode",
+      "name": "currencyCode",
+      "path": "order.shippingCost.currencyCode",
+      "type": "string",
+      "required": false,
+      "source": "declared",
+      "repo": "https://github.com/homealoneai/skill-logistic-map.git",
+      "commit_sha": "77ff12d",
+      "file_path": "pb/demo.proto",
+      "refs": [
+        "pb/demo.proto:148"
+      ],
+      "kind": "field",
+      "owner": "entry:place-order-response"
+    },
+    {
+      "id": "entry:place-order-response#order.shippingCost.nanos",
+      "name": "nanos",
+      "path": "order.shippingCost.nanos",
+      "type": "int32",
+      "required": false,
+      "source": "declared",
+      "repo": "https://github.com/homealoneai/skill-logistic-map.git",
+      "commit_sha": "77ff12d",
+      "file_path": "pb/demo.proto",
+      "refs": [
+        "pb/demo.proto:160"
+      ],
+      "kind": "field",
+      "owner": "entry:place-order-response"
+    },
+    {
+      "id": "entry:place-order-response#order.shippingCost.units",
+      "name": "units",
+      "path": "order.shippingCost.units",
+      "type": "int64",
+      "required": false,
+      "source": "declared",
+      "repo": "https://github.com/homealoneai/skill-logistic-map.git",
+      "commit_sha": "77ff12d",
+      "file_path": "pb/demo.proto",
+      "refs": [
+        "pb/demo.proto:152"
+      ],
+      "kind": "field",
+      "owner": "entry:place-order-response"
+    },
+    {
+      "id": "entry:place-order-response#order.shippingTrackingId",
+      "name": "shippingTrackingId",
+      "path": "order.shippingTrackingId",
+      "type": "string",
+      "required": false,
+      "source": "declared",
+      "repo": "https://github.com/homealoneai/skill-logistic-map.git",
+      "commit_sha": "77ff12d",
+      "file_path": "pb/demo.proto",
+      "refs": [
+        "pb/demo.proto:210"
+      ],
+      "kind": "field",
+      "owner": "entry:place-order-response"
+    },
+    {
+      "id": "entry:shipping-cost-localized#currency_code",
+      "name": "currency_code",
+      "path": "currency_code",
+      "type": "string",
+      "required": false,
+      "source": "declared",
+      "repo": "https://github.com/homealoneai/skill-logistic-map.git",
+      "commit_sha": "77ff12d",
+      "file_path": "pb/demo.proto",
+      "refs": [
+        "pb/demo.proto:148"
+      ],
+      "kind": "field",
+      "owner": "entry:shipping-cost-localized"
+    },
+    {
+      "id": "entry:shipping-cost-localized#nanos",
+      "name": "nanos",
+      "path": "nanos",
+      "type": "int32",
+      "required": false,
+      "source": "declared",
+      "repo": "https://github.com/homealoneai/skill-logistic-map.git",
+      "commit_sha": "77ff12d",
+      "file_path": "pb/demo.proto",
+      "refs": [
+        "pb/demo.proto:160"
+      ],
+      "kind": "field",
+      "owner": "entry:shipping-cost-localized"
+    },
+    {
+      "id": "entry:shipping-cost-localized#units",
+      "name": "units",
+      "path": "units",
+      "type": "int64",
+      "required": false,
+      "source": "declared",
+      "repo": "https://github.com/homealoneai/skill-logistic-map.git",
+      "commit_sha": "77ff12d",
+      "file_path": "pb/demo.proto",
+      "refs": [
+        "pb/demo.proto:152"
+      ],
+      "kind": "field",
+      "owner": "entry:shipping-cost-localized"
+    },
+    {
+      "id": "entry:shipping-quote-request#address",
+      "name": "address",
+      "path": "address",
+      "required": false,
+      "source": "inferred",
+      "repo": "https://github.com/homealoneai/skill-logistic-map.git",
+      "commit_sha": "77ff12d",
+      "file_path": "pb/demo.proto",
+      "kind": "field",
+      "refs": [],
+      "owner": "entry:shipping-quote-request"
+    },
+    {
+      "id": "entry:shipping-quote-request#address.city",
+      "name": "city",
+      "path": "address.city",
+      "type": "string",
+      "required": false,
+      "source": "declared",
+      "repo": "https://github.com/homealoneai/skill-logistic-map.git",
+      "commit_sha": "77ff12d",
+      "file_path": "pb/demo.proto",
+      "refs": [
+        "pb/demo.proto:132"
+      ],
+      "kind": "field",
+      "owner": "entry:shipping-quote-request"
+    },
+    {
+      "id": "entry:shipping-quote-request#address.country",
+      "name": "country",
+      "path": "address.country",
+      "type": "string",
+      "required": false,
+      "source": "declared",
+      "repo": "https://github.com/homealoneai/skill-logistic-map.git",
+      "commit_sha": "77ff12d",
+      "file_path": "pb/demo.proto",
+      "refs": [
+        "pb/demo.proto:134"
+      ],
+      "kind": "field",
+      "owner": "entry:shipping-quote-request"
+    },
+    {
+      "id": "entry:shipping-quote-request#address.state",
+      "name": "state",
+      "path": "address.state",
+      "type": "string",
+      "required": false,
+      "source": "declared",
+      "repo": "https://github.com/homealoneai/skill-logistic-map.git",
+      "commit_sha": "77ff12d",
+      "file_path": "pb/demo.proto",
+      "refs": [
+        "pb/demo.proto:133"
+      ],
+      "kind": "field",
+      "owner": "entry:shipping-quote-request"
+    },
+    {
+      "id": "entry:shipping-quote-request#address.street_address",
+      "name": "street_address",
+      "path": "address.street_address",
+      "type": "string",
+      "required": false,
+      "source": "declared",
+      "repo": "https://github.com/homealoneai/skill-logistic-map.git",
+      "commit_sha": "77ff12d",
+      "file_path": "pb/demo.proto",
+      "refs": [
+        "pb/demo.proto:131"
+      ],
+      "kind": "field",
+      "owner": "entry:shipping-quote-request"
+    },
+    {
+      "id": "entry:shipping-quote-request#address.zip_code",
+      "name": "zip_code",
+      "path": "address.zip_code",
+      "type": "string",
+      "required": false,
+      "source": "declared",
+      "repo": "https://github.com/homealoneai/skill-logistic-map.git",
+      "commit_sha": "77ff12d",
+      "file_path": "pb/demo.proto",
+      "refs": [
+        "pb/demo.proto:135"
+      ],
+      "kind": "field",
+      "owner": "entry:shipping-quote-request"
+    },
+    {
+      "id": "entry:shipping-quote-request#items",
+      "name": "items",
+      "path": "items",
+      "required": false,
+      "source": "inferred",
+      "repo": "https://github.com/homealoneai/skill-logistic-map.git",
+      "commit_sha": "77ff12d",
+      "file_path": "pb/demo.proto",
+      "kind": "field",
+      "refs": [],
+      "owner": "entry:shipping-quote-request"
+    },
+    {
+      "id": "entry:shipping-quote-request#items.product_id",
+      "name": "product_id",
+      "path": "items.product_id",
+      "type": "string",
+      "required": false,
+      "source": "declared",
+      "repo": "https://github.com/homealoneai/skill-logistic-map.git",
+      "commit_sha": "77ff12d",
+      "file_path": "pb/demo.proto",
+      "refs": [
+        "pb/demo.proto:30"
+      ],
+      "kind": "field",
+      "owner": "entry:shipping-quote-request"
+    },
+    {
+      "id": "entry:shipping-quote-request#items.quantity",
+      "name": "quantity",
+      "path": "items.quantity",
+      "type": "int32",
+      "required": false,
+      "source": "declared",
+      "repo": "https://github.com/homealoneai/skill-logistic-map.git",
+      "commit_sha": "77ff12d",
+      "file_path": "pb/demo.proto",
+      "refs": [
+        "pb/demo.proto:31"
+      ],
+      "kind": "field",
+      "owner": "entry:shipping-quote-request"
+    },
+    {
+      "id": "entry:shipping-quote-usd#cost_usd",
+      "name": "cost_usd",
+      "path": "cost_usd",
+      "required": false,
+      "source": "inferred",
+      "repo": "https://github.com/homealoneai/skill-logistic-map.git",
+      "commit_sha": "77ff12d",
+      "file_path": "pb/demo.proto",
+      "kind": "field",
+      "refs": [],
+      "owner": "entry:shipping-quote-usd"
+    },
+    {
+      "id": "entry:shipping-quote-usd#cost_usd.currency_code",
+      "name": "currency_code",
+      "path": "cost_usd.currency_code",
+      "type": "string",
+      "required": false,
+      "source": "declared",
+      "repo": "https://github.com/homealoneai/skill-logistic-map.git",
+      "commit_sha": "77ff12d",
+      "file_path": "pb/demo.proto",
+      "refs": [
+        "pb/demo.proto:148"
+      ],
+      "kind": "field",
+      "owner": "entry:shipping-quote-usd"
+    },
+    {
+      "id": "entry:shipping-quote-usd#cost_usd.nanos",
+      "name": "nanos",
+      "path": "cost_usd.nanos",
+      "type": "int32",
+      "required": false,
+      "source": "declared",
+      "repo": "https://github.com/homealoneai/skill-logistic-map.git",
+      "commit_sha": "77ff12d",
+      "file_path": "pb/demo.proto",
+      "refs": [
+        "pb/demo.proto:160"
+      ],
+      "kind": "field",
+      "owner": "entry:shipping-quote-usd"
+    },
+    {
+      "id": "entry:shipping-quote-usd#cost_usd.units",
+      "name": "units",
+      "path": "cost_usd.units",
+      "type": "int64",
+      "required": false,
+      "source": "declared",
+      "repo": "https://github.com/homealoneai/skill-logistic-map.git",
+      "commit_sha": "77ff12d",
+      "file_path": "pb/demo.proto",
+      "refs": [
+        "pb/demo.proto:152"
+      ],
+      "kind": "field",
+      "owner": "entry:shipping-quote-usd"
+    },
+    {
+      "id": "entry:shipping-request#address",
+      "name": "address",
+      "path": "address",
+      "required": false,
+      "source": "inferred",
+      "repo": "https://github.com/homealoneai/skill-logistic-map.git",
+      "commit_sha": "77ff12d",
+      "file_path": "pb/demo.proto",
+      "kind": "field",
+      "refs": [],
+      "owner": "entry:shipping-request"
+    },
+    {
+      "id": "entry:shipping-request#address.city",
+      "name": "city",
+      "path": "address.city",
+      "type": "string",
+      "required": false,
+      "source": "declared",
+      "repo": "https://github.com/homealoneai/skill-logistic-map.git",
+      "commit_sha": "77ff12d",
+      "file_path": "pb/demo.proto",
+      "refs": [
+        "pb/demo.proto:132"
+      ],
+      "kind": "field",
+      "owner": "entry:shipping-request"
+    },
+    {
+      "id": "entry:shipping-request#address.country",
+      "name": "country",
+      "path": "address.country",
+      "type": "string",
+      "required": false,
+      "source": "declared",
+      "repo": "https://github.com/homealoneai/skill-logistic-map.git",
+      "commit_sha": "77ff12d",
+      "file_path": "pb/demo.proto",
+      "refs": [
+        "pb/demo.proto:134"
+      ],
+      "kind": "field",
+      "owner": "entry:shipping-request"
+    },
+    {
+      "id": "entry:shipping-request#address.state",
+      "name": "state",
+      "path": "address.state",
+      "type": "string",
+      "required": false,
+      "source": "declared",
+      "repo": "https://github.com/homealoneai/skill-logistic-map.git",
+      "commit_sha": "77ff12d",
+      "file_path": "pb/demo.proto",
+      "refs": [
+        "pb/demo.proto:133"
+      ],
+      "kind": "field",
+      "owner": "entry:shipping-request"
+    },
+    {
+      "id": "entry:shipping-request#address.street_address",
+      "name": "street_address",
+      "path": "address.street_address",
+      "type": "string",
+      "required": false,
+      "source": "declared",
+      "repo": "https://github.com/homealoneai/skill-logistic-map.git",
+      "commit_sha": "77ff12d",
+      "file_path": "pb/demo.proto",
+      "refs": [
+        "pb/demo.proto:131"
+      ],
+      "kind": "field",
+      "owner": "entry:shipping-request"
+    },
+    {
+      "id": "entry:shipping-request#address.zip_code",
+      "name": "zip_code",
+      "path": "address.zip_code",
+      "type": "string",
+      "required": false,
+      "source": "declared",
+      "repo": "https://github.com/homealoneai/skill-logistic-map.git",
+      "commit_sha": "77ff12d",
+      "file_path": "pb/demo.proto",
+      "refs": [
+        "pb/demo.proto:135"
+      ],
+      "kind": "field",
+      "owner": "entry:shipping-request"
+    },
+    {
+      "id": "entry:shipping-request#items",
+      "name": "items",
+      "path": "items",
+      "required": false,
+      "source": "inferred",
+      "repo": "https://github.com/homealoneai/skill-logistic-map.git",
+      "commit_sha": "77ff12d",
+      "file_path": "pb/demo.proto",
+      "kind": "field",
+      "refs": [],
+      "owner": "entry:shipping-request"
+    },
+    {
+      "id": "entry:shipping-request#items.product_id",
+      "name": "product_id",
+      "path": "items.product_id",
+      "type": "string",
+      "required": false,
+      "source": "declared",
+      "repo": "https://github.com/homealoneai/skill-logistic-map.git",
+      "commit_sha": "77ff12d",
+      "file_path": "pb/demo.proto",
+      "refs": [
+        "pb/demo.proto:30"
+      ],
+      "kind": "field",
+      "owner": "entry:shipping-request"
+    },
+    {
+      "id": "entry:shipping-request#items.quantity",
+      "name": "quantity",
+      "path": "items.quantity",
+      "type": "int32",
+      "required": false,
+      "source": "declared",
+      "repo": "https://github.com/homealoneai/skill-logistic-map.git",
+      "commit_sha": "77ff12d",
+      "file_path": "pb/demo.proto",
+      "refs": [
+        "pb/demo.proto:31"
+      ],
+      "kind": "field",
+      "owner": "entry:shipping-request"
+    },
+    {
+      "id": "entry:shipping-tracking#tracking_id",
+      "name": "tracking_id",
+      "path": "tracking_id",
+      "type": "string",
+      "required": false,
+      "source": "declared",
+      "repo": "https://github.com/homealoneai/skill-logistic-map.git",
+      "commit_sha": "77ff12d",
+      "file_path": "pb/demo.proto",
+      "refs": [
+        "pb/demo.proto:127",
+        "src/checkout/main.go:652"
+      ],
+      "kind": "field",
+      "owner": "entry:shipping-tracking"
+    },
+    {
+      "id": "input:checkout-form-data#city",
+      "name": "city",
+      "path": "city",
+      "type": "string",
+      "required": false,
+      "source": "declared",
+      "repo": "https://github.com/homealoneai/skill-logistic-map.git",
+      "commit_sha": "77ff12d",
+      "file_path": "src/frontend/components/CheckoutForm/CheckoutForm.tsx",
+      "refs": [
+        "src/frontend/components/CheckoutForm/CheckoutForm.tsx:16"
+      ],
+      "kind": "field",
+      "owner": "input:checkout-form-data"
+    },
+    {
+      "id": "input:checkout-form-data#country",
+      "name": "country",
+      "path": "country",
+      "type": "string",
+      "required": false,
+      "source": "declared",
+      "repo": "https://github.com/homealoneai/skill-logistic-map.git",
+      "commit_sha": "77ff12d",
+      "file_path": "src/frontend/components/CheckoutForm/CheckoutForm.tsx",
+      "refs": [
+        "src/frontend/components/CheckoutForm/CheckoutForm.tsx:18"
+      ],
+      "kind": "field",
+      "owner": "input:checkout-form-data"
+    },
+    {
+      "id": "input:checkout-form-data#creditCardCvv",
+      "name": "creditCardCvv",
+      "path": "creditCardCvv",
+      "type": "number",
+      "required": false,
+      "source": "declared",
+      "repo": "https://github.com/homealoneai/skill-logistic-map.git",
+      "commit_sha": "77ff12d",
+      "file_path": "src/frontend/components/CheckoutForm/CheckoutForm.tsx",
+      "refs": [
+        "src/frontend/components/CheckoutForm/CheckoutForm.tsx:21"
+      ],
+      "kind": "field",
+      "owner": "input:checkout-form-data"
+    },
+    {
+      "id": "input:checkout-form-data#creditCardExpirationMonth",
+      "name": "creditCardExpirationMonth",
+      "path": "creditCardExpirationMonth",
+      "type": "number",
+      "required": false,
+      "source": "declared",
+      "repo": "https://github.com/homealoneai/skill-logistic-map.git",
+      "commit_sha": "77ff12d",
+      "file_path": "src/frontend/components/CheckoutForm/CheckoutForm.tsx",
+      "refs": [
+        "src/frontend/components/CheckoutForm/CheckoutForm.tsx:23"
+      ],
+      "kind": "field",
+      "owner": "input:checkout-form-data"
+    },
+    {
+      "id": "input:checkout-form-data#creditCardExpirationYear",
+      "name": "creditCardExpirationYear",
+      "path": "creditCardExpirationYear",
+      "type": "number",
+      "required": false,
+      "source": "declared",
+      "repo": "https://github.com/homealoneai/skill-logistic-map.git",
+      "commit_sha": "77ff12d",
+      "file_path": "src/frontend/components/CheckoutForm/CheckoutForm.tsx",
+      "refs": [
+        "src/frontend/components/CheckoutForm/CheckoutForm.tsx:22"
+      ],
+      "kind": "field",
+      "owner": "input:checkout-form-data"
+    },
+    {
+      "id": "input:checkout-form-data#creditCardNumber",
+      "name": "creditCardNumber",
+      "path": "creditCardNumber",
+      "type": "string",
+      "required": false,
+      "source": "declared",
+      "repo": "https://github.com/homealoneai/skill-logistic-map.git",
+      "commit_sha": "77ff12d",
+      "file_path": "src/frontend/components/CheckoutForm/CheckoutForm.tsx",
+      "refs": [
+        "src/frontend/components/CheckoutForm/CheckoutForm.tsx:20"
+      ],
+      "kind": "field",
+      "owner": "input:checkout-form-data"
+    },
+    {
+      "id": "input:checkout-form-data#email",
+      "name": "email",
+      "path": "email",
+      "type": "string",
+      "required": false,
+      "source": "declared",
+      "repo": "https://github.com/homealoneai/skill-logistic-map.git",
+      "commit_sha": "77ff12d",
+      "file_path": "src/frontend/components/CheckoutForm/CheckoutForm.tsx",
+      "refs": [
+        "src/frontend/components/CheckoutForm/CheckoutForm.tsx:14"
+      ],
+      "kind": "field",
+      "owner": "input:checkout-form-data"
+    },
+    {
+      "id": "input:checkout-form-data#state",
+      "name": "state",
+      "path": "state",
+      "type": "string",
+      "required": false,
+      "source": "declared",
+      "repo": "https://github.com/homealoneai/skill-logistic-map.git",
+      "commit_sha": "77ff12d",
+      "file_path": "src/frontend/components/CheckoutForm/CheckoutForm.tsx",
+      "refs": [
+        "src/frontend/components/CheckoutForm/CheckoutForm.tsx:17"
+      ],
+      "kind": "field",
+      "owner": "input:checkout-form-data"
+    },
+    {
+      "id": "input:checkout-form-data#streetAddress",
+      "name": "streetAddress",
+      "path": "streetAddress",
+      "type": "string",
+      "required": false,
+      "source": "declared",
+      "repo": "https://github.com/homealoneai/skill-logistic-map.git",
+      "commit_sha": "77ff12d",
+      "file_path": "src/frontend/components/CheckoutForm/CheckoutForm.tsx",
+      "refs": [
+        "src/frontend/components/CheckoutForm/CheckoutForm.tsx:15"
+      ],
+      "kind": "field",
+      "owner": "input:checkout-form-data"
+    },
+    {
+      "id": "input:checkout-form-data#zipCode",
+      "name": "zipCode",
+      "path": "zipCode",
+      "type": "string",
+      "required": false,
+      "source": "declared",
+      "repo": "https://github.com/homealoneai/skill-logistic-map.git",
+      "commit_sha": "77ff12d",
+      "file_path": "src/frontend/components/CheckoutForm/CheckoutForm.tsx",
+      "refs": [
+        "src/frontend/components/CheckoutForm/CheckoutForm.tsx:19"
+      ],
+      "kind": "field",
+      "owner": "input:checkout-form-data"
+    },
+    {
+      "id": "input:checkout-http-request#body",
+      "name": "body",
+      "path": "body",
+      "required": false,
+      "source": "inferred",
+      "repo": "https://github.com/homealoneai/skill-logistic-map.git",
+      "commit_sha": "77ff12d",
+      "file_path": "pb/demo.proto",
+      "kind": "field",
+      "refs": [],
+      "owner": "input:checkout-http-request"
+    },
+    {
+      "id": "input:checkout-http-request#body.address",
+      "name": "address",
+      "path": "body.address",
+      "required": false,
+      "source": "inferred",
+      "repo": "https://github.com/homealoneai/skill-logistic-map.git",
+      "commit_sha": "77ff12d",
+      "file_path": "pb/demo.proto",
+      "kind": "field",
+      "refs": [],
+      "owner": "input:checkout-http-request"
+    },
+    {
+      "id": "input:checkout-http-request#body.address.city",
+      "name": "city",
+      "path": "body.address.city",
+      "type": "string",
+      "required": false,
+      "source": "declared",
+      "repo": "https://github.com/homealoneai/skill-logistic-map.git",
+      "commit_sha": "77ff12d",
+      "file_path": "pb/demo.proto",
+      "refs": [
+        "pb/demo.proto:132"
+      ],
+      "kind": "field",
+      "owner": "input:checkout-http-request"
+    },
+    {
+      "id": "input:checkout-http-request#body.address.streetAddress",
+      "name": "streetAddress",
+      "path": "body.address.streetAddress",
+      "type": "string",
+      "required": false,
+      "source": "declared",
+      "repo": "https://github.com/homealoneai/skill-logistic-map.git",
+      "commit_sha": "77ff12d",
+      "file_path": "pb/demo.proto",
+      "refs": [
+        "pb/demo.proto:131"
+      ],
+      "kind": "field",
+      "owner": "input:checkout-http-request"
+    },
+    {
+      "id": "input:checkout-http-request#body.creditCard",
+      "name": "creditCard",
+      "path": "body.creditCard",
+      "required": false,
+      "source": "inferred",
+      "repo": "https://github.com/homealoneai/skill-logistic-map.git",
+      "commit_sha": "77ff12d",
+      "file_path": "pb/demo.proto",
+      "kind": "field",
+      "refs": [],
+      "owner": "input:checkout-http-request"
+    },
+    {
+      "id": "input:checkout-http-request#body.creditCard.creditCardCvv",
+      "name": "creditCardCvv",
+      "path": "body.creditCard.creditCardCvv",
+      "type": "int32",
+      "required": false,
+      "source": "declared",
+      "repo": "https://github.com/homealoneai/skill-logistic-map.git",
+      "commit_sha": "77ff12d",
+      "file_path": "pb/demo.proto",
+      "refs": [
+        "pb/demo.proto:183"
+      ],
+      "kind": "field",
+      "owner": "input:checkout-http-request"
+    },
+    {
+      "id": "input:checkout-http-request#body.creditCard.creditCardNumber",
+      "name": "creditCardNumber",
+      "path": "body.creditCard.creditCardNumber",
+      "type": "string",
+      "required": false,
+      "source": "declared",
+      "repo": "https://github.com/homealoneai/skill-logistic-map.git",
+      "commit_sha": "77ff12d",
+      "file_path": "pb/demo.proto",
+      "refs": [
+        "pb/demo.proto:182"
+      ],
+      "kind": "field",
+      "owner": "input:checkout-http-request"
+    },
+    {
+      "id": "input:checkout-http-request#body.email",
+      "name": "email",
+      "path": "body.email",
+      "type": "string",
+      "required": false,
+      "source": "declared",
+      "repo": "https://github.com/homealoneai/skill-logistic-map.git",
+      "commit_sha": "77ff12d",
+      "file_path": "pb/demo.proto",
+      "refs": [
+        "pb/demo.proto:233"
+      ],
+      "kind": "field",
+      "owner": "input:checkout-http-request"
+    },
+    {
+      "id": "input:checkout-http-request#body.userCurrency",
+      "name": "userCurrency",
+      "path": "body.userCurrency",
+      "type": "string",
+      "required": false,
+      "source": "declared",
+      "repo": "https://github.com/homealoneai/skill-logistic-map.git",
+      "commit_sha": "77ff12d",
+      "file_path": "pb/demo.proto",
+      "refs": [
+        "pb/demo.proto:230"
+      ],
+      "kind": "field",
+      "owner": "input:checkout-http-request"
+    },
+    {
+      "id": "input:checkout-http-request#body.userId",
+      "name": "userId",
+      "path": "body.userId",
+      "type": "string",
+      "required": false,
+      "source": "declared",
+      "repo": "https://github.com/homealoneai/skill-logistic-map.git",
+      "commit_sha": "77ff12d",
+      "file_path": "pb/demo.proto",
+      "refs": [
+        "pb/demo.proto:229"
+      ],
+      "kind": "field",
+      "owner": "input:checkout-http-request"
+    },
+    {
+      "id": "input:checkout-http-request#currencyCode",
+      "name": "currencyCode",
+      "path": "currencyCode",
+      "type": "string",
+      "required": false,
+      "source": "declared",
+      "repo": "https://github.com/homealoneai/skill-logistic-map.git",
+      "commit_sha": "77ff12d",
+      "file_path": "src/frontend/pages/api/checkout.ts",
+      "refs": [
+        "src/frontend/pages/api/checkout.ts:23"
+      ],
+      "kind": "field",
+      "owner": "input:checkout-http-request"
+    },
+    {
+      "id": "input:place-order-grpc-request#address",
+      "name": "address",
+      "path": "address",
+      "required": false,
+      "source": "inferred",
+      "repo": "https://github.com/homealoneai/skill-logistic-map.git",
+      "commit_sha": "77ff12d",
+      "file_path": "pb/demo.proto",
+      "kind": "field",
+      "refs": [],
+      "owner": "input:place-order-grpc-request"
+    },
+    {
+      "id": "input:place-order-grpc-request#address.city",
+      "name": "city",
+      "path": "address.city",
+      "type": "string",
+      "required": false,
+      "source": "declared",
+      "repo": "https://github.com/homealoneai/skill-logistic-map.git",
+      "commit_sha": "77ff12d",
+      "file_path": "pb/demo.proto",
+      "refs": [
+        "pb/demo.proto:132"
+      ],
+      "kind": "field",
+      "owner": "input:place-order-grpc-request"
+    },
+    {
+      "id": "input:place-order-grpc-request#address.country",
+      "name": "country",
+      "path": "address.country",
+      "type": "string",
+      "required": false,
+      "source": "declared",
+      "repo": "https://github.com/homealoneai/skill-logistic-map.git",
+      "commit_sha": "77ff12d",
+      "file_path": "pb/demo.proto",
+      "refs": [
+        "pb/demo.proto:134"
+      ],
+      "kind": "field",
+      "owner": "input:place-order-grpc-request"
+    },
+    {
+      "id": "input:place-order-grpc-request#address.state",
+      "name": "state",
+      "path": "address.state",
+      "type": "string",
+      "required": false,
+      "source": "declared",
+      "repo": "https://github.com/homealoneai/skill-logistic-map.git",
+      "commit_sha": "77ff12d",
+      "file_path": "pb/demo.proto",
+      "refs": [
+        "pb/demo.proto:133"
+      ],
+      "kind": "field",
+      "owner": "input:place-order-grpc-request"
+    },
+    {
+      "id": "input:place-order-grpc-request#address.streetAddress",
+      "name": "streetAddress",
+      "path": "address.streetAddress",
+      "type": "string",
+      "required": false,
+      "source": "declared",
+      "repo": "https://github.com/homealoneai/skill-logistic-map.git",
+      "commit_sha": "77ff12d",
+      "file_path": "pb/demo.proto",
+      "refs": [
+        "pb/demo.proto:131"
+      ],
+      "kind": "field",
+      "owner": "input:place-order-grpc-request"
+    },
+    {
+      "id": "input:place-order-grpc-request#address.zipCode",
+      "name": "zipCode",
+      "path": "address.zipCode",
+      "type": "string",
+      "required": false,
+      "source": "declared",
+      "repo": "https://github.com/homealoneai/skill-logistic-map.git",
+      "commit_sha": "77ff12d",
+      "file_path": "pb/demo.proto",
+      "refs": [
+        "pb/demo.proto:135"
+      ],
+      "kind": "field",
+      "owner": "input:place-order-grpc-request"
+    },
+    {
+      "id": "input:place-order-grpc-request#creditCard",
+      "name": "creditCard",
+      "path": "creditCard",
+      "required": false,
+      "source": "inferred",
+      "repo": "https://github.com/homealoneai/skill-logistic-map.git",
+      "commit_sha": "77ff12d",
+      "file_path": "pb/demo.proto",
+      "kind": "field",
+      "refs": [],
+      "owner": "input:place-order-grpc-request"
+    },
+    {
+      "id": "input:place-order-grpc-request#creditCard.creditCardCvv",
+      "name": "creditCardCvv",
+      "path": "creditCard.creditCardCvv",
+      "type": "int32",
+      "required": false,
+      "source": "declared",
+      "repo": "https://github.com/homealoneai/skill-logistic-map.git",
+      "commit_sha": "77ff12d",
+      "file_path": "pb/demo.proto",
+      "refs": [
+        "pb/demo.proto:183"
+      ],
+      "kind": "field",
+      "owner": "input:place-order-grpc-request"
+    },
+    {
+      "id": "input:place-order-grpc-request#creditCard.creditCardExpirationMonth",
+      "name": "creditCardExpirationMonth",
+      "path": "creditCard.creditCardExpirationMonth",
+      "type": "int32",
+      "required": false,
+      "source": "declared",
+      "repo": "https://github.com/homealoneai/skill-logistic-map.git",
+      "commit_sha": "77ff12d",
+      "file_path": "pb/demo.proto",
+      "refs": [
+        "pb/demo.proto:185"
+      ],
+      "kind": "field",
+      "owner": "input:place-order-grpc-request"
+    },
+    {
+      "id": "input:place-order-grpc-request#creditCard.creditCardExpirationYear",
+      "name": "creditCardExpirationYear",
+      "path": "creditCard.creditCardExpirationYear",
+      "type": "int32",
+      "required": false,
+      "source": "declared",
+      "repo": "https://github.com/homealoneai/skill-logistic-map.git",
+      "commit_sha": "77ff12d",
+      "file_path": "pb/demo.proto",
+      "refs": [
+        "pb/demo.proto:184"
+      ],
+      "kind": "field",
+      "owner": "input:place-order-grpc-request"
+    },
+    {
+      "id": "input:place-order-grpc-request#creditCard.creditCardNumber",
+      "name": "creditCardNumber",
+      "path": "creditCard.creditCardNumber",
+      "type": "string",
+      "required": false,
+      "source": "declared",
+      "repo": "https://github.com/homealoneai/skill-logistic-map.git",
+      "commit_sha": "77ff12d",
+      "file_path": "pb/demo.proto",
+      "refs": [
+        "pb/demo.proto:182"
+      ],
+      "kind": "field",
+      "owner": "input:place-order-grpc-request"
+    },
+    {
+      "id": "input:place-order-grpc-request#email",
+      "name": "email",
+      "path": "email",
+      "type": "string",
+      "required": false,
+      "source": "declared",
+      "repo": "https://github.com/homealoneai/skill-logistic-map.git",
+      "commit_sha": "77ff12d",
+      "file_path": "pb/demo.proto",
+      "refs": [
+        "pb/demo.proto:233"
+      ],
+      "kind": "field",
+      "owner": "input:place-order-grpc-request"
+    },
+    {
+      "id": "input:place-order-grpc-request#userCurrency",
+      "name": "userCurrency",
+      "path": "userCurrency",
+      "type": "string",
+      "required": false,
+      "source": "declared",
+      "repo": "https://github.com/homealoneai/skill-logistic-map.git",
+      "commit_sha": "77ff12d",
+      "file_path": "pb/demo.proto",
+      "refs": [
+        "pb/demo.proto:230",
+        "src/checkout/main.go:310"
+      ],
+      "kind": "field",
+      "owner": "input:place-order-grpc-request"
+    },
+    {
+      "id": "input:place-order-grpc-request#userId",
+      "name": "userId",
+      "path": "userId",
+      "type": "string",
+      "required": false,
+      "source": "declared",
+      "repo": "https://github.com/homealoneai/skill-logistic-map.git",
+      "commit_sha": "77ff12d",
+      "file_path": "pb/demo.proto",
+      "refs": [
+        "pb/demo.proto:229",
+        "src/checkout/main.go:309"
+      ],
+      "kind": "field",
+      "owner": "input:place-order-grpc-request"
+    },
+    {
+      "id": "input:product-catalog-product#id",
+      "name": "id",
+      "path": "id",
+      "type": "string",
+      "required": false,
+      "source": "declared",
+      "repo": "https://github.com/homealoneai/skill-logistic-map.git",
+      "commit_sha": "77ff12d",
+      "file_path": "pb/demo.proto",
+      "refs": [
+        "pb/demo.proto:78"
+      ],
+      "kind": "field",
+      "owner": "input:product-catalog-product"
+    },
+    {
+      "id": "input:product-catalog-product#name",
+      "name": "name",
+      "path": "name",
+      "type": "string",
+      "required": false,
+      "source": "declared",
+      "repo": "https://github.com/homealoneai/skill-logistic-map.git",
+      "commit_sha": "77ff12d",
+      "file_path": "pb/demo.proto",
+      "refs": [
+        "pb/demo.proto:79"
+      ],
+      "kind": "field",
+      "owner": "input:product-catalog-product"
+    },
+    {
+      "id": "input:product-catalog-product#priceUsd",
+      "name": "priceUsd",
+      "path": "priceUsd",
+      "required": false,
+      "source": "inferred",
+      "repo": "https://github.com/homealoneai/skill-logistic-map.git",
+      "commit_sha": "77ff12d",
+      "file_path": "pb/demo.proto",
+      "kind": "field",
+      "refs": [],
+      "owner": "input:product-catalog-product"
+    },
+    {
+      "id": "input:product-catalog-product#priceUsd.currencyCode",
+      "name": "currencyCode",
+      "path": "priceUsd.currencyCode",
+      "type": "string",
+      "required": false,
+      "source": "declared",
+      "repo": "https://github.com/homealoneai/skill-logistic-map.git",
+      "commit_sha": "77ff12d",
+      "file_path": "pb/demo.proto",
+      "refs": [
+        "pb/demo.proto:148"
+      ],
+      "kind": "field",
+      "owner": "input:product-catalog-product"
+    },
+    {
+      "id": "input:product-catalog-product#priceUsd.nanos",
+      "name": "nanos",
+      "path": "priceUsd.nanos",
+      "type": "int32",
+      "required": false,
+      "source": "declared",
+      "repo": "https://github.com/homealoneai/skill-logistic-map.git",
+      "commit_sha": "77ff12d",
+      "file_path": "pb/demo.proto",
+      "refs": [
+        "pb/demo.proto:160"
+      ],
+      "kind": "field",
+      "owner": "input:product-catalog-product"
+    },
+    {
+      "id": "input:product-catalog-product#priceUsd.units",
+      "name": "units",
+      "path": "priceUsd.units",
+      "type": "int64",
+      "required": false,
+      "source": "declared",
+      "repo": "https://github.com/homealoneai/skill-logistic-map.git",
+      "commit_sha": "77ff12d",
+      "file_path": "pb/demo.proto",
+      "refs": [
+        "pb/demo.proto:152"
+      ],
+      "kind": "field",
+      "owner": "input:product-catalog-product"
+    },
+    {
+      "id": "storage:orders-kafka-topic#items",
+      "name": "items",
+      "path": "items",
+      "required": false,
+      "source": "inferred",
+      "repo": "https://github.com/homealoneai/skill-logistic-map.git",
+      "commit_sha": "77ff12d",
+      "file_path": "pb/demo.proto",
+      "kind": "field",
+      "refs": [],
+      "owner": "storage:orders-kafka-topic"
+    },
+    {
+      "id": "storage:orders-kafka-topic#items.item",
+      "name": "item",
+      "path": "items.item",
+      "required": false,
+      "source": "inferred",
+      "repo": "https://github.com/homealoneai/skill-logistic-map.git",
+      "commit_sha": "77ff12d",
+      "file_path": "pb/demo.proto",
+      "kind": "field",
+      "refs": [],
+      "owner": "storage:orders-kafka-topic"
+    },
+    {
+      "id": "storage:orders-kafka-topic#items.item.product_id",
+      "name": "product_id",
+      "path": "items.item.product_id",
+      "type": "string",
+      "required": false,
+      "source": "declared",
+      "repo": "https://github.com/homealoneai/skill-logistic-map.git",
+      "commit_sha": "77ff12d",
+      "file_path": "pb/demo.proto",
+      "refs": [
+        "pb/demo.proto:30"
+      ],
+      "kind": "field",
+      "owner": "storage:orders-kafka-topic"
+    },
+    {
+      "id": "storage:orders-kafka-topic#items.item.quantity",
+      "name": "quantity",
+      "path": "items.item.quantity",
+      "type": "int32",
+      "required": false,
+      "source": "declared",
+      "repo": "https://github.com/homealoneai/skill-logistic-map.git",
+      "commit_sha": "77ff12d",
+      "file_path": "pb/demo.proto",
+      "refs": [
+        "pb/demo.proto:31"
+      ],
+      "kind": "field",
+      "owner": "storage:orders-kafka-topic"
+    },
+    {
+      "id": "storage:orders-kafka-topic#order_id",
+      "name": "order_id",
+      "path": "order_id",
+      "type": "string",
+      "required": false,
+      "source": "declared",
+      "repo": "https://github.com/homealoneai/skill-logistic-map.git",
+      "commit_sha": "77ff12d",
+      "file_path": "pb/demo.proto",
+      "refs": [
+        "pb/demo.proto:209",
+        "src/checkout/main.go:665"
+      ],
+      "kind": "field",
+      "owner": "storage:orders-kafka-topic"
+    },
+    {
+      "id": "storage:orders-kafka-topic#shipping_tracking_id",
+      "name": "shipping_tracking_id",
+      "path": "shipping_tracking_id",
+      "type": "string",
+      "required": false,
+      "source": "declared",
+      "repo": "https://github.com/homealoneai/skill-logistic-map.git",
+      "commit_sha": "77ff12d",
+      "file_path": "pb/demo.proto",
+      "refs": [
+        "pb/demo.proto:210",
+        "src/checkout/main.go:665"
+      ],
+      "kind": "field",
+      "owner": "storage:orders-kafka-topic"
+    },
+    {
+      "id": "storage:valkey-cart#cart",
+      "name": "cart",
+      "path": "cart",
+      "type": "bytes",
+      "required": false,
+      "source": "declared",
+      "repo": "https://github.com/homealoneai/skill-logistic-map.git",
+      "commit_sha": "77ff12d",
+      "file_path": "src/cart/src/cartstore/ValkeyCartStore.cs",
+      "refs": [
+        "src/cart/src/cartstore/ValkeyCartStore.cs:23"
+      ],
+      "kind": "field",
+      "owner": "storage:valkey-cart"
+    },
+    {
+      "id": "storage:valkey-cart#cart.items",
+      "name": "items",
+      "path": "cart.items",
+      "required": false,
+      "source": "inferred",
+      "repo": "https://github.com/homealoneai/skill-logistic-map.git",
+      "commit_sha": "77ff12d",
+      "file_path": "pb/demo.proto",
+      "kind": "field",
+      "refs": [],
+      "owner": "storage:valkey-cart"
+    },
+    {
+      "id": "storage:valkey-cart#cart.items.product_id",
+      "name": "product_id",
+      "path": "cart.items.product_id",
+      "type": "string",
+      "required": false,
+      "source": "declared",
+      "repo": "https://github.com/homealoneai/skill-logistic-map.git",
+      "commit_sha": "77ff12d",
+      "file_path": "pb/demo.proto",
+      "refs": [
+        "pb/demo.proto:30"
+      ],
+      "kind": "field",
+      "owner": "storage:valkey-cart"
+    },
+    {
+      "id": "storage:valkey-cart#cart.items.quantity",
+      "name": "quantity",
+      "path": "cart.items.quantity",
+      "type": "int32",
+      "required": false,
+      "source": "declared",
+      "repo": "https://github.com/homealoneai/skill-logistic-map.git",
+      "commit_sha": "77ff12d",
+      "file_path": "pb/demo.proto",
+      "refs": [
+        "pb/demo.proto:31"
+      ],
+      "kind": "field",
+      "owner": "storage:valkey-cart"
+    },
+    {
+      "id": "storage:valkey-cart#user_id",
+      "name": "user_id",
+      "path": "user_id",
+      "type": "string",
+      "required": false,
+      "source": "declared",
+      "repo": "https://github.com/homealoneai/skill-logistic-map.git",
+      "commit_sha": "77ff12d",
+      "file_path": "src/cart/src/cartstore/ValkeyCartStore.cs",
+      "refs": [
+        "src/cart/src/cartstore/ValkeyCartStore.cs:151"
+      ],
+      "kind": "field",
+      "owner": "storage:valkey-cart"
+    },
+    {
+      "id": "flow:checkout-api",
+      "name": "Frontend checkout API",
+      "description": "POST route calls CheckoutGateway.placeOrder, maps payment errors, and hydrates order items via ProductCatalogService.",
+      "cluster": "frontend",
+      "repo": "https://github.com/homealoneai/skill-logistic-map.git",
+      "commit_sha": "77ff12d",
+      "file_path": "src/frontend/pages/api/checkout.ts",
+      "refs": [
+        "src/frontend/pages/api/checkout.ts:28",
+        "src/frontend/pages/api/checkout.ts:50",
+        "src/frontend/pages/api/checkout.ts:54"
+      ],
+      "kind": "flow"
+    },
+    {
+      "id": "flow:place-order",
+      "name": "CheckoutService PlaceOrder",
+      "description": "Read cart, price and quote, charge, ship, empty cart, assemble OrderResult, email confirmation and publish to Kafka.",
+      "cluster": "checkout-service",
+      "repo": "https://github.com/homealoneai/skill-logistic-map.git",
+      "commit_sha": "77ff12d",
+      "file_path": "src/checkout/main.go",
+      "refs": [
+        "src/checkout/main.go:306",
+        "src/checkout/main.go:344",
+        "src/checkout/main.go:383",
+        "src/checkout/main.go:423"
+      ],
+      "kind": "flow"
+    },
+    {
+      "id": "flow:submit-checkout",
+      "name": "Submit checkout form",
+      "description": "Form values plus session user and selected currency become the PlaceOrderRequest body posted to /api/checkout.",
+      "cluster": "frontend",
+      "repo": "https://github.com/homealoneai/skill-logistic-map.git",
+      "commit_sha": "77ff12d",
+      "file_path": "src/frontend/components/Cart/CartDetail.tsx",
+      "refs": [
+        "src/frontend/components/Cart/CartDetail.tsx:25",
+        "src/frontend/components/Cart/CartDetail.tsx:38",
+        "src/frontend/gateways/Api.gateway.ts:55"
+      ],
+      "kind": "flow"
+    },
+    {
+      "id": "input:checkout-form-data",
+      "name": "IFormData",
+      "description": "Shipping address and payment form values submitted by CheckoutForm.",
+      "cluster": "frontend",
+      "repo": "https://github.com/homealoneai/skill-logistic-map.git",
+      "commit_sha": "77ff12d",
+      "file_path": "src/frontend/components/CheckoutForm/CheckoutForm.tsx",
+      "refs": [
+        "src/frontend/components/CheckoutForm/CheckoutForm.tsx:13",
+        "src/frontend/components/CheckoutForm/CheckoutForm.tsx:69"
+      ],
+      "kind": "input"
+    },
+    {
+      "id": "input:checkout-http-request",
+      "name": "POST /api/checkout request",
+      "description": "HTTP request body (PlaceOrderRequest) and currencyCode query parameter received by the Next.js route.",
+      "cluster": "frontend",
+      "repo": "https://github.com/homealoneai/skill-logistic-map.git",
+      "commit_sha": "77ff12d",
+      "file_path": "src/frontend/pages/api/checkout.ts",
+      "refs": [
+        "src/frontend/pages/api/checkout.ts:20",
+        "src/frontend/pages/api/checkout.ts:23",
+        "src/frontend/pages/api/checkout.ts:24"
+      ],
+      "kind": "input"
+    },
+    {
+      "id": "input:place-order-grpc-request",
+      "name": "PlaceOrderRequest (gRPC)",
+      "description": "Order request received by the Go CheckoutService from the frontend gateway.",
+      "cluster": "checkout-service",
+      "repo": "https://github.com/homealoneai/skill-logistic-map.git",
+      "commit_sha": "77ff12d",
+      "file_path": "src/checkout/main.go",
+      "refs": [
+        "src/checkout/main.go:306",
+        "src/checkout/main.go:344",
+        "pb/demo.proto:228"
+      ],
+      "kind": "input"
+    },
+    {
+      "id": "input:product-catalog-product",
+      "name": "Product from ProductCatalogService",
+      "description": "Product detail loaded for an order item and the selected currency during response hydration.",
+      "cluster": "product-catalog",
+      "repo": "https://github.com/homealoneai/skill-logistic-map.git",
+      "commit_sha": "77ff12d",
+      "file_path": "src/frontend/services/ProductCatalog.service.ts",
+      "refs": [
+        "src/frontend/services/ProductCatalog.service.ts:30",
+        "src/frontend/services/ProductCatalog.service.ts:35",
+        "pb/demo.proto:77"
+      ],
+      "kind": "input"
+    },
+    {
+      "id": "rule:cart-ttl",
+      "name": "Cart hash expiry",
+      "description": "Writing an empty cart to Valkey refreshes the user's hash with a 60-minute TTL.",
+      "cluster": "cart-service",
+      "repo": "https://github.com/homealoneai/skill-logistic-map.git",
+      "commit_sha": "77ff12d",
+      "file_path": "src/cart/src/cartstore/ValkeyCartStore.cs",
+      "refs": [
+        "src/cart/src/cartstore/ValkeyCartStore.cs:198",
+        "src/cart/src/cartstore/ValkeyCartStore.cs:199"
+      ],
+      "kind": "rule"
+    },
+    {
+      "id": "rule:email-timeout",
+      "name": "Email request timeout",
+      "description": "The order confirmation POST uses a one-second context timeout; a failure is only logged and does not fail the order.",
+      "cluster": "checkout-service",
+      "repo": "https://github.com/homealoneai/skill-logistic-map.git",
+      "commit_sha": "77ff12d",
+      "file_path": "src/checkout/main.go",
+      "refs": [
+        "src/checkout/main.go:77",
+        "src/checkout/main.go:601",
+        "src/checkout/main.go:411"
+      ],
+      "kind": "rule"
+    },
+    {
+      "id": "rule:emit-raw-pii-flag",
+      "name": "EmitRawPii feature flag",
+      "description": "When EmitRawPii is enabled, PlaceOrder records the user email, card number and CVV as span attributes.",
+      "cluster": "checkout-service",
+      "repo": "https://github.com/homealoneai/skill-logistic-map.git",
+      "commit_sha": "77ff12d",
+      "file_path": "src/checkout/main.go",
+      "refs": [
+        "src/checkout/main.go:313",
+        "src/checkout/main.go:319"
+      ],
+      "kind": "rule"
+    },
+    {
+      "id": "rule:kafka-broker-required",
+      "name": "Kafka publish condition",
+      "description": "OrderResult is published only when KAFKA_ADDR is set; the topic comes from KAFKA_TOPIC and defaults to 'orders'.",
+      "cluster": "checkout-service",
+      "repo": "https://github.com/homealoneai/skill-logistic-map.git",
+      "commit_sha": "77ff12d",
+      "file_path": "src/checkout/main.go",
+      "refs": [
+        "src/checkout/main.go:248",
+        "src/checkout/main.go:418",
+        "src/checkout/kafka/producer.go:18"
+      ],
+      "kind": "rule"
+    },
+    {
+      "id": "rule:kafka-queue-problems-flag",
+      "name": "KafkaQueueProblems overload flag",
+      "description": "A positive KafkaQueueProblems flag re-publishes the OrderResult message additional times to simulate queue overload.",
+      "cluster": "checkout-service",
+      "repo": "https://github.com/homealoneai/skill-logistic-map.git",
+      "commit_sha": "77ff12d",
+      "file_path": "src/checkout/main.go",
+      "refs": [
+        "src/checkout/main.go:717",
+        "src/checkout/main.go:727"
+      ],
+      "kind": "rule"
+    },
+    {
+      "id": "rule:money-validation",
+      "name": "Money validation",
+      "description": "money.Sum rejects invalid Money values and mismatched currency codes; Must turns that error into a panic during total computation.",
+      "cluster": "checkout-service",
+      "repo": "https://github.com/homealoneai/skill-logistic-map.git",
+      "commit_sha": "77ff12d",
+      "file_path": "src/checkout/money/money.go",
+      "refs": [
+        "src/checkout/money/money.go:81",
+        "src/checkout/money/money.go:108",
+        "src/checkout/main.go:355"
+      ],
+      "kind": "rule"
+    },
+    {
+      "id": "rule:payment-declined-422",
+      "name": "Payment decline mapping",
+      "description": "A gRPC error starting with 'failed to charge card:' (except Unavailable/Internal) returns HTTP 422 with code PAYMENT_FAILED; other failures return HTTP 500.",
+      "cluster": "frontend",
+      "repo": "https://github.com/homealoneai/skill-logistic-map.git",
+      "commit_sha": "77ff12d",
+      "file_path": "src/frontend/pages/api/checkout.ts",
+      "refs": [
+        "src/frontend/pages/api/checkout.ts:16",
+        "src/frontend/pages/api/checkout.ts:36",
+        "src/frontend/pages/api/checkout.ts:47"
+      ],
+      "kind": "rule"
+    },
+    {
+      "id": "rule:payment-unreachable-flag",
+      "name": "PaymentUnreachable feature flag",
+      "description": "When PaymentUnreachable is enabled, CheckoutService sends Charge to badAddress:50051 instead of the configured payment service.",
+      "cluster": "checkout-service",
+      "repo": "https://github.com/homealoneai/skill-logistic-map.git",
+      "commit_sha": "77ff12d",
+      "file_path": "src/checkout/main.go",
+      "refs": [
+        "src/checkout/main.go:575",
+        "src/checkout/main.go:579"
+      ],
+      "kind": "rule"
+    },
+    {
+      "id": "rule:post-method-only",
+      "name": "POST-only checkout route",
+      "description": "Only POST is handled by /api/checkout; any other method returns HTTP 405.",
+      "cluster": "frontend",
+      "repo": "https://github.com/homealoneai/skill-logistic-map.git",
+      "commit_sha": "77ff12d",
+      "file_path": "src/frontend/pages/api/checkout.ts",
+      "refs": [
+        "src/frontend/pages/api/checkout.ts:71",
+        "src/frontend/pages/api/checkout.ts:72"
+      ],
+      "kind": "rule"
+    },
+    {
+      "id": "storage:orders-kafka-topic",
+      "name": "orders Kafka topic",
+      "description": "Kafka orders topic carrying the protobuf-serialized OrderResult when a broker is configured.",
+      "location": "kafka://orders",
+      "store_type": "queue",
+      "cluster": "kafka",
+      "repo": "https://github.com/homealoneai/skill-logistic-map.git",
+      "commit_sha": "77ff12d",
+      "file_path": "src/checkout/kafka/producer.go",
+      "refs": [
+        "src/checkout/kafka/producer.go:18",
+        "src/checkout/main.go:664",
+        "src/checkout/main.go:683"
+      ],
+      "kind": "storage"
+    },
+    {
+      "id": "storage:valkey-cart",
+      "name": "Valkey cart hashes",
+      "description": "Cart protobuf stored in the 'cart' field of a Valkey hash keyed by user id.",
+      "location": "valkey://cart-hash/{user_id}#cart",
+      "store_type": "redis",
+      "cluster": "cart-service",
+      "repo": "https://github.com/homealoneai/skill-logistic-map.git",
+      "commit_sha": "77ff12d",
+      "file_path": "src/cart/src/cartstore/ValkeyCartStore.cs",
+      "refs": [
+        "src/cart/src/cartstore/ValkeyCartStore.cs:23",
+        "src/cart/src/cartstore/ValkeyCartStore.cs:151",
+        "src/cart/src/cartstore/ValkeyCartStore.cs:176"
+      ],
+      "kind": "storage"
+    }
+  ],
+  "edges": [
+    {
+      "kind": "contains",
+      "from": "entry:cart-get-request",
+      "to": "entry:cart-get-request#user_id",
+      "refs": [
+        "pb/demo.proto:44",
+        "src/checkout/main.go:528"
+      ],
+      "file_path": "pb/demo.proto"
+    },
+    {
+      "kind": "contains",
+      "from": "entry:cart-items",
+      "to": "entry:cart-items#items",
+      "refs": []
+    },
+    {
+      "kind": "contains",
+      "from": "entry:cart-items",
+      "to": "entry:cart-items#user_id",
+      "refs": [
+        "pb/demo.proto:48"
+      ],
+      "file_path": "pb/demo.proto"
+    },
+    {
+      "kind": "contains",
+      "from": "entry:cart-items#items",
+      "to": "entry:cart-items#items.product_id",
+      "refs": [
+        "pb/demo.proto:30"
+      ],
+      "file_path": "pb/demo.proto"
+    },
+    {
+      "kind": "contains",
+      "from": "entry:cart-items#items",
+      "to": "entry:cart-items#items.quantity",
+      "refs": [
+        "pb/demo.proto:31"
+      ],
+      "file_path": "pb/demo.proto"
+    },
+    {
+      "kind": "contains",
+      "from": "entry:charge-request",
+      "to": "entry:charge-request#amount",
+      "refs": []
+    },
+    {
+      "kind": "contains",
+      "from": "entry:charge-request",
+      "to": "entry:charge-request#credit_card",
+      "refs": []
+    },
+    {
+      "kind": "contains",
+      "from": "entry:charge-request#amount",
+      "to": "entry:charge-request#amount.currency_code",
+      "refs": [
+        "pb/demo.proto:148"
+      ],
+      "file_path": "pb/demo.proto"
+    },
+    {
+      "kind": "contains",
+      "from": "entry:charge-request#amount",
+      "to": "entry:charge-request#amount.nanos",
+      "refs": [
+        "pb/demo.proto:160"
+      ],
+      "file_path": "pb/demo.proto"
+    },
+    {
+      "kind": "contains",
+      "from": "entry:charge-request#amount",
+      "to": "entry:charge-request#amount.units",
+      "refs": [
+        "pb/demo.proto:152"
+      ],
+      "file_path": "pb/demo.proto"
+    },
+    {
+      "kind": "contains",
+      "from": "entry:charge-request#credit_card",
+      "to": "entry:charge-request#credit_card.credit_card_cvv",
+      "refs": [
+        "pb/demo.proto:183"
+      ],
+      "file_path": "pb/demo.proto"
+    },
+    {
+      "kind": "contains",
+      "from": "entry:charge-request#credit_card",
+      "to": "entry:charge-request#credit_card.credit_card_expiration_month",
+      "refs": [
+        "pb/demo.proto:185"
+      ],
+      "file_path": "pb/demo.proto"
+    },
+    {
+      "kind": "contains",
+      "from": "entry:charge-request#credit_card",
+      "to": "entry:charge-request#credit_card.credit_card_expiration_year",
+      "refs": [
+        "pb/demo.proto:184"
+      ],
+      "file_path": "pb/demo.proto"
+    },
+    {
+      "kind": "contains",
+      "from": "entry:charge-request#credit_card",
+      "to": "entry:charge-request#credit_card.credit_card_number",
+      "refs": [
+        "pb/demo.proto:182"
+      ],
+      "file_path": "pb/demo.proto"
+    },
+    {
+      "kind": "contains",
+      "from": "entry:checkout-response-hydrated",
+      "to": "entry:checkout-response-hydrated#items",
+      "refs": []
+    },
+    {
+      "kind": "contains",
+      "from": "entry:checkout-response-hydrated",
+      "to": "entry:checkout-response-hydrated#orderId",
+      "refs": [
+        "src/frontend/types/Cart.ts:18"
+      ],
+      "file_path": "src/frontend/types/Cart.ts"
+    },
+    {
+      "kind": "contains",
+      "from": "entry:checkout-response-hydrated",
+      "to": "entry:checkout-response-hydrated#shippingCost",
+      "refs": []
+    },
+    {
+      "kind": "contains",
+      "from": "entry:checkout-response-hydrated",
+      "to": "entry:checkout-response-hydrated#shippingTrackingId",
+      "refs": [
+        "src/frontend/types/Cart.ts:18"
+      ],
+      "file_path": "src/frontend/types/Cart.ts"
+    },
+    {
+      "kind": "contains",
+      "from": "entry:checkout-response-hydrated#items",
+      "to": "entry:checkout-response-hydrated#items.cost",
+      "refs": []
+    },
+    {
+      "kind": "contains",
+      "from": "entry:checkout-response-hydrated#items",
+      "to": "entry:checkout-response-hydrated#items.item",
+      "refs": []
+    },
+    {
+      "kind": "contains",
+      "from": "entry:checkout-response-hydrated#items.cost",
+      "to": "entry:checkout-response-hydrated#items.cost.currencyCode",
+      "refs": [
+        "pb/demo.proto:148"
+      ],
+      "file_path": "pb/demo.proto"
+    },
+    {
+      "kind": "contains",
+      "from": "entry:checkout-response-hydrated#items.cost",
+      "to": "entry:checkout-response-hydrated#items.cost.nanos",
+      "refs": [
+        "pb/demo.proto:160"
+      ],
+      "file_path": "pb/demo.proto"
+    },
+    {
+      "kind": "contains",
+      "from": "entry:checkout-response-hydrated#items.cost",
+      "to": "entry:checkout-response-hydrated#items.cost.units",
+      "refs": [
+        "pb/demo.proto:152"
+      ],
+      "file_path": "pb/demo.proto"
+    },
+    {
+      "kind": "contains",
+      "from": "entry:checkout-response-hydrated#items.item",
+      "to": "entry:checkout-response-hydrated#items.item.product",
+      "refs": []
+    },
+    {
+      "kind": "contains",
+      "from": "entry:checkout-response-hydrated#items.item",
+      "to": "entry:checkout-response-hydrated#items.item.productId",
+      "refs": [
+        "src/frontend/types/Cart.ts:15"
+      ],
+      "file_path": "src/frontend/types/Cart.ts"
+    },
+    {
+      "kind": "contains",
+      "from": "entry:checkout-response-hydrated#items.item",
+      "to": "entry:checkout-response-hydrated#items.item.quantity",
+      "refs": [
+        "pb/demo.proto:31"
+      ],
+      "file_path": "pb/demo.proto"
+    },
+    {
+      "kind": "contains",
+      "from": "entry:checkout-response-hydrated#items.item.product",
+      "to": "entry:checkout-response-hydrated#items.item.product.id",
+      "refs": [
+        "src/frontend/types/Cart.ts:11"
+      ],
+      "file_path": "src/frontend/types/Cart.ts"
+    },
+    {
+      "kind": "contains",
+      "from": "entry:checkout-response-hydrated#items.item.product",
+      "to": "entry:checkout-response-hydrated#items.item.product.name",
+      "refs": [
+        "pb/demo.proto:79"
+      ],
+      "file_path": "pb/demo.proto"
+    },
+    {
+      "kind": "contains",
+      "from": "entry:checkout-response-hydrated#items.item.product",
+      "to": "entry:checkout-response-hydrated#items.item.product.priceUsd",
+      "refs": []
+    },
+    {
+      "kind": "contains",
+      "from": "entry:checkout-response-hydrated#items.item.product.priceUsd",
+      "to": "entry:checkout-response-hydrated#items.item.product.priceUsd.currencyCode",
+      "refs": [
+        "pb/demo.proto:148"
+      ],
+      "file_path": "pb/demo.proto"
+    },
+    {
+      "kind": "contains",
+      "from": "entry:checkout-response-hydrated#items.item.product.priceUsd",
+      "to": "entry:checkout-response-hydrated#items.item.product.priceUsd.nanos",
+      "refs": [
+        "pb/demo.proto:160"
+      ],
+      "file_path": "pb/demo.proto"
+    },
+    {
+      "kind": "contains",
+      "from": "entry:checkout-response-hydrated#items.item.product.priceUsd",
+      "to": "entry:checkout-response-hydrated#items.item.product.priceUsd.units",
+      "refs": [
+        "pb/demo.proto:152"
+      ],
+      "file_path": "pb/demo.proto"
+    },
+    {
+      "kind": "contains",
+      "from": "entry:checkout-response-hydrated#shippingCost",
+      "to": "entry:checkout-response-hydrated#shippingCost.currencyCode",
+      "refs": [
+        "pb/demo.proto:148"
+      ],
+      "file_path": "pb/demo.proto"
+    },
+    {
+      "kind": "contains",
+      "from": "entry:checkout-response-hydrated#shippingCost",
+      "to": "entry:checkout-response-hydrated#shippingCost.nanos",
+      "refs": [
+        "pb/demo.proto:160"
+      ],
+      "file_path": "pb/demo.proto"
+    },
+    {
+      "kind": "contains",
+      "from": "entry:checkout-response-hydrated#shippingCost",
+      "to": "entry:checkout-response-hydrated#shippingCost.units",
+      "refs": [
+        "pb/demo.proto:152"
+      ],
+      "file_path": "pb/demo.proto"
+    },
+    {
+      "kind": "contains",
+      "from": "entry:email-confirmation-payload",
+      "to": "entry:email-confirmation-payload#email",
+      "refs": [
+        "src/checkout/main.go:593"
+      ],
+      "file_path": "src/checkout/main.go"
+    },
+    {
+      "kind": "contains",
+      "from": "entry:email-confirmation-payload",
+      "to": "entry:email-confirmation-payload#order",
+      "refs": []
+    },
+    {
+      "kind": "contains",
+      "from": "entry:email-confirmation-payload#order",
+      "to": "entry:email-confirmation-payload#order.order_id",
+      "refs": [
+        "pb/demo.proto:209"
+      ],
+      "file_path": "pb/demo.proto"
+    },
+    {
+      "kind": "contains",
+      "from": "entry:empty-cart-request",
+      "to": "entry:empty-cart-request#user_id",
+      "refs": [
+        "pb/demo.proto:40",
+        "src/checkout/main.go:536"
+      ],
+      "file_path": "pb/demo.proto"
+    },
+    {
+      "kind": "contains",
+      "from": "entry:order-items-localized",
+      "to": "entry:order-items-localized#items",
+      "refs": []
+    },
+    {
+      "kind": "contains",
+      "from": "entry:order-items-localized#items",
+      "to": "entry:order-items-localized#items.cost",
+      "refs": []
+    },
+    {
+      "kind": "contains",
+      "from": "entry:order-items-localized#items",
+      "to": "entry:order-items-localized#items.item",
+      "refs": []
+    },
+    {
+      "kind": "contains",
+      "from": "entry:order-items-localized#items.cost",
+      "to": "entry:order-items-localized#items.cost.currency_code",
+      "refs": [
+        "pb/demo.proto:148"
+      ],
+      "file_path": "pb/demo.proto"
+    },
+    {
+      "kind": "contains",
+      "from": "entry:order-items-localized#items.cost",
+      "to": "entry:order-items-localized#items.cost.nanos",
+      "refs": [
+        "pb/demo.proto:160"
+      ],
+      "file_path": "pb/demo.proto"
+    },
+    {
+      "kind": "contains",
+      "from": "entry:order-items-localized#items.cost",
+      "to": "entry:order-items-localized#items.cost.units",
+      "refs": [
+        "pb/demo.proto:152"
+      ],
+      "file_path": "pb/demo.proto"
+    },
+    {
+      "kind": "contains",
+      "from": "entry:order-items-localized#items.item",
+      "to": "entry:order-items-localized#items.item.product_id",
+      "refs": [
+        "pb/demo.proto:30"
+      ],
+      "file_path": "pb/demo.proto"
+    },
+    {
+      "kind": "contains",
+      "from": "entry:order-items-localized#items.item",
+      "to": "entry:order-items-localized#items.item.quantity",
+      "refs": [
+        "pb/demo.proto:31"
+      ],
+      "file_path": "pb/demo.proto"
+    },
+    {
+      "kind": "contains",
+      "from": "entry:order-result",
+      "to": "entry:order-result#items",
+      "refs": []
+    },
+    {
+      "kind": "contains",
+      "from": "entry:order-result",
+      "to": "entry:order-result#order_id",
+      "refs": [
+        "pb/demo.proto:209",
+        "src/checkout/main.go:384"
+      ],
+      "file_path": "pb/demo.proto"
+    },
+    {
+      "kind": "contains",
+      "from": "entry:order-result",
+      "to": "entry:order-result#shipping_address",
+      "refs": []
+    },
+    {
+      "kind": "contains",
+      "from": "entry:order-result",
+      "to": "entry:order-result#shipping_cost",
+      "refs": []
+    },
+    {
+      "kind": "contains",
+      "from": "entry:order-result",
+      "to": "entry:order-result#shipping_tracking_id",
+      "refs": [
+        "pb/demo.proto:210",
+        "src/checkout/main.go:385"
+      ],
+      "file_path": "pb/demo.proto"
+    },
+    {
+      "kind": "contains",
+      "from": "entry:order-result#items",
+      "to": "entry:order-result#items.cost",
+      "refs": []
+    },
+    {
+      "kind": "contains",
+      "from": "entry:order-result#items",
+      "to": "entry:order-result#items.item",
+      "refs": []
+    },
+    {
+      "kind": "contains",
+      "from": "entry:order-result#items.cost",
+      "to": "entry:order-result#items.cost.currency_code",
+      "refs": [
+        "pb/demo.proto:148"
+      ],
+      "file_path": "pb/demo.proto"
+    },
+    {
+      "kind": "contains",
+      "from": "entry:order-result#items.cost",
+      "to": "entry:order-result#items.cost.nanos",
+      "refs": [
+        "pb/demo.proto:160"
+      ],
+      "file_path": "pb/demo.proto"
+    },
+    {
+      "kind": "contains",
+      "from": "entry:order-result#items.cost",
+      "to": "entry:order-result#items.cost.units",
+      "refs": [
+        "pb/demo.proto:152"
+      ],
+      "file_path": "pb/demo.proto"
+    },
+    {
+      "kind": "contains",
+      "from": "entry:order-result#items.item",
+      "to": "entry:order-result#items.item.product_id",
+      "refs": [
+        "pb/demo.proto:30"
+      ],
+      "file_path": "pb/demo.proto"
+    },
+    {
+      "kind": "contains",
+      "from": "entry:order-result#items.item",
+      "to": "entry:order-result#items.item.quantity",
+      "refs": [
+        "pb/demo.proto:31"
+      ],
+      "file_path": "pb/demo.proto"
+    },
+    {
+      "kind": "contains",
+      "from": "entry:order-result#shipping_address",
+      "to": "entry:order-result#shipping_address.city",
+      "refs": [
+        "pb/demo.proto:132"
+      ],
+      "file_path": "pb/demo.proto"
+    },
+    {
+      "kind": "contains",
+      "from": "entry:order-result#shipping_address",
+      "to": "entry:order-result#shipping_address.street_address",
+      "refs": [
+        "pb/demo.proto:131"
+      ],
+      "file_path": "pb/demo.proto"
+    },
+    {
+      "kind": "contains",
+      "from": "entry:order-result#shipping_cost",
+      "to": "entry:order-result#shipping_cost.currency_code",
+      "refs": [
+        "pb/demo.proto:148"
+      ],
+      "file_path": "pb/demo.proto"
+    },
+    {
+      "kind": "contains",
+      "from": "entry:order-result#shipping_cost",
+      "to": "entry:order-result#shipping_cost.nanos",
+      "refs": [
+        "pb/demo.proto:160"
+      ],
+      "file_path": "pb/demo.proto"
+    },
+    {
+      "kind": "contains",
+      "from": "entry:order-result#shipping_cost",
+      "to": "entry:order-result#shipping_cost.units",
+      "refs": [
+        "pb/demo.proto:152"
+      ],
+      "file_path": "pb/demo.proto"
+    },
+    {
+      "kind": "contains",
+      "from": "entry:order-total",
+      "to": "entry:order-total#currency_code",
+      "refs": [
+        "pb/demo.proto:148"
+      ],
+      "file_path": "pb/demo.proto"
+    },
+    {
+      "kind": "contains",
+      "from": "entry:order-total",
+      "to": "entry:order-total#nanos",
+      "refs": [
+        "pb/demo.proto:160"
+      ],
+      "file_path": "pb/demo.proto"
+    },
+    {
+      "kind": "contains",
+      "from": "entry:order-total",
+      "to": "entry:order-total#units",
+      "refs": [
+        "pb/demo.proto:152"
+      ],
+      "file_path": "pb/demo.proto"
+    },
+    {
+      "kind": "contains",
+      "from": "entry:payment-result",
+      "to": "entry:payment-result#transaction_id",
+      "refs": [
+        "pb/demo.proto:194"
+      ],
+      "file_path": "pb/demo.proto"
+    },
+    {
+      "kind": "contains",
+      "from": "entry:place-order-grpc-response",
+      "to": "entry:place-order-grpc-response#order",
+      "refs": []
+    },
+    {
+      "kind": "contains",
+      "from": "entry:place-order-grpc-response#order",
+      "to": "entry:place-order-grpc-response#order.items",
+      "refs": []
+    },
+    {
+      "kind": "contains",
+      "from": "entry:place-order-grpc-response#order",
+      "to": "entry:place-order-grpc-response#order.order_id",
+      "refs": [
+        "pb/demo.proto:209",
+        "src/checkout/main.go:423"
+      ],
+      "file_path": "pb/demo.proto"
+    },
+    {
+      "kind": "contains",
+      "from": "entry:place-order-grpc-response#order",
+      "to": "entry:place-order-grpc-response#order.shipping_cost",
+      "refs": []
+    },
+    {
+      "kind": "contains",
+      "from": "entry:place-order-grpc-response#order",
+      "to": "entry:place-order-grpc-response#order.shipping_tracking_id",
+      "refs": [
+        "pb/demo.proto:210"
+      ],
+      "file_path": "pb/demo.proto"
+    },
+    {
+      "kind": "contains",
+      "from": "entry:place-order-grpc-response#order.items",
+      "to": "entry:place-order-grpc-response#order.items.cost",
+      "refs": []
+    },
+    {
+      "kind": "contains",
+      "from": "entry:place-order-grpc-response#order.items",
+      "to": "entry:place-order-grpc-response#order.items.item",
+      "refs": []
+    },
+    {
+      "kind": "contains",
+      "from": "entry:place-order-grpc-response#order.items.cost",
+      "to": "entry:place-order-grpc-response#order.items.cost.currency_code",
+      "refs": [
+        "pb/demo.proto:148"
+      ],
+      "file_path": "pb/demo.proto"
+    },
+    {
+      "kind": "contains",
+      "from": "entry:place-order-grpc-response#order.items.cost",
+      "to": "entry:place-order-grpc-response#order.items.cost.nanos",
+      "refs": [
+        "pb/demo.proto:160"
+      ],
+      "file_path": "pb/demo.proto"
+    },
+    {
+      "kind": "contains",
+      "from": "entry:place-order-grpc-response#order.items.cost",
+      "to": "entry:place-order-grpc-response#order.items.cost.units",
+      "refs": [
+        "pb/demo.proto:152"
+      ],
+      "file_path": "pb/demo.proto"
+    },
+    {
+      "kind": "contains",
+      "from": "entry:place-order-grpc-response#order.items.item",
+      "to": "entry:place-order-grpc-response#order.items.item.product_id",
+      "refs": [
+        "pb/demo.proto:30"
+      ],
+      "file_path": "pb/demo.proto"
+    },
+    {
+      "kind": "contains",
+      "from": "entry:place-order-grpc-response#order.items.item",
+      "to": "entry:place-order-grpc-response#order.items.item.quantity",
+      "refs": [
+        "pb/demo.proto:31"
+      ],
+      "file_path": "pb/demo.proto"
+    },
+    {
+      "kind": "contains",
+      "from": "entry:place-order-grpc-response#order.shipping_cost",
+      "to": "entry:place-order-grpc-response#order.shipping_cost.currency_code",
+      "refs": [
+        "pb/demo.proto:148"
+      ],
+      "file_path": "pb/demo.proto"
+    },
+    {
+      "kind": "contains",
+      "from": "entry:place-order-grpc-response#order.shipping_cost",
+      "to": "entry:place-order-grpc-response#order.shipping_cost.nanos",
+      "refs": [
+        "pb/demo.proto:160"
+      ],
+      "file_path": "pb/demo.proto"
+    },
+    {
+      "kind": "contains",
+      "from": "entry:place-order-grpc-response#order.shipping_cost",
+      "to": "entry:place-order-grpc-response#order.shipping_cost.units",
+      "refs": [
+        "pb/demo.proto:152"
+      ],
+      "file_path": "pb/demo.proto"
+    },
+    {
+      "kind": "contains",
+      "from": "entry:place-order-request",
+      "to": "entry:place-order-request#address",
+      "refs": []
+    },
+    {
+      "kind": "contains",
+      "from": "entry:place-order-request",
+      "to": "entry:place-order-request#creditCard",
+      "refs": []
+    },
+    {
+      "kind": "contains",
+      "from": "entry:place-order-request",
+      "to": "entry:place-order-request#email",
+      "refs": [
+        "pb/demo.proto:233",
+        "src/frontend/components/Cart/CartDetail.tsx:40"
+      ],
+      "file_path": "pb/demo.proto"
+    },
+    {
+      "kind": "contains",
+      "from": "entry:place-order-request",
+      "to": "entry:place-order-request#userCurrency",
+      "refs": [
+        "pb/demo.proto:230",
+        "src/frontend/components/Cart/CartDetail.tsx:48"
+      ],
+      "file_path": "pb/demo.proto"
+    },
+    {
+      "kind": "contains",
+      "from": "entry:place-order-request",
+      "to": "entry:place-order-request#userId",
+      "refs": [
+        "pb/demo.proto:229",
+        "src/frontend/components/Cart/CartDetail.tsx:39"
+      ],
+      "file_path": "pb/demo.proto"
+    },
+    {
+      "kind": "contains",
+      "from": "entry:place-order-request#address",
+      "to": "entry:place-order-request#address.city",
+      "refs": [
+        "pb/demo.proto:132",
+        "src/frontend/components/Cart/CartDetail.tsx:45"
+      ],
+      "file_path": "pb/demo.proto"
+    },
+    {
+      "kind": "contains",
+      "from": "entry:place-order-request#address",
+      "to": "entry:place-order-request#address.country",
+      "refs": [
+        "pb/demo.proto:134",
+        "src/frontend/components/Cart/CartDetail.tsx:44"
+      ],
+      "file_path": "pb/demo.proto"
+    },
+    {
+      "kind": "contains",
+      "from": "entry:place-order-request#address",
+      "to": "entry:place-order-request#address.state",
+      "refs": [
+        "pb/demo.proto:133",
+        "src/frontend/components/Cart/CartDetail.tsx:43"
+      ],
+      "file_path": "pb/demo.proto"
+    },
+    {
+      "kind": "contains",
+      "from": "entry:place-order-request#address",
+      "to": "entry:place-order-request#address.streetAddress",
+      "refs": [
+        "pb/demo.proto:131",
+        "src/frontend/components/Cart/CartDetail.tsx:42"
+      ],
+      "file_path": "pb/demo.proto"
+    },
+    {
+      "kind": "contains",
+      "from": "entry:place-order-request#address",
+      "to": "entry:place-order-request#address.zipCode",
+      "refs": [
+        "pb/demo.proto:135",
+        "src/frontend/components/Cart/CartDetail.tsx:46"
+      ],
+      "file_path": "pb/demo.proto"
+    },
+    {
+      "kind": "contains",
+      "from": "entry:place-order-request#creditCard",
+      "to": "entry:place-order-request#creditCard.creditCardCvv",
+      "refs": [
+        "pb/demo.proto:183",
+        "src/frontend/components/Cart/CartDetail.tsx:50"
+      ],
+      "file_path": "pb/demo.proto"
+    },
+    {
+      "kind": "contains",
+      "from": "entry:place-order-request#creditCard",
+      "to": "entry:place-order-request#creditCard.creditCardExpirationMonth",
+      "refs": [
+        "pb/demo.proto:185",
+        "src/frontend/components/Cart/CartDetail.tsx:51"
+      ],
+      "file_path": "pb/demo.proto"
+    },
+    {
+      "kind": "contains",
+      "from": "entry:place-order-request#creditCard",
+      "to": "entry:place-order-request#creditCard.creditCardExpirationYear",
+      "refs": [
+        "pb/demo.proto:184",
+        "src/frontend/components/Cart/CartDetail.tsx:52"
+      ],
+      "file_path": "pb/demo.proto"
+    },
+    {
+      "kind": "contains",
+      "from": "entry:place-order-request#creditCard",
+      "to": "entry:place-order-request#creditCard.creditCardNumber",
+      "refs": [
+        "pb/demo.proto:182",
+        "src/frontend/components/Cart/CartDetail.tsx:53"
+      ],
+      "file_path": "pb/demo.proto"
+    },
+    {
+      "kind": "contains",
+      "from": "entry:place-order-response",
+      "to": "entry:place-order-response#order",
+      "refs": []
+    },
+    {
+      "kind": "contains",
+      "from": "entry:place-order-response#order",
+      "to": "entry:place-order-response#order.items",
+      "refs": []
+    },
+    {
+      "kind": "contains",
+      "from": "entry:place-order-response#order",
+      "to": "entry:place-order-response#order.orderId",
+      "refs": [
+        "pb/demo.proto:209",
+        "src/frontend/pages/api/checkout.ts:50"
+      ],
+      "file_path": "pb/demo.proto"
+    },
+    {
+      "kind": "contains",
+      "from": "entry:place-order-response#order",
+      "to": "entry:place-order-response#order.shippingAddress",
+      "refs": []
+    },
+    {
+      "kind": "contains",
+      "from": "entry:place-order-response#order",
+      "to": "entry:place-order-response#order.shippingCost",
+      "refs": []
+    },
+    {
+      "kind": "contains",
+      "from": "entry:place-order-response#order",
+      "to": "entry:place-order-response#order.shippingTrackingId",
+      "refs": [
+        "pb/demo.proto:210"
+      ],
+      "file_path": "pb/demo.proto"
+    },
+    {
+      "kind": "contains",
+      "from": "entry:place-order-response#order.items",
+      "to": "entry:place-order-response#order.items.cost",
+      "refs": []
+    },
+    {
+      "kind": "contains",
+      "from": "entry:place-order-response#order.items",
+      "to": "entry:place-order-response#order.items.item",
+      "refs": []
+    },
+    {
+      "kind": "contains",
+      "from": "entry:place-order-response#order.items.cost",
+      "to": "entry:place-order-response#order.items.cost.currencyCode",
+      "refs": [
+        "pb/demo.proto:148"
+      ],
+      "file_path": "pb/demo.proto"
+    },
+    {
+      "kind": "contains",
+      "from": "entry:place-order-response#order.items.cost",
+      "to": "entry:place-order-response#order.items.cost.nanos",
+      "refs": [
+        "pb/demo.proto:160"
+      ],
+      "file_path": "pb/demo.proto"
+    },
+    {
+      "kind": "contains",
+      "from": "entry:place-order-response#order.items.cost",
+      "to": "entry:place-order-response#order.items.cost.units",
+      "refs": [
+        "pb/demo.proto:152"
+      ],
+      "file_path": "pb/demo.proto"
+    },
+    {
+      "kind": "contains",
+      "from": "entry:place-order-response#order.items.item",
+      "to": "entry:place-order-response#order.items.item.productId",
+      "refs": [
+        "pb/demo.proto:30"
+      ],
+      "file_path": "pb/demo.proto"
+    },
+    {
+      "kind": "contains",
+      "from": "entry:place-order-response#order.items.item",
+      "to": "entry:place-order-response#order.items.item.quantity",
+      "refs": [
+        "pb/demo.proto:31"
+      ],
+      "file_path": "pb/demo.proto"
+    },
+    {
+      "kind": "contains",
+      "from": "entry:place-order-response#order.shippingAddress",
+      "to": "entry:place-order-response#order.shippingAddress.streetAddress",
+      "refs": [
+        "pb/demo.proto:131"
+      ],
+      "file_path": "pb/demo.proto"
+    },
+    {
+      "kind": "contains",
+      "from": "entry:place-order-response#order.shippingCost",
+      "to": "entry:place-order-response#order.shippingCost.currencyCode",
+      "refs": [
+        "pb/demo.proto:148"
+      ],
+      "file_path": "pb/demo.proto"
+    },
+    {
+      "kind": "contains",
+      "from": "entry:place-order-response#order.shippingCost",
+      "to": "entry:place-order-response#order.shippingCost.nanos",
+      "refs": [
+        "pb/demo.proto:160"
+      ],
+      "file_path": "pb/demo.proto"
+    },
+    {
+      "kind": "contains",
+      "from": "entry:place-order-response#order.shippingCost",
+      "to": "entry:place-order-response#order.shippingCost.units",
+      "refs": [
+        "pb/demo.proto:152"
+      ],
+      "file_path": "pb/demo.proto"
+    },
+    {
+      "kind": "contains",
+      "from": "entry:shipping-cost-localized",
+      "to": "entry:shipping-cost-localized#currency_code",
+      "refs": [
+        "pb/demo.proto:148"
+      ],
+      "file_path": "pb/demo.proto"
+    },
+    {
+      "kind": "contains",
+      "from": "entry:shipping-cost-localized",
+      "to": "entry:shipping-cost-localized#nanos",
+      "refs": [
+        "pb/demo.proto:160"
+      ],
+      "file_path": "pb/demo.proto"
+    },
+    {
+      "kind": "contains",
+      "from": "entry:shipping-cost-localized",
+      "to": "entry:shipping-cost-localized#units",
+      "refs": [
+        "pb/demo.proto:152"
+      ],
+      "file_path": "pb/demo.proto"
+    },
+    {
+      "kind": "contains",
+      "from": "entry:shipping-quote-request",
+      "to": "entry:shipping-quote-request#address",
+      "refs": []
+    },
+    {
+      "kind": "contains",
+      "from": "entry:shipping-quote-request",
+      "to": "entry:shipping-quote-request#items",
+      "refs": []
+    },
+    {
+      "kind": "contains",
+      "from": "entry:shipping-quote-request#address",
+      "to": "entry:shipping-quote-request#address.city",
+      "refs": [
+        "pb/demo.proto:132"
+      ],
+      "file_path": "pb/demo.proto"
+    },
+    {
+      "kind": "contains",
+      "from": "entry:shipping-quote-request#address",
+      "to": "entry:shipping-quote-request#address.country",
+      "refs": [
+        "pb/demo.proto:134"
+      ],
+      "file_path": "pb/demo.proto"
+    },
+    {
+      "kind": "contains",
+      "from": "entry:shipping-quote-request#address",
+      "to": "entry:shipping-quote-request#address.state",
+      "refs": [
+        "pb/demo.proto:133"
+      ],
+      "file_path": "pb/demo.proto"
+    },
+    {
+      "kind": "contains",
+      "from": "entry:shipping-quote-request#address",
+      "to": "entry:shipping-quote-request#address.street_address",
+      "refs": [
+        "pb/demo.proto:131"
+      ],
+      "file_path": "pb/demo.proto"
+    },
+    {
+      "kind": "contains",
+      "from": "entry:shipping-quote-request#address",
+      "to": "entry:shipping-quote-request#address.zip_code",
+      "refs": [
+        "pb/demo.proto:135"
+      ],
+      "file_path": "pb/demo.proto"
+    },
+    {
+      "kind": "contains",
+      "from": "entry:shipping-quote-request#items",
+      "to": "entry:shipping-quote-request#items.product_id",
+      "refs": [
+        "pb/demo.proto:30"
+      ],
+      "file_path": "pb/demo.proto"
+    },
+    {
+      "kind": "contains",
+      "from": "entry:shipping-quote-request#items",
+      "to": "entry:shipping-quote-request#items.quantity",
+      "refs": [
+        "pb/demo.proto:31"
+      ],
+      "file_path": "pb/demo.proto"
+    },
+    {
+      "kind": "contains",
+      "from": "entry:shipping-quote-usd",
+      "to": "entry:shipping-quote-usd#cost_usd",
+      "refs": []
+    },
+    {
+      "kind": "contains",
+      "from": "entry:shipping-quote-usd#cost_usd",
+      "to": "entry:shipping-quote-usd#cost_usd.currency_code",
+      "refs": [
+        "pb/demo.proto:148"
+      ],
+      "file_path": "pb/demo.proto"
+    },
+    {
+      "kind": "contains",
+      "from": "entry:shipping-quote-usd#cost_usd",
+      "to": "entry:shipping-quote-usd#cost_usd.nanos",
+      "refs": [
+        "pb/demo.proto:160"
+      ],
+      "file_path": "pb/demo.proto"
+    },
+    {
+      "kind": "contains",
+      "from": "entry:shipping-quote-usd#cost_usd",
+      "to": "entry:shipping-quote-usd#cost_usd.units",
+      "refs": [
+        "pb/demo.proto:152"
+      ],
+      "file_path": "pb/demo.proto"
+    },
+    {
+      "kind": "contains",
+      "from": "entry:shipping-request",
+      "to": "entry:shipping-request#address",
+      "refs": []
+    },
+    {
+      "kind": "contains",
+      "from": "entry:shipping-request",
+      "to": "entry:shipping-request#items",
+      "refs": []
+    },
+    {
+      "kind": "contains",
+      "from": "entry:shipping-request#address",
+      "to": "entry:shipping-request#address.city",
+      "refs": [
+        "pb/demo.proto:132"
+      ],
+      "file_path": "pb/demo.proto"
+    },
+    {
+      "kind": "contains",
+      "from": "entry:shipping-request#address",
+      "to": "entry:shipping-request#address.country",
+      "refs": [
+        "pb/demo.proto:134"
+      ],
+      "file_path": "pb/demo.proto"
+    },
+    {
+      "kind": "contains",
+      "from": "entry:shipping-request#address",
+      "to": "entry:shipping-request#address.state",
+      "refs": [
+        "pb/demo.proto:133"
+      ],
+      "file_path": "pb/demo.proto"
+    },
+    {
+      "kind": "contains",
+      "from": "entry:shipping-request#address",
+      "to": "entry:shipping-request#address.street_address",
+      "refs": [
+        "pb/demo.proto:131"
+      ],
+      "file_path": "pb/demo.proto"
+    },
+    {
+      "kind": "contains",
+      "from": "entry:shipping-request#address",
+      "to": "entry:shipping-request#address.zip_code",
+      "refs": [
+        "pb/demo.proto:135"
+      ],
+      "file_path": "pb/demo.proto"
+    },
+    {
+      "kind": "contains",
+      "from": "entry:shipping-request#items",
+      "to": "entry:shipping-request#items.product_id",
+      "refs": [
+        "pb/demo.proto:30"
+      ],
+      "file_path": "pb/demo.proto"
+    },
+    {
+      "kind": "contains",
+      "from": "entry:shipping-request#items",
+      "to": "entry:shipping-request#items.quantity",
+      "refs": [
+        "pb/demo.proto:31"
+      ],
+      "file_path": "pb/demo.proto"
+    },
+    {
+      "kind": "contains",
+      "from": "entry:shipping-tracking",
+      "to": "entry:shipping-tracking#tracking_id",
+      "refs": [
+        "pb/demo.proto:127",
+        "src/checkout/main.go:652"
+      ],
+      "file_path": "pb/demo.proto"
+    },
+    {
+      "kind": "contains",
+      "from": "input:checkout-form-data",
+      "to": "input:checkout-form-data#city",
+      "refs": [
+        "src/frontend/components/CheckoutForm/CheckoutForm.tsx:16"
+      ],
+      "file_path": "src/frontend/components/CheckoutForm/CheckoutForm.tsx"
+    },
+    {
+      "kind": "contains",
+      "from": "input:checkout-form-data",
+      "to": "input:checkout-form-data#country",
+      "refs": [
+        "src/frontend/components/CheckoutForm/CheckoutForm.tsx:18"
+      ],
+      "file_path": "src/frontend/components/CheckoutForm/CheckoutForm.tsx"
+    },
+    {
+      "kind": "contains",
+      "from": "input:checkout-form-data",
+      "to": "input:checkout-form-data#creditCardCvv",
+      "refs": [
+        "src/frontend/components/CheckoutForm/CheckoutForm.tsx:21"
+      ],
+      "file_path": "src/frontend/components/CheckoutForm/CheckoutForm.tsx"
+    },
+    {
+      "kind": "contains",
+      "from": "input:checkout-form-data",
+      "to": "input:checkout-form-data#creditCardExpirationMonth",
+      "refs": [
+        "src/frontend/components/CheckoutForm/CheckoutForm.tsx:23"
+      ],
+      "file_path": "src/frontend/components/CheckoutForm/CheckoutForm.tsx"
+    },
+    {
+      "kind": "contains",
+      "from": "input:checkout-form-data",
+      "to": "input:checkout-form-data#creditCardExpirationYear",
+      "refs": [
+        "src/frontend/components/CheckoutForm/CheckoutForm.tsx:22"
+      ],
+      "file_path": "src/frontend/components/CheckoutForm/CheckoutForm.tsx"
+    },
+    {
+      "kind": "contains",
+      "from": "input:checkout-form-data",
+      "to": "input:checkout-form-data#creditCardNumber",
+      "refs": [
+        "src/frontend/components/CheckoutForm/CheckoutForm.tsx:20"
+      ],
+      "file_path": "src/frontend/components/CheckoutForm/CheckoutForm.tsx"
+    },
+    {
+      "kind": "contains",
+      "from": "input:checkout-form-data",
+      "to": "input:checkout-form-data#email",
+      "refs": [
+        "src/frontend/components/CheckoutForm/CheckoutForm.tsx:14"
+      ],
+      "file_path": "src/frontend/components/CheckoutForm/CheckoutForm.tsx"
+    },
+    {
+      "kind": "contains",
+      "from": "input:checkout-form-data",
+      "to": "input:checkout-form-data#state",
+      "refs": [
+        "src/frontend/components/CheckoutForm/CheckoutForm.tsx:17"
+      ],
+      "file_path": "src/frontend/components/CheckoutForm/CheckoutForm.tsx"
+    },
+    {
+      "kind": "contains",
+      "from": "input:checkout-form-data",
+      "to": "input:checkout-form-data#streetAddress",
+      "refs": [
+        "src/frontend/components/CheckoutForm/CheckoutForm.tsx:15"
+      ],
+      "file_path": "src/frontend/components/CheckoutForm/CheckoutForm.tsx"
+    },
+    {
+      "kind": "contains",
+      "from": "input:checkout-form-data",
+      "to": "input:checkout-form-data#zipCode",
+      "refs": [
+        "src/frontend/components/CheckoutForm/CheckoutForm.tsx:19"
+      ],
+      "file_path": "src/frontend/components/CheckoutForm/CheckoutForm.tsx"
+    },
+    {
+      "kind": "contains",
+      "from": "input:checkout-http-request",
+      "to": "input:checkout-http-request#body",
+      "refs": []
+    },
+    {
+      "kind": "contains",
+      "from": "input:checkout-http-request",
+      "to": "input:checkout-http-request#currencyCode",
+      "refs": [
+        "src/frontend/pages/api/checkout.ts:23"
+      ],
+      "file_path": "src/frontend/pages/api/checkout.ts"
+    },
+    {
+      "kind": "contains",
+      "from": "input:checkout-http-request#body",
+      "to": "input:checkout-http-request#body.address",
+      "refs": []
+    },
+    {
+      "kind": "contains",
+      "from": "input:checkout-http-request#body",
+      "to": "input:checkout-http-request#body.creditCard",
+      "refs": []
+    },
+    {
+      "kind": "contains",
+      "from": "input:checkout-http-request#body",
+      "to": "input:checkout-http-request#body.email",
+      "refs": [
+        "pb/demo.proto:233"
+      ],
+      "file_path": "pb/demo.proto"
+    },
+    {
+      "kind": "contains",
+      "from": "input:checkout-http-request#body",
+      "to": "input:checkout-http-request#body.userCurrency",
+      "refs": [
+        "pb/demo.proto:230"
+      ],
+      "file_path": "pb/demo.proto"
+    },
+    {
+      "kind": "contains",
+      "from": "input:checkout-http-request#body",
+      "to": "input:checkout-http-request#body.userId",
+      "refs": [
+        "pb/demo.proto:229"
+      ],
+      "file_path": "pb/demo.proto"
+    },
+    {
+      "kind": "contains",
+      "from": "input:checkout-http-request#body.address",
+      "to": "input:checkout-http-request#body.address.city",
+      "refs": [
+        "pb/demo.proto:132"
+      ],
+      "file_path": "pb/demo.proto"
+    },
+    {
+      "kind": "contains",
+      "from": "input:checkout-http-request#body.address",
+      "to": "input:checkout-http-request#body.address.streetAddress",
+      "refs": [
+        "pb/demo.proto:131"
+      ],
+      "file_path": "pb/demo.proto"
+    },
+    {
+      "kind": "contains",
+      "from": "input:checkout-http-request#body.creditCard",
+      "to": "input:checkout-http-request#body.creditCard.creditCardCvv",
+      "refs": [
+        "pb/demo.proto:183"
+      ],
+      "file_path": "pb/demo.proto"
+    },
+    {
+      "kind": "contains",
+      "from": "input:checkout-http-request#body.creditCard",
+      "to": "input:checkout-http-request#body.creditCard.creditCardNumber",
+      "refs": [
+        "pb/demo.proto:182"
+      ],
+      "file_path": "pb/demo.proto"
+    },
+    {
+      "kind": "contains",
+      "from": "input:place-order-grpc-request",
+      "to": "input:place-order-grpc-request#address",
+      "refs": []
+    },
+    {
+      "kind": "contains",
+      "from": "input:place-order-grpc-request",
+      "to": "input:place-order-grpc-request#creditCard",
+      "refs": []
+    },
+    {
+      "kind": "contains",
+      "from": "input:place-order-grpc-request",
+      "to": "input:place-order-grpc-request#email",
+      "refs": [
+        "pb/demo.proto:233"
+      ],
+      "file_path": "pb/demo.proto"
+    },
+    {
+      "kind": "contains",
+      "from": "input:place-order-grpc-request",
+      "to": "input:place-order-grpc-request#userCurrency",
+      "refs": [
+        "pb/demo.proto:230",
+        "src/checkout/main.go:310"
+      ],
+      "file_path": "pb/demo.proto"
+    },
+    {
+      "kind": "contains",
+      "from": "input:place-order-grpc-request",
+      "to": "input:place-order-grpc-request#userId",
+      "refs": [
+        "pb/demo.proto:229",
+        "src/checkout/main.go:309"
+      ],
+      "file_path": "pb/demo.proto"
+    },
+    {
+      "kind": "contains",
+      "from": "input:place-order-grpc-request#address",
+      "to": "input:place-order-grpc-request#address.city",
+      "refs": [
+        "pb/demo.proto:132"
+      ],
+      "file_path": "pb/demo.proto"
+    },
+    {
+      "kind": "contains",
+      "from": "input:place-order-grpc-request#address",
+      "to": "input:place-order-grpc-request#address.country",
+      "refs": [
+        "pb/demo.proto:134"
+      ],
+      "file_path": "pb/demo.proto"
+    },
+    {
+      "kind": "contains",
+      "from": "input:place-order-grpc-request#address",
+      "to": "input:place-order-grpc-request#address.state",
+      "refs": [
+        "pb/demo.proto:133"
+      ],
+      "file_path": "pb/demo.proto"
+    },
+    {
+      "kind": "contains",
+      "from": "input:place-order-grpc-request#address",
+      "to": "input:place-order-grpc-request#address.streetAddress",
+      "refs": [
+        "pb/demo.proto:131"
+      ],
+      "file_path": "pb/demo.proto"
+    },
+    {
+      "kind": "contains",
+      "from": "input:place-order-grpc-request#address",
+      "to": "input:place-order-grpc-request#address.zipCode",
+      "refs": [
+        "pb/demo.proto:135"
+      ],
+      "file_path": "pb/demo.proto"
+    },
+    {
+      "kind": "contains",
+      "from": "input:place-order-grpc-request#creditCard",
+      "to": "input:place-order-grpc-request#creditCard.creditCardCvv",
+      "refs": [
+        "pb/demo.proto:183"
+      ],
+      "file_path": "pb/demo.proto"
+    },
+    {
+      "kind": "contains",
+      "from": "input:place-order-grpc-request#creditCard",
+      "to": "input:place-order-grpc-request#creditCard.creditCardExpirationMonth",
+      "refs": [
+        "pb/demo.proto:185"
+      ],
+      "file_path": "pb/demo.proto"
+    },
+    {
+      "kind": "contains",
+      "from": "input:place-order-grpc-request#creditCard",
+      "to": "input:place-order-grpc-request#creditCard.creditCardExpirationYear",
+      "refs": [
+        "pb/demo.proto:184"
+      ],
+      "file_path": "pb/demo.proto"
+    },
+    {
+      "kind": "contains",
+      "from": "input:place-order-grpc-request#creditCard",
+      "to": "input:place-order-grpc-request#creditCard.creditCardNumber",
+      "refs": [
+        "pb/demo.proto:182"
+      ],
+      "file_path": "pb/demo.proto"
+    },
+    {
+      "kind": "contains",
+      "from": "input:product-catalog-product",
+      "to": "input:product-catalog-product#id",
+      "refs": [
+        "pb/demo.proto:78"
+      ],
+      "file_path": "pb/demo.proto"
+    },
+    {
+      "kind": "contains",
+      "from": "input:product-catalog-product",
+      "to": "input:product-catalog-product#name",
+      "refs": [
+        "pb/demo.proto:79"
+      ],
+      "file_path": "pb/demo.proto"
+    },
+    {
+      "kind": "contains",
+      "from": "input:product-catalog-product",
+      "to": "input:product-catalog-product#priceUsd",
+      "refs": []
+    },
+    {
+      "kind": "contains",
+      "from": "input:product-catalog-product#priceUsd",
+      "to": "input:product-catalog-product#priceUsd.currencyCode",
+      "refs": [
+        "pb/demo.proto:148"
+      ],
+      "file_path": "pb/demo.proto"
+    },
+    {
+      "kind": "contains",
+      "from": "input:product-catalog-product#priceUsd",
+      "to": "input:product-catalog-product#priceUsd.nanos",
+      "refs": [
+        "pb/demo.proto:160"
+      ],
+      "file_path": "pb/demo.proto"
+    },
+    {
+      "kind": "contains",
+      "from": "input:product-catalog-product#priceUsd",
+      "to": "input:product-catalog-product#priceUsd.units",
+      "refs": [
+        "pb/demo.proto:152"
+      ],
+      "file_path": "pb/demo.proto"
+    },
+    {
+      "kind": "contains",
+      "from": "storage:orders-kafka-topic",
+      "to": "storage:orders-kafka-topic#items",
+      "refs": []
+    },
+    {
+      "kind": "contains",
+      "from": "storage:orders-kafka-topic",
+      "to": "storage:orders-kafka-topic#order_id",
+      "refs": [
+        "pb/demo.proto:209",
+        "src/checkout/main.go:665"
+      ],
+      "file_path": "pb/demo.proto"
+    },
+    {
+      "kind": "contains",
+      "from": "storage:orders-kafka-topic",
+      "to": "storage:orders-kafka-topic#shipping_tracking_id",
+      "refs": [
+        "pb/demo.proto:210",
+        "src/checkout/main.go:665"
+      ],
+      "file_path": "pb/demo.proto"
+    },
+    {
+      "kind": "contains",
+      "from": "storage:orders-kafka-topic#items",
+      "to": "storage:orders-kafka-topic#items.item",
+      "refs": []
+    },
+    {
+      "kind": "contains",
+      "from": "storage:orders-kafka-topic#items.item",
+      "to": "storage:orders-kafka-topic#items.item.product_id",
+      "refs": [
+        "pb/demo.proto:30"
+      ],
+      "file_path": "pb/demo.proto"
+    },
+    {
+      "kind": "contains",
+      "from": "storage:orders-kafka-topic#items.item",
+      "to": "storage:orders-kafka-topic#items.item.quantity",
+      "refs": [
+        "pb/demo.proto:31"
+      ],
+      "file_path": "pb/demo.proto"
+    },
+    {
+      "kind": "contains",
+      "from": "storage:valkey-cart",
+      "to": "storage:valkey-cart#cart",
+      "refs": [
+        "src/cart/src/cartstore/ValkeyCartStore.cs:23"
+      ],
+      "file_path": "src/cart/src/cartstore/ValkeyCartStore.cs"
+    },
+    {
+      "kind": "contains",
+      "from": "storage:valkey-cart",
+      "to": "storage:valkey-cart#user_id",
+      "refs": [
+        "src/cart/src/cartstore/ValkeyCartStore.cs:151"
+      ],
+      "file_path": "src/cart/src/cartstore/ValkeyCartStore.cs"
+    },
+    {
+      "kind": "contains",
+      "from": "storage:valkey-cart#cart",
+      "to": "storage:valkey-cart#cart.items",
+      "refs": []
+    },
+    {
+      "kind": "contains",
+      "from": "storage:valkey-cart#cart.items",
+      "to": "storage:valkey-cart#cart.items.product_id",
+      "refs": [
+        "pb/demo.proto:30"
+      ],
+      "file_path": "pb/demo.proto"
+    },
+    {
+      "kind": "contains",
+      "from": "storage:valkey-cart#cart.items",
+      "to": "storage:valkey-cart#cart.items.quantity",
+      "refs": [
+        "pb/demo.proto:31"
+      ],
+      "file_path": "pb/demo.proto"
+    },
+    {
+      "kind": "related",
+      "from": "entrypoint:checkout-form-submit",
+      "to": "entrypoint:post-checkout-api",
+      "description": "CheckoutForm's onSubmit in CartDetail calls placeOrder, which POSTs the order to /api/checkout via ApiGateway.",
+      "refs": [
+        "src/frontend/components/Cart/CartDetail.tsx:38",
+        "src/frontend/gateways/Api.gateway.ts:55"
+      ]
+    },
+    {
+      "kind": "related",
+      "from": "entrypoint:post-checkout-api",
+      "to": "entrypoint:grpc-place-order",
+      "description": "The API route calls CheckoutGateway.placeOrder, which invokes CheckoutService.PlaceOrder over gRPC.",
+      "refs": [
+        "src/frontend/pages/api/checkout.ts:28",
+        "src/frontend/gateways/rpc/Checkout.gateway.ts:14"
+      ]
+    },
+    {
+      "kind": "rule",
+      "from": "entrypoint:post-checkout-api",
+      "to": "rule:post-method-only",
+      "refs": [
+        "src/frontend/pages/api/checkout.ts:71"
+      ]
+    },
+    {
+      "kind": "rule",
+      "from": "flow:checkout-api",
+      "to": "rule:payment-declined-422",
+      "refs": [
+        "src/frontend/pages/api/checkout.ts:36"
+      ]
+    },
+    {
+      "kind": "rule",
+      "from": "flow:place-order",
+      "to": "rule:cart-ttl",
+      "refs": [
+        "src/cart/src/cartstore/ValkeyCartStore.cs:199"
+      ]
+    },
+    {
+      "kind": "rule",
+      "from": "flow:place-order",
+      "to": "rule:email-timeout",
+      "refs": [
+        "src/checkout/main.go:601"
+      ]
+    },
+    {
+      "kind": "rule",
+      "from": "flow:place-order",
+      "to": "rule:emit-raw-pii-flag",
+      "refs": [
+        "src/checkout/main.go:313"
+      ]
+    },
+    {
+      "kind": "rule",
+      "from": "flow:place-order",
+      "to": "rule:kafka-broker-required",
+      "refs": [
+        "src/checkout/main.go:418"
+      ]
+    },
+    {
+      "kind": "rule",
+      "from": "flow:place-order",
+      "to": "rule:kafka-queue-problems-flag",
+      "refs": [
+        "src/checkout/main.go:717"
+      ]
+    },
+    {
+      "kind": "rule",
+      "from": "flow:place-order",
+      "to": "rule:money-validation",
+      "refs": [
+        "src/checkout/money/money.go:81"
+      ]
+    },
+    {
+      "kind": "rule",
+      "from": "flow:place-order",
+      "to": "rule:payment-unreachable-flag",
+      "refs": [
+        "src/checkout/main.go:575"
+      ]
+    },
+    {
+      "kind": "transform",
+      "from": "entry:cart-get-request",
+      "to": "storage:valkey-cart",
+      "flow_id": "flow:place-order",
+      "refs": [
+        "src/cart/src/cartstore/ValkeyCartStore.cs:222"
+      ],
+      "note": "CartService.GetCart looks up the Valkey hash keyed by user_id and its 'cart' field."
+    },
+    {
+      "kind": "transform",
+      "from": "entry:cart-items",
+      "to": "entry:order-items-localized",
+      "flow_id": "flow:place-order",
+      "refs": [
+        "src/checkout/main.go:546",
+        "src/checkout/main.go:554"
+      ],
+      "note": "For each cart item GetProduct returns price_usd, which is converted to userCurrency into OrderItem.cost."
+    },
+    {
+      "kind": "transform",
+      "from": "entry:cart-items",
+      "to": "entry:order-result",
+      "flow_id": "flow:place-order",
+      "refs": [
+        "src/checkout/main.go:388"
+      ],
+      "note": "Prepared order items are placed in OrderResult.Items."
+    },
+    {
+      "kind": "transform",
+      "from": "entry:cart-items",
+      "to": "entry:shipping-quote-request",
+      "flow_id": "flow:place-order",
+      "refs": [
+        "src/checkout/main.go:488"
+      ],
+      "note": "Cart items become the JSON 'items' of the /get-quote payload."
+    },
+    {
+      "kind": "transform",
+      "from": "entry:cart-items",
+      "to": "entry:shipping-request",
+      "flow_id": "flow:place-order",
+      "refs": [
+        "src/checkout/main.go:623"
+      ],
+      "note": "Cart items become JSON 'items' of the POST /ship-order payload."
+    },
+    {
+      "kind": "transform",
+      "from": "entry:charge-request",
+      "to": "entry:payment-result",
+      "flow_id": "flow:place-order",
+      "refs": [
+        "src/checkout/main.go:589"
+      ],
+      "note": "PaymentService.Charge returns transaction_id, recorded in the span."
+    },
+    {
+      "kind": "transform",
+      "from": "entry:empty-cart-request",
+      "to": "storage:valkey-cart",
+      "flow_id": "flow:place-order",
+      "refs": [
+        "src/checkout/main.go:536",
+        "src/cart/src/cartstore/ValkeyCartStore.cs:198"
+      ],
+      "note": "CartService.EmptyCart writes an empty serialized Cart into the user's Valkey cart field."
+    },
+    {
+      "kind": "transform",
+      "from": "entry:order-items-localized",
+      "to": "entry:order-total",
+      "flow_id": "flow:place-order",
+      "refs": [
+        "src/checkout/main.go:357"
+      ],
+      "note": "Each item cost is multiplied by its quantity and summed into the total."
+    },
+    {
+      "kind": "transform",
+      "from": "entry:order-result",
+      "to": "entry:email-confirmation-payload",
+      "flow_id": "flow:place-order",
+      "refs": [
+        "src/checkout/main.go:595"
+      ],
+      "note": "Assembled OrderResult becomes the 'order' key of the confirmation payload."
+    },
+    {
+      "kind": "transform",
+      "from": "entry:order-result",
+      "to": "entry:place-order-grpc-response",
+      "flow_id": "flow:place-order",
+      "refs": [
+        "src/checkout/main.go:423"
+      ],
+      "note": "OrderResult is wrapped as PlaceOrderResponse.Order for the gRPC reply."
+    },
+    {
+      "kind": "transform",
+      "from": "entry:order-result",
+      "to": "storage:orders-kafka-topic",
+      "flow_id": "flow:place-order",
+      "refs": [
+        "src/checkout/main.go:665",
+        "src/checkout/main.go:683"
+      ],
+      "note": "OrderResult is protobuf-marshalled and published as the Kafka message value (topic defaults to 'orders')."
+    },
+    {
+      "kind": "transform",
+      "from": "entry:order-total",
+      "to": "entry:charge-request",
+      "flow_id": "flow:place-order",
+      "refs": [
+        "src/checkout/main.go:582"
+      ],
+      "note": "Computed total becomes ChargeRequest.amount."
+    },
+    {
+      "kind": "transform",
+      "from": "entry:place-order-request",
+      "to": "input:checkout-http-request",
+      "flow_id": "flow:checkout-api",
+      "refs": [
+        "src/frontend/gateways/Api.gateway.ts:55",
+        "src/frontend/pages/api/checkout.ts:23"
+      ],
+      "note": "The PlaceOrderRequest body posted by ApiGateway is received by the route; selectedCurrency is additionally sent as the currencyCode query parameter."
+    },
+    {
+      "kind": "transform",
+      "from": "entry:place-order-response",
+      "to": "entry:checkout-response-hydrated",
+      "flow_id": "flow:checkout-api",
+      "refs": [
+        "src/frontend/pages/api/checkout.ts:50",
+        "src/frontend/pages/api/checkout.ts:68"
+      ],
+      "note": "Order fields pass through; each ordered item's product is fetched and attached before JSON response."
+    },
+    {
+      "kind": "transform",
+      "from": "entry:shipping-cost-localized",
+      "to": "entry:order-result",
+      "flow_id": "flow:place-order",
+      "refs": [
+        "src/checkout/main.go:386"
+      ],
+      "note": "Localized shipping quote becomes OrderResult.ShippingCost."
+    },
+    {
+      "kind": "transform",
+      "from": "entry:shipping-cost-localized",
+      "to": "entry:order-total",
+      "flow_id": "flow:place-order",
+      "refs": [
+        "src/checkout/main.go:355"
+      ],
+      "note": "Shipping cost starts the running Money total."
+    },
+    {
+      "kind": "transform",
+      "from": "entry:shipping-quote-request",
+      "to": "entry:shipping-quote-usd",
+      "flow_id": "flow:place-order",
+      "refs": [
+        "src/checkout/main.go:514"
+      ],
+      "note": "POST /get-quote response body is unmarshalled into cost_usd Money."
+    },
+    {
+      "kind": "transform",
+      "from": "entry:shipping-quote-usd",
+      "to": "entry:shipping-cost-localized",
+      "flow_id": "flow:place-order",
+      "refs": [
+        "src/checkout/main.go:450",
+        "src/checkout/main.go:562"
+      ],
+      "note": "CurrencyService.Convert converts cost_usd to req.userCurrency."
+    },
+    {
+      "kind": "transform",
+      "from": "entry:shipping-request",
+      "to": "entry:shipping-tracking",
+      "flow_id": "flow:place-order",
+      "refs": [
+        "src/checkout/main.go:654"
+      ],
+      "note": "POST /ship-order response body is unmarshalled into tracking_id."
+    },
+    {
+      "kind": "transform",
+      "from": "entry:shipping-tracking",
+      "to": "entry:order-result",
+      "flow_id": "flow:place-order",
+      "refs": [
+        "src/checkout/main.go:385"
+      ],
+      "note": "Tracking id becomes OrderResult.ShippingTrackingId."
+    },
+    {
+      "kind": "transform",
+      "from": "input:checkout-form-data",
+      "to": "entry:place-order-request",
+      "flow_id": "flow:submit-checkout",
+      "refs": [
+        "src/frontend/components/Cart/CartDetail.tsx:38",
+        "src/frontend/gateways/Api.gateway.ts:55"
+      ],
+      "note": "Form address and card fields map into Address and CreditCardInfo; session userId and selectedCurrency are added."
+    },
+    {
+      "kind": "transform",
+      "from": "input:checkout-http-request",
+      "to": "entry:place-order-response",
+      "flow_id": "flow:checkout-api",
+      "refs": [
+        "src/frontend/pages/api/checkout.ts:28"
+      ],
+      "note": "Request body is forwarded via CheckoutGateway.placeOrder; the gRPC response carries the assembled OrderResult."
+    },
+    {
+      "kind": "transform",
+      "from": "input:place-order-grpc-request",
+      "to": "entry:cart-get-request",
+      "flow_id": "flow:place-order",
+      "refs": [
+        "src/checkout/main.go:528"
+      ],
+      "note": "req.UserId becomes GetCartRequest.UserId."
+    },
+    {
+      "kind": "transform",
+      "from": "input:place-order-grpc-request",
+      "to": "entry:charge-request",
+      "flow_id": "flow:place-order",
+      "refs": [
+        "src/checkout/main.go:584"
+      ],
+      "note": "Request credit card details are copied into ChargeRequest.credit_card."
+    },
+    {
+      "kind": "transform",
+      "from": "input:place-order-grpc-request",
+      "to": "entry:email-confirmation-payload",
+      "flow_id": "flow:place-order",
+      "refs": [
+        "src/checkout/main.go:593"
+      ],
+      "note": "req.Email becomes the 'email' key of the email service JSON payload."
+    },
+    {
+      "kind": "transform",
+      "from": "input:place-order-grpc-request",
+      "to": "entry:empty-cart-request",
+      "flow_id": "flow:place-order",
+      "refs": [
+        "src/checkout/main.go:536"
+      ],
+      "note": "req.UserId becomes EmptyCartRequest.UserId after shipping."
+    },
+    {
+      "kind": "transform",
+      "from": "input:place-order-grpc-request",
+      "to": "entry:order-result",
+      "flow_id": "flow:place-order",
+      "refs": [
+        "src/checkout/main.go:339",
+        "src/checkout/main.go:387"
+      ],
+      "note": "New UUID and request Address populate OrderResult.OrderId and ShippingAddress."
+    },
+    {
+      "kind": "transform",
+      "from": "input:place-order-grpc-request",
+      "to": "entry:shipping-quote-request",
+      "flow_id": "flow:place-order",
+      "refs": [
+        "src/checkout/main.go:486"
+      ],
+      "note": "Request Address becomes the JSON 'address' of the /get-quote payload."
+    },
+    {
+      "kind": "transform",
+      "from": "input:place-order-grpc-request",
+      "to": "entry:shipping-request",
+      "flow_id": "flow:place-order",
+      "refs": [
+        "src/checkout/main.go:624"
+      ],
+      "note": "Request Address becomes JSON 'address' of the POST /ship-order payload."
+    },
+    {
+      "kind": "transform",
+      "from": "input:product-catalog-product",
+      "to": "entry:checkout-response-hydrated",
+      "flow_id": "flow:checkout-api",
+      "refs": [
+        "src/frontend/pages/api/checkout.ts:54",
+        "src/frontend/services/ProductCatalog.service.ts:30"
+      ],
+      "note": "Product from ProductCatalogService.getProduct(productId, currencyCode) becomes items[].item.product."
+    },
+    {
+      "kind": "transform",
+      "from": "storage:valkey-cart",
+      "to": "entry:cart-items",
+      "flow_id": "flow:place-order",
+      "refs": [
+        "src/cart/src/cartstore/ValkeyCartStore.cs:226",
+        "src/checkout/main.go:532"
+      ],
+      "note": "Serialized Cart protobuf is parsed and its product_id/quantity items are returned to checkout."
+    },
+    {
+      "kind": "trigger",
+      "from": "entrypoint:checkout-form-submit",
+      "to": "flow:submit-checkout",
+      "refs": [
+        "src/frontend/components/CheckoutForm/CheckoutForm.tsx:69"
+      ]
+    },
+    {
+      "kind": "trigger",
+      "from": "entrypoint:grpc-place-order",
+      "to": "flow:place-order",
+      "refs": [
+        "src/checkout/main.go:306"
+      ]
+    },
+    {
+      "kind": "trigger",
+      "from": "entrypoint:post-checkout-api",
+      "to": "flow:checkout-api",
+      "refs": [
+        "src/frontend/pages/api/checkout.ts:22"
+      ]
+    },
+    {
+      "kind": "use",
+      "from": "flow:checkout-api",
+      "to": "entry:checkout-response-hydrated",
+      "refs": []
+    },
+    {
+      "kind": "use",
+      "from": "flow:checkout-api",
+      "to": "entry:place-order-request",
+      "refs": []
+    },
+    {
+      "kind": "use",
+      "from": "flow:checkout-api",
+      "to": "entry:place-order-response",
+      "refs": []
+    },
+    {
+      "kind": "use",
+      "from": "flow:checkout-api",
+      "to": "input:checkout-http-request",
+      "refs": []
+    },
+    {
+      "kind": "use",
+      "from": "flow:checkout-api",
+      "to": "input:product-catalog-product",
+      "refs": []
+    },
+    {
+      "kind": "use",
+      "from": "flow:place-order",
+      "to": "entry:cart-get-request",
+      "refs": []
+    },
+    {
+      "kind": "use",
+      "from": "flow:place-order",
+      "to": "entry:cart-items",
+      "refs": []
+    },
+    {
+      "kind": "use",
+      "from": "flow:place-order",
+      "to": "entry:charge-request",
+      "refs": []
+    },
+    {
+      "kind": "use",
+      "from": "flow:place-order",
+      "to": "entry:email-confirmation-payload",
+      "refs": []
+    },
+    {
+      "kind": "use",
+      "from": "flow:place-order",
+      "to": "entry:empty-cart-request",
+      "refs": []
+    },
+    {
+      "kind": "use",
+      "from": "flow:place-order",
+      "to": "entry:order-items-localized",
+      "refs": []
+    },
+    {
+      "kind": "use",
+      "from": "flow:place-order",
+      "to": "entry:order-result",
+      "refs": []
+    },
+    {
+      "kind": "use",
+      "from": "flow:place-order",
+      "to": "entry:order-total",
+      "refs": []
+    },
+    {
+      "kind": "use",
+      "from": "flow:place-order",
+      "to": "entry:payment-result",
+      "refs": []
+    },
+    {
+      "kind": "use",
+      "from": "flow:place-order",
+      "to": "entry:place-order-grpc-response",
+      "refs": []
+    },
+    {
+      "kind": "use",
+      "from": "flow:place-order",
+      "to": "entry:shipping-cost-localized",
+      "refs": []
+    },
+    {
+      "kind": "use",
+      "from": "flow:place-order",
+      "to": "entry:shipping-quote-request",
+      "refs": []
+    },
+    {
+      "kind": "use",
+      "from": "flow:place-order",
+      "to": "entry:shipping-quote-usd",
+      "refs": []
+    },
+    {
+      "kind": "use",
+      "from": "flow:place-order",
+      "to": "entry:shipping-request",
+      "refs": []
+    },
+    {
+      "kind": "use",
+      "from": "flow:place-order",
+      "to": "entry:shipping-tracking",
+      "refs": []
+    },
+    {
+      "kind": "use",
+      "from": "flow:place-order",
+      "to": "input:place-order-grpc-request",
+      "refs": []
+    },
+    {
+      "kind": "use",
+      "from": "flow:place-order",
+      "to": "storage:orders-kafka-topic",
+      "refs": []
+    },
+    {
+      "kind": "use",
+      "from": "flow:place-order",
+      "to": "storage:valkey-cart",
+      "refs": []
+    },
+    {
+      "kind": "use",
+      "from": "flow:submit-checkout",
+      "to": "entry:place-order-request",
+      "refs": []
+    },
+    {
+      "kind": "use",
+      "from": "flow:submit-checkout",
+      "to": "input:checkout-form-data",
+      "refs": []
+    }
+  ]
+}

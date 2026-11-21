@@ -1,0 +1,2750 @@
+{
+  "schema_version": 7,
+  "generated_at": "2026-11-21T00:16:06+00:00",
+  "repo": "https://github.com/homealoneai/skill-logistic-map.git",
+  "commit": "77ff12d",
+  "nodes": [
+    {
+      "id": "entry:detail-cached-user",
+      "name": "Cached detail row",
+      "description": "Flow<DbUser> emitted by UserDao.getUserByIdAsFlow, before and after the detail fallback update",
+      "stage": "cached",
+      "cluster": "core-users",
+      "repo": "https://github.com/homealoneai/skill-logistic-map.git",
+      "commit_sha": "77ff12d",
+      "file_path": "core/src/main/java/com/kryptkode/core/cache/user/UserDao.kt",
+      "refs": [
+        "core/src/main/java/com/kryptkode/core/cache/user/UserDao.kt:15",
+        "features/users/src/main/java/com/kryptkode/users/domain/GetUserDetailUseCase.kt:25"
+      ],
+      "kind": "entry"
+    },
+    {
+      "id": "entry:detail-enriched-user",
+      "name": "Enriched detail row",
+      "description": "DbUser produced by UserResponseDbMapper from the detail endpoint, with phone/gender/location and parsed dates filled",
+      "stage": "enriched",
+      "cluster": "core-users",
+      "repo": "https://github.com/homealoneai/skill-logistic-map.git",
+      "commit_sha": "77ff12d",
+      "file_path": "core/src/main/java/com/kryptkode/core/remote/mapper/UserResponseDbMapper.kt",
+      "refs": [
+        "core/src/main/java/com/kryptkode/core/remote/mapper/UserResponseDbMapper.kt:11",
+        "features/users/src/main/java/com/kryptkode/users/domain/GetUserDetailUseCase.kt:29"
+      ],
+      "kind": "entry"
+    },
+    {
+      "id": "entry:detail-ui-model",
+      "name": "User detail view model",
+      "description": "UserDetail model mapped from a cached DbUser with display-formatted dates and nested UserLocation",
+      "stage": "view",
+      "cluster": "users-ui",
+      "repo": "https://github.com/homealoneai/skill-logistic-map.git",
+      "commit_sha": "77ff12d",
+      "file_path": "features/users/src/main/java/com/kryptkode/users/model/UserDetail.kt",
+      "refs": [
+        "features/users/src/main/java/com/kryptkode/users/mapper/UserDetailMapper.kt:16",
+        "features/users/src/main/java/com/kryptkode/users/ui/detail/UserDetailViewModel.kt:31"
+      ],
+      "kind": "entry"
+    },
+    {
+      "id": "entry:paged-db-users",
+      "name": "Paged cached user rows",
+      "description": "PagingData of DbUser rows emitted by the Room PagingSource through the Pager",
+      "stage": "paged",
+      "cluster": "core-users",
+      "repo": "https://github.com/homealoneai/skill-logistic-map.git",
+      "commit_sha": "77ff12d",
+      "file_path": "core/src/main/java/com/kryptkode/core/cache/user/UserDao.kt",
+      "refs": [
+        "core/src/main/java/com/kryptkode/core/cache/user/UserDao.kt:12",
+        "features/users/src/main/java/com/kryptkode/users/domain/GetUsersUseCase.kt:26"
+      ],
+      "kind": "entry"
+    },
+    {
+      "id": "entry:paged-ui-users",
+      "name": "Paged UI users",
+      "description": "PagingData of User view models mapped from cached rows and cached in UserListViewModel",
+      "stage": "view",
+      "cluster": "users-ui",
+      "repo": "https://github.com/homealoneai/skill-logistic-map.git",
+      "commit_sha": "77ff12d",
+      "file_path": "features/users/src/main/java/com/kryptkode/users/model/User.kt",
+      "refs": [
+        "features/users/src/main/java/com/kryptkode/users/mapper/UserMapper.kt:10",
+        "features/users/src/main/java/com/kryptkode/users/ui/list/UserListViewModel.kt:22"
+      ],
+      "kind": "entry"
+    },
+    {
+      "id": "entry:user-list-entities",
+      "name": "Mapped user rows for page",
+      "description": "List of DbUser rows produced by UserRemoteDbMapper from UserResponse.data in the mediator",
+      "stage": "mapped",
+      "cluster": "core-users",
+      "repo": "https://github.com/homealoneai/skill-logistic-map.git",
+      "commit_sha": "77ff12d",
+      "file_path": "core/src/main/java/com/kryptkode/core/remote/mapper/UserRemoteDbMapper.kt",
+      "refs": [
+        "core/src/main/java/com/kryptkode/core/remote/mapper/UserRemoteDbMapper.kt:8",
+        "core/src/main/java/com/kryptkode/core/remote/mediator/UserRemoteMediator.kt:72"
+      ],
+      "kind": "entry"
+    },
+    {
+      "id": "entry:user-remote-keys",
+      "name": "Remote keys for page",
+      "description": "List of UserRemoteKeys built from each user id plus prevKey/nextKey for paging",
+      "stage": "mapped",
+      "cluster": "core-users",
+      "repo": "https://github.com/homealoneai/skill-logistic-map.git",
+      "commit_sha": "77ff12d",
+      "file_path": "core/src/main/java/com/kryptkode/core/remote/mediator/UserRemoteMediator.kt",
+      "refs": [
+        "core/src/main/java/com/kryptkode/core/remote/mediator/UserRemoteMediator.kt:66",
+        "core/src/main/java/com/kryptkode/core/cache/keys/UserRemoteKeys.kt:8"
+      ],
+      "kind": "entry"
+    },
+    {
+      "id": "entrypoint:user-detail-screen",
+      "name": "User detail screen",
+      "description": "UserDetailFragment.onViewCreated calls viewModel.getUserDetails(user) for the selected list user and renders the resulting detail state",
+      "cluster": "users-ui",
+      "repo": "https://github.com/homealoneai/skill-logistic-map.git",
+      "commit_sha": "77ff12d",
+      "file_path": "features/users/src/main/java/com/kryptkode/users/ui/detail/UserDetailFragment.kt",
+      "refs": [
+        "features/users/src/main/java/com/kryptkode/users/ui/detail/UserDetailFragment.kt:39",
+        "features/users/src/main/java/com/kryptkode/users/ui/detail/UserDetailFragment.kt:59"
+      ],
+      "kind": "entrypoint"
+    },
+    {
+      "id": "entrypoint:user-list-screen",
+      "name": "User list screen",
+      "description": "UserListFragment.onViewCreated observes the paged user list, renders it and handles item clicks / refresh-retry events",
+      "cluster": "users-ui",
+      "repo": "https://github.com/homealoneai/skill-logistic-map.git",
+      "commit_sha": "77ff12d",
+      "file_path": "features/users/src/main/java/com/kryptkode/users/ui/list/UserListFragment.kt",
+      "refs": [
+        "features/users/src/main/java/com/kryptkode/users/ui/list/UserListFragment.kt:35",
+        "features/users/src/main/java/com/kryptkode/users/ui/list/UserListFragment.kt:39",
+        "features/users/src/main/java/com/kryptkode/users/ui/list/UserListFragment.kt:54"
+      ],
+      "kind": "entrypoint"
+    },
+    {
+      "id": "entry:detail-cached-user#dateOfBirth",
+      "name": "dateOfBirth",
+      "path": "dateOfBirth",
+      "type": "timestamp",
+      "required": false,
+      "source": "declared",
+      "repo": "https://github.com/homealoneai/skill-logistic-map.git",
+      "commit_sha": "77ff12d",
+      "file_path": "core/src/main/java/com/kryptkode/core/cache/user/DbUser.kt",
+      "refs": [
+        "core/src/main/java/com/kryptkode/core/cache/user/DbUser.kt:23"
+      ],
+      "kind": "field",
+      "owner": "entry:detail-cached-user"
+    },
+    {
+      "id": "entry:detail-cached-user#firstName",
+      "name": "firstName",
+      "path": "firstName",
+      "type": "string",
+      "required": false,
+      "source": "declared",
+      "repo": "https://github.com/homealoneai/skill-logistic-map.git",
+      "commit_sha": "77ff12d",
+      "file_path": "core/src/main/java/com/kryptkode/core/cache/user/DbUser.kt",
+      "refs": [
+        "core/src/main/java/com/kryptkode/core/cache/user/DbUser.kt:15"
+      ],
+      "kind": "field",
+      "owner": "entry:detail-cached-user"
+    },
+    {
+      "id": "entry:detail-cached-user#gender",
+      "name": "gender",
+      "path": "gender",
+      "type": "string",
+      "required": false,
+      "source": "declared",
+      "repo": "https://github.com/homealoneai/skill-logistic-map.git",
+      "commit_sha": "77ff12d",
+      "file_path": "core/src/main/java/com/kryptkode/core/cache/user/DbUser.kt",
+      "refs": [
+        "core/src/main/java/com/kryptkode/core/cache/user/DbUser.kt:19"
+      ],
+      "kind": "field",
+      "owner": "entry:detail-cached-user"
+    },
+    {
+      "id": "entry:detail-cached-user#id",
+      "name": "id",
+      "path": "id",
+      "type": "string",
+      "required": false,
+      "source": "declared",
+      "repo": "https://github.com/homealoneai/skill-logistic-map.git",
+      "commit_sha": "77ff12d",
+      "file_path": "core/src/main/java/com/kryptkode/core/cache/user/DbUser.kt",
+      "refs": [
+        "core/src/main/java/com/kryptkode/core/cache/user/DbUser.kt:13"
+      ],
+      "kind": "field",
+      "owner": "entry:detail-cached-user"
+    },
+    {
+      "id": "entry:detail-cached-user#lastName",
+      "name": "lastName",
+      "path": "lastName",
+      "type": "string",
+      "required": false,
+      "source": "declared",
+      "repo": "https://github.com/homealoneai/skill-logistic-map.git",
+      "commit_sha": "77ff12d",
+      "file_path": "core/src/main/java/com/kryptkode/core/cache/user/DbUser.kt",
+      "refs": [
+        "core/src/main/java/com/kryptkode/core/cache/user/DbUser.kt:14"
+      ],
+      "kind": "field",
+      "owner": "entry:detail-cached-user"
+    },
+    {
+      "id": "entry:detail-cached-user#location",
+      "name": "location",
+      "path": "location",
+      "type": "object",
+      "required": false,
+      "source": "declared",
+      "repo": "https://github.com/homealoneai/skill-logistic-map.git",
+      "commit_sha": "77ff12d",
+      "file_path": "core/src/main/java/com/kryptkode/core/cache/user/DbUser.kt",
+      "refs": [
+        "core/src/main/java/com/kryptkode/core/cache/user/DbUser.kt:21"
+      ],
+      "kind": "field",
+      "owner": "entry:detail-cached-user"
+    },
+    {
+      "id": "entry:detail-cached-user#location.city",
+      "name": "city",
+      "path": "location.city",
+      "type": "string",
+      "required": false,
+      "source": "declared",
+      "repo": "https://github.com/homealoneai/skill-logistic-map.git",
+      "commit_sha": "77ff12d",
+      "file_path": "core/src/main/java/com/kryptkode/core/cache/user/DbUser.kt",
+      "refs": [
+        "core/src/main/java/com/kryptkode/core/cache/user/DbUser.kt:21"
+      ],
+      "kind": "field",
+      "owner": "entry:detail-cached-user"
+    },
+    {
+      "id": "entry:detail-cached-user#phone",
+      "name": "phone",
+      "path": "phone",
+      "type": "string",
+      "required": false,
+      "source": "declared",
+      "repo": "https://github.com/homealoneai/skill-logistic-map.git",
+      "commit_sha": "77ff12d",
+      "file_path": "core/src/main/java/com/kryptkode/core/cache/user/DbUser.kt",
+      "refs": [
+        "core/src/main/java/com/kryptkode/core/cache/user/DbUser.kt:20"
+      ],
+      "kind": "field",
+      "owner": "entry:detail-cached-user"
+    },
+    {
+      "id": "entry:detail-cached-user#registerDate",
+      "name": "registerDate",
+      "path": "registerDate",
+      "type": "timestamp",
+      "required": false,
+      "source": "declared",
+      "repo": "https://github.com/homealoneai/skill-logistic-map.git",
+      "commit_sha": "77ff12d",
+      "file_path": "core/src/main/java/com/kryptkode/core/cache/user/DbUser.kt",
+      "refs": [
+        "core/src/main/java/com/kryptkode/core/cache/user/DbUser.kt:22"
+      ],
+      "kind": "field",
+      "owner": "entry:detail-cached-user"
+    },
+    {
+      "id": "entry:detail-enriched-user#dateOfBirth",
+      "name": "dateOfBirth",
+      "path": "dateOfBirth",
+      "type": "timestamp",
+      "required": false,
+      "source": "declared",
+      "repo": "https://github.com/homealoneai/skill-logistic-map.git",
+      "commit_sha": "77ff12d",
+      "file_path": "core/src/main/java/com/kryptkode/core/remote/mapper/UserResponseDbMapper.kt",
+      "refs": [
+        "core/src/main/java/com/kryptkode/core/remote/mapper/UserResponseDbMapper.kt:23"
+      ],
+      "kind": "field",
+      "owner": "entry:detail-enriched-user"
+    },
+    {
+      "id": "entry:detail-enriched-user#firstName",
+      "name": "firstName",
+      "path": "firstName",
+      "type": "string",
+      "required": false,
+      "source": "declared",
+      "repo": "https://github.com/homealoneai/skill-logistic-map.git",
+      "commit_sha": "77ff12d",
+      "file_path": "core/src/main/java/com/kryptkode/core/remote/mapper/UserResponseDbMapper.kt",
+      "refs": [
+        "core/src/main/java/com/kryptkode/core/remote/mapper/UserResponseDbMapper.kt:15"
+      ],
+      "kind": "field",
+      "owner": "entry:detail-enriched-user"
+    },
+    {
+      "id": "entry:detail-enriched-user#gender",
+      "name": "gender",
+      "path": "gender",
+      "type": "string",
+      "required": false,
+      "source": "declared",
+      "repo": "https://github.com/homealoneai/skill-logistic-map.git",
+      "commit_sha": "77ff12d",
+      "file_path": "core/src/main/java/com/kryptkode/core/remote/mapper/UserResponseDbMapper.kt",
+      "refs": [
+        "core/src/main/java/com/kryptkode/core/remote/mapper/UserResponseDbMapper.kt:19"
+      ],
+      "kind": "field",
+      "owner": "entry:detail-enriched-user"
+    },
+    {
+      "id": "entry:detail-enriched-user#id",
+      "name": "id",
+      "path": "id",
+      "type": "string",
+      "required": false,
+      "source": "declared",
+      "repo": "https://github.com/homealoneai/skill-logistic-map.git",
+      "commit_sha": "77ff12d",
+      "file_path": "core/src/main/java/com/kryptkode/core/remote/mapper/UserResponseDbMapper.kt",
+      "refs": [
+        "core/src/main/java/com/kryptkode/core/remote/mapper/UserResponseDbMapper.kt:13"
+      ],
+      "kind": "field",
+      "owner": "entry:detail-enriched-user"
+    },
+    {
+      "id": "entry:detail-enriched-user#lastName",
+      "name": "lastName",
+      "path": "lastName",
+      "type": "string",
+      "required": false,
+      "source": "declared",
+      "repo": "https://github.com/homealoneai/skill-logistic-map.git",
+      "commit_sha": "77ff12d",
+      "file_path": "core/src/main/java/com/kryptkode/core/remote/mapper/UserResponseDbMapper.kt",
+      "refs": [
+        "core/src/main/java/com/kryptkode/core/remote/mapper/UserResponseDbMapper.kt:14"
+      ],
+      "kind": "field",
+      "owner": "entry:detail-enriched-user"
+    },
+    {
+      "id": "entry:detail-enriched-user#location",
+      "name": "location",
+      "path": "location",
+      "type": "object",
+      "required": false,
+      "source": "declared",
+      "repo": "https://github.com/homealoneai/skill-logistic-map.git",
+      "commit_sha": "77ff12d",
+      "file_path": "core/src/main/java/com/kryptkode/core/remote/mapper/UserResponseDbMapper.kt",
+      "refs": [
+        "core/src/main/java/com/kryptkode/core/remote/mapper/UserResponseDbMapper.kt:21",
+        "core/src/main/java/com/kryptkode/core/remote/entities/user/Location.kt:7"
+      ],
+      "kind": "field",
+      "owner": "entry:detail-enriched-user"
+    },
+    {
+      "id": "entry:detail-enriched-user#location.city",
+      "name": "city",
+      "path": "location.city",
+      "type": "string",
+      "required": false,
+      "source": "declared",
+      "repo": "https://github.com/homealoneai/skill-logistic-map.git",
+      "commit_sha": "77ff12d",
+      "file_path": "core/src/main/java/com/kryptkode/core/remote/entities/user/Location.kt",
+      "refs": [
+        "core/src/main/java/com/kryptkode/core/remote/mapper/UserResponseDbMapper.kt:21",
+        "core/src/main/java/com/kryptkode/core/remote/entities/user/Location.kt:10"
+      ],
+      "kind": "field",
+      "owner": "entry:detail-enriched-user"
+    },
+    {
+      "id": "entry:detail-enriched-user#phone",
+      "name": "phone",
+      "path": "phone",
+      "type": "string",
+      "required": false,
+      "source": "declared",
+      "repo": "https://github.com/homealoneai/skill-logistic-map.git",
+      "commit_sha": "77ff12d",
+      "file_path": "core/src/main/java/com/kryptkode/core/remote/mapper/UserResponseDbMapper.kt",
+      "refs": [
+        "core/src/main/java/com/kryptkode/core/remote/mapper/UserResponseDbMapper.kt:20"
+      ],
+      "kind": "field",
+      "owner": "entry:detail-enriched-user"
+    },
+    {
+      "id": "entry:detail-enriched-user#registerDate",
+      "name": "registerDate",
+      "path": "registerDate",
+      "type": "timestamp",
+      "required": false,
+      "source": "declared",
+      "repo": "https://github.com/homealoneai/skill-logistic-map.git",
+      "commit_sha": "77ff12d",
+      "file_path": "core/src/main/java/com/kryptkode/core/remote/mapper/UserResponseDbMapper.kt",
+      "refs": [
+        "core/src/main/java/com/kryptkode/core/remote/mapper/UserResponseDbMapper.kt:22"
+      ],
+      "kind": "field",
+      "owner": "entry:detail-enriched-user"
+    },
+    {
+      "id": "entry:detail-ui-model#dateOfBirth",
+      "name": "dateOfBirth",
+      "path": "dateOfBirth",
+      "type": "string",
+      "required": false,
+      "source": "declared",
+      "repo": "https://github.com/homealoneai/skill-logistic-map.git",
+      "commit_sha": "77ff12d",
+      "file_path": "features/users/src/main/java/com/kryptkode/users/model/UserDetail.kt",
+      "refs": [
+        "features/users/src/main/java/com/kryptkode/users/model/UserDetail.kt:18"
+      ],
+      "kind": "field",
+      "owner": "entry:detail-ui-model"
+    },
+    {
+      "id": "entry:detail-ui-model#firstName",
+      "name": "firstName",
+      "path": "firstName",
+      "type": "string",
+      "required": false,
+      "source": "declared",
+      "repo": "https://github.com/homealoneai/skill-logistic-map.git",
+      "commit_sha": "77ff12d",
+      "file_path": "features/users/src/main/java/com/kryptkode/users/model/UserDetail.kt",
+      "refs": [
+        "features/users/src/main/java/com/kryptkode/users/model/UserDetail.kt:10"
+      ],
+      "kind": "field",
+      "owner": "entry:detail-ui-model"
+    },
+    {
+      "id": "entry:detail-ui-model#gender",
+      "name": "gender",
+      "path": "gender",
+      "type": "string",
+      "required": false,
+      "source": "declared",
+      "repo": "https://github.com/homealoneai/skill-logistic-map.git",
+      "commit_sha": "77ff12d",
+      "file_path": "features/users/src/main/java/com/kryptkode/users/model/UserDetail.kt",
+      "refs": [
+        "features/users/src/main/java/com/kryptkode/users/model/UserDetail.kt:15"
+      ],
+      "kind": "field",
+      "owner": "entry:detail-ui-model"
+    },
+    {
+      "id": "entry:detail-ui-model#id",
+      "name": "id",
+      "path": "id",
+      "type": "string",
+      "required": false,
+      "source": "declared",
+      "repo": "https://github.com/homealoneai/skill-logistic-map.git",
+      "commit_sha": "77ff12d",
+      "file_path": "features/users/src/main/java/com/kryptkode/users/model/UserDetail.kt",
+      "refs": [
+        "features/users/src/main/java/com/kryptkode/users/model/UserDetail.kt:8"
+      ],
+      "kind": "field",
+      "owner": "entry:detail-ui-model"
+    },
+    {
+      "id": "entry:detail-ui-model#lastName",
+      "name": "lastName",
+      "path": "lastName",
+      "type": "string",
+      "required": false,
+      "source": "declared",
+      "repo": "https://github.com/homealoneai/skill-logistic-map.git",
+      "commit_sha": "77ff12d",
+      "file_path": "features/users/src/main/java/com/kryptkode/users/model/UserDetail.kt",
+      "refs": [
+        "features/users/src/main/java/com/kryptkode/users/model/UserDetail.kt:9"
+      ],
+      "kind": "field",
+      "owner": "entry:detail-ui-model"
+    },
+    {
+      "id": "entry:detail-ui-model#location",
+      "name": "location",
+      "path": "location",
+      "type": "object",
+      "required": false,
+      "source": "declared",
+      "repo": "https://github.com/homealoneai/skill-logistic-map.git",
+      "commit_sha": "77ff12d",
+      "file_path": "features/users/src/main/java/com/kryptkode/users/model/UserDetail.kt",
+      "refs": [
+        "features/users/src/main/java/com/kryptkode/users/model/UserDetail.kt:16",
+        "features/users/src/main/java/com/kryptkode/users/model/UserLocation.kt:7"
+      ],
+      "kind": "field",
+      "owner": "entry:detail-ui-model"
+    },
+    {
+      "id": "entry:detail-ui-model#location.city",
+      "name": "city",
+      "path": "location.city",
+      "type": "string",
+      "required": false,
+      "source": "declared",
+      "repo": "https://github.com/homealoneai/skill-logistic-map.git",
+      "commit_sha": "77ff12d",
+      "file_path": "features/users/src/main/java/com/kryptkode/users/model/UserLocation.kt",
+      "refs": [
+        "features/users/src/main/java/com/kryptkode/users/model/UserLocation.kt:10"
+      ],
+      "kind": "field",
+      "owner": "entry:detail-ui-model"
+    },
+    {
+      "id": "entry:detail-ui-model#phone",
+      "name": "phone",
+      "path": "phone",
+      "type": "string",
+      "required": false,
+      "source": "declared",
+      "repo": "https://github.com/homealoneai/skill-logistic-map.git",
+      "commit_sha": "77ff12d",
+      "file_path": "features/users/src/main/java/com/kryptkode/users/model/UserDetail.kt",
+      "refs": [
+        "features/users/src/main/java/com/kryptkode/users/model/UserDetail.kt:14"
+      ],
+      "kind": "field",
+      "owner": "entry:detail-ui-model"
+    },
+    {
+      "id": "entry:detail-ui-model#registerDate",
+      "name": "registerDate",
+      "path": "registerDate",
+      "type": "string",
+      "required": false,
+      "source": "declared",
+      "repo": "https://github.com/homealoneai/skill-logistic-map.git",
+      "commit_sha": "77ff12d",
+      "file_path": "features/users/src/main/java/com/kryptkode/users/model/UserDetail.kt",
+      "refs": [
+        "features/users/src/main/java/com/kryptkode/users/model/UserDetail.kt:17"
+      ],
+      "kind": "field",
+      "owner": "entry:detail-ui-model"
+    },
+    {
+      "id": "entry:paged-db-users#email",
+      "name": "email",
+      "path": "email",
+      "type": "string",
+      "required": false,
+      "source": "declared",
+      "repo": "https://github.com/homealoneai/skill-logistic-map.git",
+      "commit_sha": "77ff12d",
+      "file_path": "core/src/main/java/com/kryptkode/core/cache/user/DbUser.kt",
+      "refs": [
+        "core/src/main/java/com/kryptkode/core/cache/user/DbUser.kt:16"
+      ],
+      "kind": "field",
+      "owner": "entry:paged-db-users"
+    },
+    {
+      "id": "entry:paged-db-users#firstName",
+      "name": "firstName",
+      "path": "firstName",
+      "type": "string",
+      "required": false,
+      "source": "declared",
+      "repo": "https://github.com/homealoneai/skill-logistic-map.git",
+      "commit_sha": "77ff12d",
+      "file_path": "core/src/main/java/com/kryptkode/core/cache/user/DbUser.kt",
+      "refs": [
+        "core/src/main/java/com/kryptkode/core/cache/user/DbUser.kt:15"
+      ],
+      "kind": "field",
+      "owner": "entry:paged-db-users"
+    },
+    {
+      "id": "entry:paged-db-users#id",
+      "name": "id",
+      "path": "id",
+      "type": "string",
+      "required": false,
+      "source": "declared",
+      "repo": "https://github.com/homealoneai/skill-logistic-map.git",
+      "commit_sha": "77ff12d",
+      "file_path": "core/src/main/java/com/kryptkode/core/cache/user/DbUser.kt",
+      "refs": [
+        "core/src/main/java/com/kryptkode/core/cache/user/DbUser.kt:13"
+      ],
+      "kind": "field",
+      "owner": "entry:paged-db-users"
+    },
+    {
+      "id": "entry:paged-db-users#lastName",
+      "name": "lastName",
+      "path": "lastName",
+      "type": "string",
+      "required": false,
+      "source": "declared",
+      "repo": "https://github.com/homealoneai/skill-logistic-map.git",
+      "commit_sha": "77ff12d",
+      "file_path": "core/src/main/java/com/kryptkode/core/cache/user/DbUser.kt",
+      "refs": [
+        "core/src/main/java/com/kryptkode/core/cache/user/DbUser.kt:14"
+      ],
+      "kind": "field",
+      "owner": "entry:paged-db-users"
+    },
+    {
+      "id": "entry:paged-db-users#picture",
+      "name": "picture",
+      "path": "picture",
+      "type": "string",
+      "required": false,
+      "source": "declared",
+      "repo": "https://github.com/homealoneai/skill-logistic-map.git",
+      "commit_sha": "77ff12d",
+      "file_path": "core/src/main/java/com/kryptkode/core/cache/user/DbUser.kt",
+      "refs": [
+        "core/src/main/java/com/kryptkode/core/cache/user/DbUser.kt:18"
+      ],
+      "kind": "field",
+      "owner": "entry:paged-db-users"
+    },
+    {
+      "id": "entry:paged-ui-users#email",
+      "name": "email",
+      "path": "email",
+      "type": "string",
+      "required": false,
+      "source": "declared",
+      "repo": "https://github.com/homealoneai/skill-logistic-map.git",
+      "commit_sha": "77ff12d",
+      "file_path": "features/users/src/main/java/com/kryptkode/users/model/User.kt",
+      "refs": [
+        "features/users/src/main/java/com/kryptkode/users/model/User.kt:11"
+      ],
+      "kind": "field",
+      "owner": "entry:paged-ui-users"
+    },
+    {
+      "id": "entry:paged-ui-users#firstName",
+      "name": "firstName",
+      "path": "firstName",
+      "type": "string",
+      "required": false,
+      "source": "declared",
+      "repo": "https://github.com/homealoneai/skill-logistic-map.git",
+      "commit_sha": "77ff12d",
+      "file_path": "features/users/src/main/java/com/kryptkode/users/model/User.kt",
+      "refs": [
+        "features/users/src/main/java/com/kryptkode/users/model/User.kt:10"
+      ],
+      "kind": "field",
+      "owner": "entry:paged-ui-users"
+    },
+    {
+      "id": "entry:paged-ui-users#id",
+      "name": "id",
+      "path": "id",
+      "type": "string",
+      "required": false,
+      "source": "declared",
+      "repo": "https://github.com/homealoneai/skill-logistic-map.git",
+      "commit_sha": "77ff12d",
+      "file_path": "features/users/src/main/java/com/kryptkode/users/model/User.kt",
+      "refs": [
+        "features/users/src/main/java/com/kryptkode/users/model/User.kt:8"
+      ],
+      "kind": "field",
+      "owner": "entry:paged-ui-users"
+    },
+    {
+      "id": "entry:paged-ui-users#lastName",
+      "name": "lastName",
+      "path": "lastName",
+      "type": "string",
+      "required": false,
+      "source": "declared",
+      "repo": "https://github.com/homealoneai/skill-logistic-map.git",
+      "commit_sha": "77ff12d",
+      "file_path": "features/users/src/main/java/com/kryptkode/users/model/User.kt",
+      "refs": [
+        "features/users/src/main/java/com/kryptkode/users/model/User.kt:9"
+      ],
+      "kind": "field",
+      "owner": "entry:paged-ui-users"
+    },
+    {
+      "id": "entry:paged-ui-users#picture",
+      "name": "picture",
+      "path": "picture",
+      "type": "string",
+      "required": false,
+      "source": "declared",
+      "repo": "https://github.com/homealoneai/skill-logistic-map.git",
+      "commit_sha": "77ff12d",
+      "file_path": "features/users/src/main/java/com/kryptkode/users/model/User.kt",
+      "refs": [
+        "features/users/src/main/java/com/kryptkode/users/model/User.kt:13"
+      ],
+      "kind": "field",
+      "owner": "entry:paged-ui-users"
+    },
+    {
+      "id": "entry:paged-ui-users#title",
+      "name": "title",
+      "path": "title",
+      "type": "string",
+      "required": false,
+      "source": "declared",
+      "repo": "https://github.com/homealoneai/skill-logistic-map.git",
+      "commit_sha": "77ff12d",
+      "file_path": "features/users/src/main/java/com/kryptkode/users/model/User.kt",
+      "refs": [
+        "features/users/src/main/java/com/kryptkode/users/model/User.kt:12"
+      ],
+      "kind": "field",
+      "owner": "entry:paged-ui-users"
+    },
+    {
+      "id": "entry:user-list-entities#email",
+      "name": "email",
+      "path": "email",
+      "type": "string",
+      "required": false,
+      "source": "declared",
+      "repo": "https://github.com/homealoneai/skill-logistic-map.git",
+      "commit_sha": "77ff12d",
+      "file_path": "core/src/main/java/com/kryptkode/core/remote/mapper/UserRemoteDbMapper.kt",
+      "refs": [
+        "core/src/main/java/com/kryptkode/core/remote/mapper/UserRemoteDbMapper.kt:13"
+      ],
+      "kind": "field",
+      "owner": "entry:user-list-entities"
+    },
+    {
+      "id": "entry:user-list-entities#firstName",
+      "name": "firstName",
+      "path": "firstName",
+      "type": "string",
+      "required": false,
+      "source": "declared",
+      "repo": "https://github.com/homealoneai/skill-logistic-map.git",
+      "commit_sha": "77ff12d",
+      "file_path": "core/src/main/java/com/kryptkode/core/remote/mapper/UserRemoteDbMapper.kt",
+      "refs": [
+        "core/src/main/java/com/kryptkode/core/remote/mapper/UserRemoteDbMapper.kt:12"
+      ],
+      "kind": "field",
+      "owner": "entry:user-list-entities"
+    },
+    {
+      "id": "entry:user-list-entities#id",
+      "name": "id",
+      "path": "id",
+      "type": "string",
+      "required": false,
+      "source": "declared",
+      "repo": "https://github.com/homealoneai/skill-logistic-map.git",
+      "commit_sha": "77ff12d",
+      "file_path": "core/src/main/java/com/kryptkode/core/remote/mapper/UserRemoteDbMapper.kt",
+      "refs": [
+        "core/src/main/java/com/kryptkode/core/remote/mapper/UserRemoteDbMapper.kt:10"
+      ],
+      "kind": "field",
+      "owner": "entry:user-list-entities"
+    },
+    {
+      "id": "entry:user-list-entities#lastName",
+      "name": "lastName",
+      "path": "lastName",
+      "type": "string",
+      "required": false,
+      "source": "declared",
+      "repo": "https://github.com/homealoneai/skill-logistic-map.git",
+      "commit_sha": "77ff12d",
+      "file_path": "core/src/main/java/com/kryptkode/core/remote/mapper/UserRemoteDbMapper.kt",
+      "refs": [
+        "core/src/main/java/com/kryptkode/core/remote/mapper/UserRemoteDbMapper.kt:11"
+      ],
+      "kind": "field",
+      "owner": "entry:user-list-entities"
+    },
+    {
+      "id": "entry:user-list-entities#picture",
+      "name": "picture",
+      "path": "picture",
+      "type": "string",
+      "required": false,
+      "source": "declared",
+      "repo": "https://github.com/homealoneai/skill-logistic-map.git",
+      "commit_sha": "77ff12d",
+      "file_path": "core/src/main/java/com/kryptkode/core/remote/mapper/UserRemoteDbMapper.kt",
+      "refs": [
+        "core/src/main/java/com/kryptkode/core/remote/mapper/UserRemoteDbMapper.kt:15"
+      ],
+      "kind": "field",
+      "owner": "entry:user-list-entities"
+    },
+    {
+      "id": "entry:user-list-entities#title",
+      "name": "title",
+      "path": "title",
+      "type": "string",
+      "required": false,
+      "source": "declared",
+      "repo": "https://github.com/homealoneai/skill-logistic-map.git",
+      "commit_sha": "77ff12d",
+      "file_path": "core/src/main/java/com/kryptkode/core/remote/mapper/UserRemoteDbMapper.kt",
+      "refs": [
+        "core/src/main/java/com/kryptkode/core/remote/mapper/UserRemoteDbMapper.kt:14"
+      ],
+      "kind": "field",
+      "owner": "entry:user-list-entities"
+    },
+    {
+      "id": "entry:user-remote-keys#nextKey",
+      "name": "nextKey",
+      "path": "nextKey",
+      "type": "integer",
+      "required": false,
+      "source": "declared",
+      "repo": "https://github.com/homealoneai/skill-logistic-map.git",
+      "commit_sha": "77ff12d",
+      "file_path": "core/src/main/java/com/kryptkode/core/cache/keys/UserRemoteKeys.kt",
+      "refs": [
+        "core/src/main/java/com/kryptkode/core/cache/keys/UserRemoteKeys.kt:11"
+      ],
+      "kind": "field",
+      "owner": "entry:user-remote-keys"
+    },
+    {
+      "id": "entry:user-remote-keys#prevKey",
+      "name": "prevKey",
+      "path": "prevKey",
+      "type": "integer",
+      "required": false,
+      "source": "declared",
+      "repo": "https://github.com/homealoneai/skill-logistic-map.git",
+      "commit_sha": "77ff12d",
+      "file_path": "core/src/main/java/com/kryptkode/core/cache/keys/UserRemoteKeys.kt",
+      "refs": [
+        "core/src/main/java/com/kryptkode/core/cache/keys/UserRemoteKeys.kt:10"
+      ],
+      "kind": "field",
+      "owner": "entry:user-remote-keys"
+    },
+    {
+      "id": "entry:user-remote-keys#userId",
+      "name": "userId",
+      "path": "userId",
+      "type": "string",
+      "required": false,
+      "source": "declared",
+      "repo": "https://github.com/homealoneai/skill-logistic-map.git",
+      "commit_sha": "77ff12d",
+      "file_path": "core/src/main/java/com/kryptkode/core/cache/keys/UserRemoteKeys.kt",
+      "refs": [
+        "core/src/main/java/com/kryptkode/core/cache/keys/UserRemoteKeys.kt:9"
+      ],
+      "kind": "field",
+      "owner": "entry:user-remote-keys"
+    },
+    {
+      "id": "input:user-detail-response#dateOfBirth",
+      "name": "dateOfBirth",
+      "path": "dateOfBirth",
+      "type": "string",
+      "required": false,
+      "source": "declared",
+      "repo": "https://github.com/homealoneai/skill-logistic-map.git",
+      "commit_sha": "77ff12d",
+      "file_path": "core/src/main/java/com/kryptkode/core/remote/entities/user/UserDetailResponse.kt",
+      "refs": [
+        "core/src/main/java/com/kryptkode/core/remote/entities/user/UserDetailResponse.kt:18"
+      ],
+      "kind": "field",
+      "owner": "input:user-detail-response"
+    },
+    {
+      "id": "input:user-detail-response#email",
+      "name": "email",
+      "path": "email",
+      "type": "string",
+      "required": false,
+      "source": "declared",
+      "repo": "https://github.com/homealoneai/skill-logistic-map.git",
+      "commit_sha": "77ff12d",
+      "file_path": "core/src/main/java/com/kryptkode/core/remote/entities/user/UserDetailResponse.kt",
+      "refs": [
+        "core/src/main/java/com/kryptkode/core/remote/entities/user/UserDetailResponse.kt:9"
+      ],
+      "kind": "field",
+      "owner": "input:user-detail-response"
+    },
+    {
+      "id": "input:user-detail-response#firstName",
+      "name": "firstName",
+      "path": "firstName",
+      "type": "string",
+      "required": false,
+      "source": "declared",
+      "repo": "https://github.com/homealoneai/skill-logistic-map.git",
+      "commit_sha": "77ff12d",
+      "file_path": "core/src/main/java/com/kryptkode/core/remote/entities/user/UserDetailResponse.kt",
+      "refs": [
+        "core/src/main/java/com/kryptkode/core/remote/entities/user/UserDetailResponse.kt:10"
+      ],
+      "kind": "field",
+      "owner": "input:user-detail-response"
+    },
+    {
+      "id": "input:user-detail-response#gender",
+      "name": "gender",
+      "path": "gender",
+      "type": "string",
+      "required": false,
+      "source": "declared",
+      "repo": "https://github.com/homealoneai/skill-logistic-map.git",
+      "commit_sha": "77ff12d",
+      "file_path": "core/src/main/java/com/kryptkode/core/remote/entities/user/UserDetailResponse.kt",
+      "refs": [
+        "core/src/main/java/com/kryptkode/core/remote/entities/user/UserDetailResponse.kt:15"
+      ],
+      "kind": "field",
+      "owner": "input:user-detail-response"
+    },
+    {
+      "id": "input:user-detail-response#id",
+      "name": "id",
+      "path": "id",
+      "type": "string",
+      "required": false,
+      "source": "declared",
+      "repo": "https://github.com/homealoneai/skill-logistic-map.git",
+      "commit_sha": "77ff12d",
+      "file_path": "core/src/main/java/com/kryptkode/core/remote/entities/user/UserDetailResponse.kt",
+      "refs": [
+        "core/src/main/java/com/kryptkode/core/remote/entities/user/UserDetailResponse.kt:8"
+      ],
+      "kind": "field",
+      "owner": "input:user-detail-response"
+    },
+    {
+      "id": "input:user-detail-response#lastName",
+      "name": "lastName",
+      "path": "lastName",
+      "type": "string",
+      "required": false,
+      "source": "declared",
+      "repo": "https://github.com/homealoneai/skill-logistic-map.git",
+      "commit_sha": "77ff12d",
+      "file_path": "core/src/main/java/com/kryptkode/core/remote/entities/user/UserDetailResponse.kt",
+      "refs": [
+        "core/src/main/java/com/kryptkode/core/remote/entities/user/UserDetailResponse.kt:11"
+      ],
+      "kind": "field",
+      "owner": "input:user-detail-response"
+    },
+    {
+      "id": "input:user-detail-response#location",
+      "name": "location",
+      "path": "location",
+      "type": "object",
+      "required": false,
+      "source": "declared",
+      "repo": "https://github.com/homealoneai/skill-logistic-map.git",
+      "commit_sha": "77ff12d",
+      "file_path": "core/src/main/java/com/kryptkode/core/remote/entities/user/UserDetailResponse.kt",
+      "refs": [
+        "core/src/main/java/com/kryptkode/core/remote/entities/user/UserDetailResponse.kt:16",
+        "core/src/main/java/com/kryptkode/core/remote/entities/user/Location.kt:7"
+      ],
+      "kind": "field",
+      "owner": "input:user-detail-response"
+    },
+    {
+      "id": "input:user-detail-response#location.city",
+      "name": "city",
+      "path": "location.city",
+      "type": "string",
+      "required": false,
+      "source": "declared",
+      "repo": "https://github.com/homealoneai/skill-logistic-map.git",
+      "commit_sha": "77ff12d",
+      "file_path": "core/src/main/java/com/kryptkode/core/remote/entities/user/Location.kt",
+      "refs": [
+        "core/src/main/java/com/kryptkode/core/remote/entities/user/Location.kt:10"
+      ],
+      "kind": "field",
+      "owner": "input:user-detail-response"
+    },
+    {
+      "id": "input:user-detail-response#phone",
+      "name": "phone",
+      "path": "phone",
+      "type": "string",
+      "required": false,
+      "source": "declared",
+      "repo": "https://github.com/homealoneai/skill-logistic-map.git",
+      "commit_sha": "77ff12d",
+      "file_path": "core/src/main/java/com/kryptkode/core/remote/entities/user/UserDetailResponse.kt",
+      "refs": [
+        "core/src/main/java/com/kryptkode/core/remote/entities/user/UserDetailResponse.kt:14"
+      ],
+      "kind": "field",
+      "owner": "input:user-detail-response"
+    },
+    {
+      "id": "input:user-detail-response#picture",
+      "name": "picture",
+      "path": "picture",
+      "type": "string",
+      "required": false,
+      "source": "declared",
+      "repo": "https://github.com/homealoneai/skill-logistic-map.git",
+      "commit_sha": "77ff12d",
+      "file_path": "core/src/main/java/com/kryptkode/core/remote/entities/user/UserDetailResponse.kt",
+      "refs": [
+        "core/src/main/java/com/kryptkode/core/remote/entities/user/UserDetailResponse.kt:13"
+      ],
+      "kind": "field",
+      "owner": "input:user-detail-response"
+    },
+    {
+      "id": "input:user-detail-response#registerDate",
+      "name": "registerDate",
+      "path": "registerDate",
+      "type": "string",
+      "required": false,
+      "source": "declared",
+      "repo": "https://github.com/homealoneai/skill-logistic-map.git",
+      "commit_sha": "77ff12d",
+      "file_path": "core/src/main/java/com/kryptkode/core/remote/entities/user/UserDetailResponse.kt",
+      "refs": [
+        "core/src/main/java/com/kryptkode/core/remote/entities/user/UserDetailResponse.kt:17"
+      ],
+      "kind": "field",
+      "owner": "input:user-detail-response"
+    },
+    {
+      "id": "input:user-list-page#data",
+      "name": "data",
+      "path": "data",
+      "type": "array",
+      "required": false,
+      "source": "declared",
+      "repo": "https://github.com/homealoneai/skill-logistic-map.git",
+      "commit_sha": "77ff12d",
+      "file_path": "core/src/main/java/com/kryptkode/core/remote/entities/user/UserResponse.kt",
+      "refs": [
+        "core/src/main/java/com/kryptkode/core/remote/entities/user/UserResponse.kt:8"
+      ],
+      "kind": "field",
+      "owner": "input:user-list-page"
+    },
+    {
+      "id": "input:user-list-page#data.firstName",
+      "name": "firstName",
+      "path": "data.firstName",
+      "type": "string",
+      "required": false,
+      "source": "declared",
+      "repo": "https://github.com/homealoneai/skill-logistic-map.git",
+      "commit_sha": "77ff12d",
+      "file_path": "core/src/main/java/com/kryptkode/core/remote/entities/user/UserRemote.kt",
+      "refs": [
+        "core/src/main/java/com/kryptkode/core/remote/entities/user/UserRemote.kt:10"
+      ],
+      "kind": "field",
+      "owner": "input:user-list-page"
+    },
+    {
+      "id": "input:user-list-page#data.id",
+      "name": "id",
+      "path": "data.id",
+      "type": "string",
+      "required": false,
+      "source": "declared",
+      "repo": "https://github.com/homealoneai/skill-logistic-map.git",
+      "commit_sha": "77ff12d",
+      "file_path": "core/src/main/java/com/kryptkode/core/remote/entities/user/UserRemote.kt",
+      "refs": [
+        "core/src/main/java/com/kryptkode/core/remote/entities/user/UserRemote.kt:8"
+      ],
+      "kind": "field",
+      "owner": "input:user-list-page"
+    },
+    {
+      "id": "input:user-list-page#data.lastName",
+      "name": "lastName",
+      "path": "data.lastName",
+      "type": "string",
+      "required": false,
+      "source": "declared",
+      "repo": "https://github.com/homealoneai/skill-logistic-map.git",
+      "commit_sha": "77ff12d",
+      "file_path": "core/src/main/java/com/kryptkode/core/remote/entities/user/UserRemote.kt",
+      "refs": [
+        "core/src/main/java/com/kryptkode/core/remote/entities/user/UserRemote.kt:9"
+      ],
+      "kind": "field",
+      "owner": "input:user-list-page"
+    },
+    {
+      "id": "input:user-list-page#data.picture",
+      "name": "picture",
+      "path": "data.picture",
+      "type": "string",
+      "required": false,
+      "source": "declared",
+      "repo": "https://github.com/homealoneai/skill-logistic-map.git",
+      "commit_sha": "77ff12d",
+      "file_path": "core/src/main/java/com/kryptkode/core/remote/entities/user/UserRemote.kt",
+      "refs": [
+        "core/src/main/java/com/kryptkode/core/remote/entities/user/UserRemote.kt:13"
+      ],
+      "kind": "field",
+      "owner": "input:user-list-page"
+    },
+    {
+      "id": "input:user-list-page#limit",
+      "name": "limit",
+      "path": "limit",
+      "type": "integer",
+      "required": false,
+      "source": "declared",
+      "repo": "https://github.com/homealoneai/skill-logistic-map.git",
+      "commit_sha": "77ff12d",
+      "file_path": "core/src/main/java/com/kryptkode/core/remote/entities/user/UserResponse.kt",
+      "refs": [
+        "core/src/main/java/com/kryptkode/core/remote/entities/user/UserResponse.kt:11"
+      ],
+      "kind": "field",
+      "owner": "input:user-list-page"
+    },
+    {
+      "id": "input:user-list-page#offset",
+      "name": "offset",
+      "path": "offset",
+      "type": "integer",
+      "required": false,
+      "source": "declared",
+      "repo": "https://github.com/homealoneai/skill-logistic-map.git",
+      "commit_sha": "77ff12d",
+      "file_path": "core/src/main/java/com/kryptkode/core/remote/entities/user/UserResponse.kt",
+      "refs": [
+        "core/src/main/java/com/kryptkode/core/remote/entities/user/UserResponse.kt:12"
+      ],
+      "kind": "field",
+      "owner": "input:user-list-page"
+    },
+    {
+      "id": "input:user-list-page#page",
+      "name": "page",
+      "path": "page",
+      "type": "integer",
+      "required": false,
+      "source": "declared",
+      "repo": "https://github.com/homealoneai/skill-logistic-map.git",
+      "commit_sha": "77ff12d",
+      "file_path": "core/src/main/java/com/kryptkode/core/remote/entities/user/UserResponse.kt",
+      "refs": [
+        "core/src/main/java/com/kryptkode/core/remote/entities/user/UserResponse.kt:10"
+      ],
+      "kind": "field",
+      "owner": "input:user-list-page"
+    },
+    {
+      "id": "input:user-list-page#total",
+      "name": "total",
+      "path": "total",
+      "type": "integer",
+      "required": false,
+      "source": "declared",
+      "repo": "https://github.com/homealoneai/skill-logistic-map.git",
+      "commit_sha": "77ff12d",
+      "file_path": "core/src/main/java/com/kryptkode/core/remote/entities/user/UserResponse.kt",
+      "refs": [
+        "core/src/main/java/com/kryptkode/core/remote/entities/user/UserResponse.kt:9"
+      ],
+      "kind": "field",
+      "owner": "input:user-list-page"
+    },
+    {
+      "id": "storage:user-remote-keys#nextKey",
+      "name": "nextKey",
+      "path": "nextKey",
+      "type": "integer",
+      "required": false,
+      "source": "declared",
+      "repo": "https://github.com/homealoneai/skill-logistic-map.git",
+      "commit_sha": "77ff12d",
+      "file_path": "core/src/main/java/com/kryptkode/core/cache/keys/UserRemoteKeys.kt",
+      "refs": [
+        "core/src/main/java/com/kryptkode/core/cache/keys/UserRemoteKeys.kt:11"
+      ],
+      "kind": "field",
+      "owner": "storage:user-remote-keys"
+    },
+    {
+      "id": "storage:user-remote-keys#prevKey",
+      "name": "prevKey",
+      "path": "prevKey",
+      "type": "integer",
+      "required": false,
+      "source": "declared",
+      "repo": "https://github.com/homealoneai/skill-logistic-map.git",
+      "commit_sha": "77ff12d",
+      "file_path": "core/src/main/java/com/kryptkode/core/cache/keys/UserRemoteKeys.kt",
+      "refs": [
+        "core/src/main/java/com/kryptkode/core/cache/keys/UserRemoteKeys.kt:10"
+      ],
+      "kind": "field",
+      "owner": "storage:user-remote-keys"
+    },
+    {
+      "id": "storage:user-remote-keys#userId",
+      "name": "userId",
+      "path": "userId",
+      "type": "string",
+      "required": false,
+      "source": "declared",
+      "repo": "https://github.com/homealoneai/skill-logistic-map.git",
+      "commit_sha": "77ff12d",
+      "file_path": "core/src/main/java/com/kryptkode/core/cache/keys/UserRemoteKeys.kt",
+      "refs": [
+        "core/src/main/java/com/kryptkode/core/cache/keys/UserRemoteKeys.kt:9"
+      ],
+      "kind": "field",
+      "owner": "storage:user-remote-keys"
+    },
+    {
+      "id": "storage:users#dateOfBirth",
+      "name": "dateOfBirth",
+      "path": "dateOfBirth",
+      "type": "timestamp",
+      "required": false,
+      "source": "declared",
+      "repo": "https://github.com/homealoneai/skill-logistic-map.git",
+      "commit_sha": "77ff12d",
+      "file_path": "core/src/main/java/com/kryptkode/core/cache/user/DbUser.kt",
+      "refs": [
+        "core/src/main/java/com/kryptkode/core/cache/user/DbUser.kt:23"
+      ],
+      "kind": "field",
+      "owner": "storage:users"
+    },
+    {
+      "id": "storage:users#email",
+      "name": "email",
+      "path": "email",
+      "type": "string",
+      "required": false,
+      "source": "declared",
+      "repo": "https://github.com/homealoneai/skill-logistic-map.git",
+      "commit_sha": "77ff12d",
+      "file_path": "core/src/main/java/com/kryptkode/core/cache/user/DbUser.kt",
+      "refs": [
+        "core/src/main/java/com/kryptkode/core/cache/user/DbUser.kt:16"
+      ],
+      "kind": "field",
+      "owner": "storage:users"
+    },
+    {
+      "id": "storage:users#firstName",
+      "name": "firstName",
+      "path": "firstName",
+      "type": "string",
+      "required": false,
+      "source": "declared",
+      "repo": "https://github.com/homealoneai/skill-logistic-map.git",
+      "commit_sha": "77ff12d",
+      "file_path": "core/src/main/java/com/kryptkode/core/cache/user/DbUser.kt",
+      "refs": [
+        "core/src/main/java/com/kryptkode/core/cache/user/DbUser.kt:15"
+      ],
+      "kind": "field",
+      "owner": "storage:users"
+    },
+    {
+      "id": "storage:users#gender",
+      "name": "gender",
+      "path": "gender",
+      "type": "string",
+      "required": false,
+      "source": "declared",
+      "repo": "https://github.com/homealoneai/skill-logistic-map.git",
+      "commit_sha": "77ff12d",
+      "file_path": "core/src/main/java/com/kryptkode/core/cache/user/DbUser.kt",
+      "refs": [
+        "core/src/main/java/com/kryptkode/core/cache/user/DbUser.kt:19"
+      ],
+      "kind": "field",
+      "owner": "storage:users"
+    },
+    {
+      "id": "storage:users#id",
+      "name": "id",
+      "path": "id",
+      "type": "string",
+      "required": false,
+      "source": "declared",
+      "repo": "https://github.com/homealoneai/skill-logistic-map.git",
+      "commit_sha": "77ff12d",
+      "file_path": "core/src/main/java/com/kryptkode/core/cache/user/DbUser.kt",
+      "refs": [
+        "core/src/main/java/com/kryptkode/core/cache/user/DbUser.kt:13"
+      ],
+      "kind": "field",
+      "owner": "storage:users"
+    },
+    {
+      "id": "storage:users#lastName",
+      "name": "lastName",
+      "path": "lastName",
+      "type": "string",
+      "required": false,
+      "source": "declared",
+      "repo": "https://github.com/homealoneai/skill-logistic-map.git",
+      "commit_sha": "77ff12d",
+      "file_path": "core/src/main/java/com/kryptkode/core/cache/user/DbUser.kt",
+      "refs": [
+        "core/src/main/java/com/kryptkode/core/cache/user/DbUser.kt:14"
+      ],
+      "kind": "field",
+      "owner": "storage:users"
+    },
+    {
+      "id": "storage:users#location",
+      "name": "location",
+      "path": "location",
+      "type": "object",
+      "required": false,
+      "source": "declared",
+      "repo": "https://github.com/homealoneai/skill-logistic-map.git",
+      "commit_sha": "77ff12d",
+      "file_path": "core/src/main/java/com/kryptkode/core/cache/user/DbUser.kt",
+      "refs": [
+        "core/src/main/java/com/kryptkode/core/cache/user/DbUser.kt:21",
+        "core/src/main/java/com/kryptkode/core/remote/entities/user/Location.kt:7"
+      ],
+      "kind": "field",
+      "owner": "storage:users"
+    },
+    {
+      "id": "storage:users#location.city",
+      "name": "city",
+      "path": "location.city",
+      "type": "string",
+      "required": false,
+      "source": "declared",
+      "repo": "https://github.com/homealoneai/skill-logistic-map.git",
+      "commit_sha": "77ff12d",
+      "file_path": "core/src/main/java/com/kryptkode/core/cache/user/DbUser.kt",
+      "refs": [
+        "core/src/main/java/com/kryptkode/core/cache/user/DbUser.kt:21",
+        "core/src/main/java/com/kryptkode/core/remote/entities/user/Location.kt:10"
+      ],
+      "kind": "field",
+      "owner": "storage:users"
+    },
+    {
+      "id": "storage:users#phone",
+      "name": "phone",
+      "path": "phone",
+      "type": "string",
+      "required": false,
+      "source": "declared",
+      "repo": "https://github.com/homealoneai/skill-logistic-map.git",
+      "commit_sha": "77ff12d",
+      "file_path": "core/src/main/java/com/kryptkode/core/cache/user/DbUser.kt",
+      "refs": [
+        "core/src/main/java/com/kryptkode/core/cache/user/DbUser.kt:20"
+      ],
+      "kind": "field",
+      "owner": "storage:users"
+    },
+    {
+      "id": "storage:users#picture",
+      "name": "picture",
+      "path": "picture",
+      "type": "string",
+      "required": false,
+      "source": "declared",
+      "repo": "https://github.com/homealoneai/skill-logistic-map.git",
+      "commit_sha": "77ff12d",
+      "file_path": "core/src/main/java/com/kryptkode/core/cache/user/DbUser.kt",
+      "refs": [
+        "core/src/main/java/com/kryptkode/core/cache/user/DbUser.kt:18"
+      ],
+      "kind": "field",
+      "owner": "storage:users"
+    },
+    {
+      "id": "storage:users#registerDate",
+      "name": "registerDate",
+      "path": "registerDate",
+      "type": "timestamp",
+      "required": false,
+      "source": "declared",
+      "repo": "https://github.com/homealoneai/skill-logistic-map.git",
+      "commit_sha": "77ff12d",
+      "file_path": "core/src/main/java/com/kryptkode/core/cache/user/DbUser.kt",
+      "refs": [
+        "core/src/main/java/com/kryptkode/core/cache/user/DbUser.kt:22"
+      ],
+      "kind": "field",
+      "owner": "storage:users"
+    },
+    {
+      "id": "storage:users#title",
+      "name": "title",
+      "path": "title",
+      "type": "string",
+      "required": false,
+      "source": "declared",
+      "repo": "https://github.com/homealoneai/skill-logistic-map.git",
+      "commit_sha": "77ff12d",
+      "file_path": "core/src/main/java/com/kryptkode/core/cache/user/DbUser.kt",
+      "refs": [
+        "core/src/main/java/com/kryptkode/core/cache/user/DbUser.kt:17"
+      ],
+      "kind": "field",
+      "owner": "storage:users"
+    },
+    {
+      "id": "flow:show-user-detail",
+      "name": "Load and show user detail",
+      "description": "Detail screen activation: cached DbUser is read; if detail fields are missing GET user/{userId} fills and updates the cache, then the re-emitted row is mapped to UserDetail for the detail views",
+      "cluster": "users-ui",
+      "repo": "https://github.com/homealoneai/skill-logistic-map.git",
+      "commit_sha": "77ff12d",
+      "file_path": "features/users/src/main/java/com/kryptkode/users/domain/GetUserDetailUseCase.kt",
+      "refs": [
+        "features/users/src/main/java/com/kryptkode/users/domain/GetUserDetailUseCase.kt:24",
+        "core/src/main/java/com/kryptkode/core/repo/UserRepositoryImpl.kt:24",
+        "features/users/src/main/java/com/kryptkode/users/ui/detail/UserDetailViewModel.kt:23"
+      ],
+      "kind": "flow"
+    },
+    {
+      "id": "flow:show-users-list",
+      "name": "Load and show paged users",
+      "description": "List screen activation: Retrofit GET user page is mapped to Room entities and remote keys, cached in SQLite, then read back as PagingData and mapped to User models for the list",
+      "cluster": "users-ui",
+      "repo": "https://github.com/homealoneai/skill-logistic-map.git",
+      "commit_sha": "77ff12d",
+      "file_path": "features/users/src/main/java/com/kryptkode/users/domain/GetUsersUseCase.kt",
+      "refs": [
+        "features/users/src/main/java/com/kryptkode/users/domain/GetUsersUseCase.kt:25",
+        "core/src/main/java/com/kryptkode/core/remote/mediator/UserRemoteMediator.kt:54",
+        "features/users/src/main/java/com/kryptkode/users/ui/list/UserListViewModel.kt:22"
+      ],
+      "kind": "flow"
+    },
+    {
+      "id": "input:user-detail-response",
+      "name": "GET user/{userId} response",
+      "description": "UserDetailResponse returned by Retrofit GET user/{userId} when cached detail fields are missing",
+      "cluster": "core-users",
+      "repo": "https://github.com/homealoneai/skill-logistic-map.git",
+      "commit_sha": "77ff12d",
+      "file_path": "core/src/main/java/com/kryptkode/core/remote/entities/user/UserDetailResponse.kt",
+      "refs": [
+        "core/src/main/java/com/kryptkode/core/remote/entities/user/UserDetailResponse.kt:7",
+        "core/src/main/java/com/kryptkode/core/remote/api/UsersServiceApi.kt:17"
+      ],
+      "kind": "input"
+    },
+    {
+      "id": "input:user-list-page",
+      "name": "GET user page response",
+      "description": "UserResponse envelope returned by Retrofit GET user?page&limit",
+      "cluster": "core-users",
+      "repo": "https://github.com/homealoneai/skill-logistic-map.git",
+      "commit_sha": "77ff12d",
+      "file_path": "core/src/main/java/com/kryptkode/core/remote/entities/user/UserResponse.kt",
+      "refs": [
+        "core/src/main/java/com/kryptkode/core/remote/entities/user/UserResponse.kt:7",
+        "core/src/main/java/com/kryptkode/core/remote/api/UsersServiceApi.kt:11"
+      ],
+      "kind": "input"
+    },
+    {
+      "id": "rule:app-id-header",
+      "name": "app-id request header",
+      "description": "Every users API request is sent with an app-id header set to BuildConfig.DUMMY_APP_ID by AppIdHeaderInterceptor",
+      "cluster": "core-users",
+      "repo": "https://github.com/homealoneai/skill-logistic-map.git",
+      "commit_sha": "77ff12d",
+      "file_path": "core/src/main/java/com/kryptkode/core/remote/api/AppIdHeaderInterceptor.kt",
+      "refs": [
+        "core/src/main/java/com/kryptkode/core/remote/api/AppIdHeaderInterceptor.kt:12",
+        "core/src/main/java/com/kryptkode/core/remote/api/ApiFactory.kt:38"
+      ],
+      "kind": "rule"
+    },
+    {
+      "id": "rule:cache-write-transaction",
+      "name": "Atomic cache page write",
+      "description": "Remote keys and mapped user entities are inserted together inside database.withTransaction so the page and its paging keys commit atomically",
+      "cluster": "core-users",
+      "repo": "https://github.com/homealoneai/skill-logistic-map.git",
+      "commit_sha": "77ff12d",
+      "file_path": "core/src/main/java/com/kryptkode/core/remote/mediator/UserRemoteMediator.kt",
+      "refs": [
+        "core/src/main/java/com/kryptkode/core/remote/mediator/UserRemoteMediator.kt:57",
+        "core/src/main/java/com/kryptkode/core/remote/mediator/UserRemoteMediator.kt:66",
+        "core/src/main/java/com/kryptkode/core/remote/mediator/UserRemoteMediator.kt:72"
+      ],
+      "kind": "rule"
+    },
+    {
+      "id": "rule:detail-fallback-condition",
+      "name": "Detail fallback only when cache incomplete",
+      "description": "The detail endpoint is called only when the cached Flow is empty (onEmpty) or DbUser.noDetails is true (empty phone/gender/dates/location); the response is written back to cache",
+      "cluster": "core-users",
+      "repo": "https://github.com/homealoneai/skill-logistic-map.git",
+      "commit_sha": "77ff12d",
+      "file_path": "features/users/src/main/java/com/kryptkode/users/domain/GetUserDetailUseCase.kt",
+      "refs": [
+        "features/users/src/main/java/com/kryptkode/users/domain/GetUserDetailUseCase.kt:27",
+        "core/src/main/java/com/kryptkode/core/repo/UserRepositoryImpl.kt:25",
+        "core/src/main/java/com/kryptkode/core/cache/user/DbUser.kt:26"
+      ],
+      "kind": "rule"
+    },
+    {
+      "id": "rule:http-timeout",
+      "name": "Network timeouts",
+      "description": "OkHttp client for the users API uses 60-second connect and read timeouts",
+      "cluster": "core-users",
+      "repo": "https://github.com/homealoneai/skill-logistic-map.git",
+      "commit_sha": "77ff12d",
+      "file_path": "core/src/main/java/com/kryptkode/core/remote/api/ApiFactory.kt",
+      "refs": [
+        "core/src/main/java/com/kryptkode/core/remote/api/ApiFactory.kt:40",
+        "core/src/main/java/com/kryptkode/core/remote/api/ApiFactory.kt:41",
+        "core/src/main/java/com/kryptkode/core/remote/api/ApiFactory.kt:92"
+      ],
+      "kind": "rule"
+    },
+    {
+      "id": "rule:paging-config",
+      "name": "Paging configuration",
+      "description": "Pager uses pageSize 30 (PAGE_SIZE), initialLoadSize 40 and enablePlaceholders false for both the repository and use case Pager instances",
+      "cluster": "core-users",
+      "repo": "https://github.com/homealoneai/skill-logistic-map.git",
+      "commit_sha": "77ff12d",
+      "file_path": "features/users/src/main/java/com/kryptkode/users/domain/GetUsersUseCase.kt",
+      "refs": [
+        "features/users/src/main/java/com/kryptkode/users/domain/GetUsersUseCase.kt:27",
+        "core/src/main/java/com/kryptkode/core/repo/UserRepository.kt:12",
+        "core/src/main/java/com/kryptkode/core/repo/UserRepositoryImpl.kt:34"
+      ],
+      "kind": "rule"
+    },
+    {
+      "id": "rule:refresh-clears-cache",
+      "name": "Refresh clears cached pages",
+      "description": "On LoadType.REFRESH the mediator clears user_remote_keys and users before inserting the new page, both inside one Room transaction",
+      "cluster": "core-users",
+      "repo": "https://github.com/homealoneai/skill-logistic-map.git",
+      "commit_sha": "77ff12d",
+      "file_path": "core/src/main/java/com/kryptkode/core/remote/mediator/UserRemoteMediator.kt",
+      "refs": [
+        "core/src/main/java/com/kryptkode/core/remote/mediator/UserRemoteMediator.kt:57",
+        "core/src/main/java/com/kryptkode/core/remote/mediator/UserRemoteMediator.kt:58",
+        "core/src/main/java/com/kryptkode/core/remote/mediator/UserRemoteMediator.kt:60"
+      ],
+      "kind": "rule"
+    },
+    {
+      "id": "rule:remote-page-keys",
+      "name": "Remote page key derivation",
+      "description": "STARTING_PAGE_INDEX is 0; prevKey/nextKey derive from page and endOfPaginationReached is true when the returned data list is empty",
+      "cluster": "core-users",
+      "repo": "https://github.com/homealoneai/skill-logistic-map.git",
+      "commit_sha": "77ff12d",
+      "file_path": "core/src/main/java/com/kryptkode/core/remote/mediator/UserRemoteMediator.kt",
+      "refs": [
+        "core/src/main/java/com/kryptkode/core/remote/mediator/UserRemoteMediator.kt:18",
+        "core/src/main/java/com/kryptkode/core/remote/mediator/UserRemoteMediator.kt:56",
+        "core/src/main/java/com/kryptkode/core/remote/mediator/UserRemoteMediator.kt:63"
+      ],
+      "kind": "rule"
+    },
+    {
+      "id": "storage:user-remote-keys",
+      "name": "Room user_remote_keys table",
+      "description": "SQLite user_remote_keys table holding prev/next page keys per user id",
+      "location": "sqlite:droidArch.db/user_remote_keys",
+      "store_type": "sql",
+      "cluster": "core-users",
+      "repo": "https://github.com/homealoneai/skill-logistic-map.git",
+      "commit_sha": "77ff12d",
+      "file_path": "core/src/main/java/com/kryptkode/core/cache/AppDatabase.kt",
+      "refs": [
+        "core/src/main/java/com/kryptkode/core/cache/AppDatabase.kt:19",
+        "core/src/main/java/com/kryptkode/core/cache/keys/UserRemoteKeys.kt:7",
+        "core/src/main/java/com/kryptkode/core/cache/keys/UserRemoteKeysDao.kt:10"
+      ],
+      "kind": "storage"
+    },
+    {
+      "id": "storage:users",
+      "name": "Room users table",
+      "description": "SQLite users table holding DbUser rows; written by the mediator and repository, read by both use cases",
+      "location": "sqlite:droidArch.db/users",
+      "store_type": "sql",
+      "cluster": "core-users",
+      "repo": "https://github.com/homealoneai/skill-logistic-map.git",
+      "commit_sha": "77ff12d",
+      "file_path": "core/src/main/java/com/kryptkode/core/cache/AppDatabase.kt",
+      "refs": [
+        "core/src/main/java/com/kryptkode/core/cache/AppDatabase.kt:19",
+        "core/src/main/java/com/kryptkode/core/cache/user/DbUser.kt:10",
+        "core/src/main/java/com/kryptkode/core/cache/user/UserDao.kt:12"
+      ],
+      "kind": "storage"
+    }
+  ],
+  "edges": [
+    {
+      "kind": "contains",
+      "from": "entry:detail-cached-user",
+      "to": "entry:detail-cached-user#dateOfBirth",
+      "refs": [
+        "core/src/main/java/com/kryptkode/core/cache/user/DbUser.kt:23"
+      ],
+      "file_path": "core/src/main/java/com/kryptkode/core/cache/user/DbUser.kt"
+    },
+    {
+      "kind": "contains",
+      "from": "entry:detail-cached-user",
+      "to": "entry:detail-cached-user#firstName",
+      "refs": [
+        "core/src/main/java/com/kryptkode/core/cache/user/DbUser.kt:15"
+      ],
+      "file_path": "core/src/main/java/com/kryptkode/core/cache/user/DbUser.kt"
+    },
+    {
+      "kind": "contains",
+      "from": "entry:detail-cached-user",
+      "to": "entry:detail-cached-user#gender",
+      "refs": [
+        "core/src/main/java/com/kryptkode/core/cache/user/DbUser.kt:19"
+      ],
+      "file_path": "core/src/main/java/com/kryptkode/core/cache/user/DbUser.kt"
+    },
+    {
+      "kind": "contains",
+      "from": "entry:detail-cached-user",
+      "to": "entry:detail-cached-user#id",
+      "refs": [
+        "core/src/main/java/com/kryptkode/core/cache/user/DbUser.kt:13"
+      ],
+      "file_path": "core/src/main/java/com/kryptkode/core/cache/user/DbUser.kt"
+    },
+    {
+      "kind": "contains",
+      "from": "entry:detail-cached-user",
+      "to": "entry:detail-cached-user#lastName",
+      "refs": [
+        "core/src/main/java/com/kryptkode/core/cache/user/DbUser.kt:14"
+      ],
+      "file_path": "core/src/main/java/com/kryptkode/core/cache/user/DbUser.kt"
+    },
+    {
+      "kind": "contains",
+      "from": "entry:detail-cached-user",
+      "to": "entry:detail-cached-user#location",
+      "refs": [
+        "core/src/main/java/com/kryptkode/core/cache/user/DbUser.kt:21"
+      ],
+      "file_path": "core/src/main/java/com/kryptkode/core/cache/user/DbUser.kt"
+    },
+    {
+      "kind": "contains",
+      "from": "entry:detail-cached-user",
+      "to": "entry:detail-cached-user#phone",
+      "refs": [
+        "core/src/main/java/com/kryptkode/core/cache/user/DbUser.kt:20"
+      ],
+      "file_path": "core/src/main/java/com/kryptkode/core/cache/user/DbUser.kt"
+    },
+    {
+      "kind": "contains",
+      "from": "entry:detail-cached-user",
+      "to": "entry:detail-cached-user#registerDate",
+      "refs": [
+        "core/src/main/java/com/kryptkode/core/cache/user/DbUser.kt:22"
+      ],
+      "file_path": "core/src/main/java/com/kryptkode/core/cache/user/DbUser.kt"
+    },
+    {
+      "kind": "contains",
+      "from": "entry:detail-cached-user#location",
+      "to": "entry:detail-cached-user#location.city",
+      "refs": [
+        "core/src/main/java/com/kryptkode/core/cache/user/DbUser.kt:21"
+      ],
+      "file_path": "core/src/main/java/com/kryptkode/core/cache/user/DbUser.kt"
+    },
+    {
+      "kind": "contains",
+      "from": "entry:detail-enriched-user",
+      "to": "entry:detail-enriched-user#dateOfBirth",
+      "refs": [
+        "core/src/main/java/com/kryptkode/core/remote/mapper/UserResponseDbMapper.kt:23"
+      ],
+      "file_path": "core/src/main/java/com/kryptkode/core/remote/mapper/UserResponseDbMapper.kt"
+    },
+    {
+      "kind": "contains",
+      "from": "entry:detail-enriched-user",
+      "to": "entry:detail-enriched-user#firstName",
+      "refs": [
+        "core/src/main/java/com/kryptkode/core/remote/mapper/UserResponseDbMapper.kt:15"
+      ],
+      "file_path": "core/src/main/java/com/kryptkode/core/remote/mapper/UserResponseDbMapper.kt"
+    },
+    {
+      "kind": "contains",
+      "from": "entry:detail-enriched-user",
+      "to": "entry:detail-enriched-user#gender",
+      "refs": [
+        "core/src/main/java/com/kryptkode/core/remote/mapper/UserResponseDbMapper.kt:19"
+      ],
+      "file_path": "core/src/main/java/com/kryptkode/core/remote/mapper/UserResponseDbMapper.kt"
+    },
+    {
+      "kind": "contains",
+      "from": "entry:detail-enriched-user",
+      "to": "entry:detail-enriched-user#id",
+      "refs": [
+        "core/src/main/java/com/kryptkode/core/remote/mapper/UserResponseDbMapper.kt:13"
+      ],
+      "file_path": "core/src/main/java/com/kryptkode/core/remote/mapper/UserResponseDbMapper.kt"
+    },
+    {
+      "kind": "contains",
+      "from": "entry:detail-enriched-user",
+      "to": "entry:detail-enriched-user#lastName",
+      "refs": [
+        "core/src/main/java/com/kryptkode/core/remote/mapper/UserResponseDbMapper.kt:14"
+      ],
+      "file_path": "core/src/main/java/com/kryptkode/core/remote/mapper/UserResponseDbMapper.kt"
+    },
+    {
+      "kind": "contains",
+      "from": "entry:detail-enriched-user",
+      "to": "entry:detail-enriched-user#location",
+      "refs": [
+        "core/src/main/java/com/kryptkode/core/remote/mapper/UserResponseDbMapper.kt:21",
+        "core/src/main/java/com/kryptkode/core/remote/entities/user/Location.kt:7"
+      ],
+      "file_path": "core/src/main/java/com/kryptkode/core/remote/mapper/UserResponseDbMapper.kt"
+    },
+    {
+      "kind": "contains",
+      "from": "entry:detail-enriched-user",
+      "to": "entry:detail-enriched-user#phone",
+      "refs": [
+        "core/src/main/java/com/kryptkode/core/remote/mapper/UserResponseDbMapper.kt:20"
+      ],
+      "file_path": "core/src/main/java/com/kryptkode/core/remote/mapper/UserResponseDbMapper.kt"
+    },
+    {
+      "kind": "contains",
+      "from": "entry:detail-enriched-user",
+      "to": "entry:detail-enriched-user#registerDate",
+      "refs": [
+        "core/src/main/java/com/kryptkode/core/remote/mapper/UserResponseDbMapper.kt:22"
+      ],
+      "file_path": "core/src/main/java/com/kryptkode/core/remote/mapper/UserResponseDbMapper.kt"
+    },
+    {
+      "kind": "contains",
+      "from": "entry:detail-enriched-user#location",
+      "to": "entry:detail-enriched-user#location.city",
+      "refs": [
+        "core/src/main/java/com/kryptkode/core/remote/mapper/UserResponseDbMapper.kt:21",
+        "core/src/main/java/com/kryptkode/core/remote/entities/user/Location.kt:10"
+      ],
+      "file_path": "core/src/main/java/com/kryptkode/core/remote/entities/user/Location.kt"
+    },
+    {
+      "kind": "contains",
+      "from": "entry:detail-ui-model",
+      "to": "entry:detail-ui-model#dateOfBirth",
+      "refs": [
+        "features/users/src/main/java/com/kryptkode/users/model/UserDetail.kt:18"
+      ],
+      "file_path": "features/users/src/main/java/com/kryptkode/users/model/UserDetail.kt"
+    },
+    {
+      "kind": "contains",
+      "from": "entry:detail-ui-model",
+      "to": "entry:detail-ui-model#firstName",
+      "refs": [
+        "features/users/src/main/java/com/kryptkode/users/model/UserDetail.kt:10"
+      ],
+      "file_path": "features/users/src/main/java/com/kryptkode/users/model/UserDetail.kt"
+    },
+    {
+      "kind": "contains",
+      "from": "entry:detail-ui-model",
+      "to": "entry:detail-ui-model#gender",
+      "refs": [
+        "features/users/src/main/java/com/kryptkode/users/model/UserDetail.kt:15"
+      ],
+      "file_path": "features/users/src/main/java/com/kryptkode/users/model/UserDetail.kt"
+    },
+    {
+      "kind": "contains",
+      "from": "entry:detail-ui-model",
+      "to": "entry:detail-ui-model#id",
+      "refs": [
+        "features/users/src/main/java/com/kryptkode/users/model/UserDetail.kt:8"
+      ],
+      "file_path": "features/users/src/main/java/com/kryptkode/users/model/UserDetail.kt"
+    },
+    {
+      "kind": "contains",
+      "from": "entry:detail-ui-model",
+      "to": "entry:detail-ui-model#lastName",
+      "refs": [
+        "features/users/src/main/java/com/kryptkode/users/model/UserDetail.kt:9"
+      ],
+      "file_path": "features/users/src/main/java/com/kryptkode/users/model/UserDetail.kt"
+    },
+    {
+      "kind": "contains",
+      "from": "entry:detail-ui-model",
+      "to": "entry:detail-ui-model#location",
+      "refs": [
+        "features/users/src/main/java/com/kryptkode/users/model/UserDetail.kt:16",
+        "features/users/src/main/java/com/kryptkode/users/model/UserLocation.kt:7"
+      ],
+      "file_path": "features/users/src/main/java/com/kryptkode/users/model/UserDetail.kt"
+    },
+    {
+      "kind": "contains",
+      "from": "entry:detail-ui-model",
+      "to": "entry:detail-ui-model#phone",
+      "refs": [
+        "features/users/src/main/java/com/kryptkode/users/model/UserDetail.kt:14"
+      ],
+      "file_path": "features/users/src/main/java/com/kryptkode/users/model/UserDetail.kt"
+    },
+    {
+      "kind": "contains",
+      "from": "entry:detail-ui-model",
+      "to": "entry:detail-ui-model#registerDate",
+      "refs": [
+        "features/users/src/main/java/com/kryptkode/users/model/UserDetail.kt:17"
+      ],
+      "file_path": "features/users/src/main/java/com/kryptkode/users/model/UserDetail.kt"
+    },
+    {
+      "kind": "contains",
+      "from": "entry:detail-ui-model#location",
+      "to": "entry:detail-ui-model#location.city",
+      "refs": [
+        "features/users/src/main/java/com/kryptkode/users/model/UserLocation.kt:10"
+      ],
+      "file_path": "features/users/src/main/java/com/kryptkode/users/model/UserLocation.kt"
+    },
+    {
+      "kind": "contains",
+      "from": "entry:paged-db-users",
+      "to": "entry:paged-db-users#email",
+      "refs": [
+        "core/src/main/java/com/kryptkode/core/cache/user/DbUser.kt:16"
+      ],
+      "file_path": "core/src/main/java/com/kryptkode/core/cache/user/DbUser.kt"
+    },
+    {
+      "kind": "contains",
+      "from": "entry:paged-db-users",
+      "to": "entry:paged-db-users#firstName",
+      "refs": [
+        "core/src/main/java/com/kryptkode/core/cache/user/DbUser.kt:15"
+      ],
+      "file_path": "core/src/main/java/com/kryptkode/core/cache/user/DbUser.kt"
+    },
+    {
+      "kind": "contains",
+      "from": "entry:paged-db-users",
+      "to": "entry:paged-db-users#id",
+      "refs": [
+        "core/src/main/java/com/kryptkode/core/cache/user/DbUser.kt:13"
+      ],
+      "file_path": "core/src/main/java/com/kryptkode/core/cache/user/DbUser.kt"
+    },
+    {
+      "kind": "contains",
+      "from": "entry:paged-db-users",
+      "to": "entry:paged-db-users#lastName",
+      "refs": [
+        "core/src/main/java/com/kryptkode/core/cache/user/DbUser.kt:14"
+      ],
+      "file_path": "core/src/main/java/com/kryptkode/core/cache/user/DbUser.kt"
+    },
+    {
+      "kind": "contains",
+      "from": "entry:paged-db-users",
+      "to": "entry:paged-db-users#picture",
+      "refs": [
+        "core/src/main/java/com/kryptkode/core/cache/user/DbUser.kt:18"
+      ],
+      "file_path": "core/src/main/java/com/kryptkode/core/cache/user/DbUser.kt"
+    },
+    {
+      "kind": "contains",
+      "from": "entry:paged-ui-users",
+      "to": "entry:paged-ui-users#email",
+      "refs": [
+        "features/users/src/main/java/com/kryptkode/users/model/User.kt:11"
+      ],
+      "file_path": "features/users/src/main/java/com/kryptkode/users/model/User.kt"
+    },
+    {
+      "kind": "contains",
+      "from": "entry:paged-ui-users",
+      "to": "entry:paged-ui-users#firstName",
+      "refs": [
+        "features/users/src/main/java/com/kryptkode/users/model/User.kt:10"
+      ],
+      "file_path": "features/users/src/main/java/com/kryptkode/users/model/User.kt"
+    },
+    {
+      "kind": "contains",
+      "from": "entry:paged-ui-users",
+      "to": "entry:paged-ui-users#id",
+      "refs": [
+        "features/users/src/main/java/com/kryptkode/users/model/User.kt:8"
+      ],
+      "file_path": "features/users/src/main/java/com/kryptkode/users/model/User.kt"
+    },
+    {
+      "kind": "contains",
+      "from": "entry:paged-ui-users",
+      "to": "entry:paged-ui-users#lastName",
+      "refs": [
+        "features/users/src/main/java/com/kryptkode/users/model/User.kt:9"
+      ],
+      "file_path": "features/users/src/main/java/com/kryptkode/users/model/User.kt"
+    },
+    {
+      "kind": "contains",
+      "from": "entry:paged-ui-users",
+      "to": "entry:paged-ui-users#picture",
+      "refs": [
+        "features/users/src/main/java/com/kryptkode/users/model/User.kt:13"
+      ],
+      "file_path": "features/users/src/main/java/com/kryptkode/users/model/User.kt"
+    },
+    {
+      "kind": "contains",
+      "from": "entry:paged-ui-users",
+      "to": "entry:paged-ui-users#title",
+      "refs": [
+        "features/users/src/main/java/com/kryptkode/users/model/User.kt:12"
+      ],
+      "file_path": "features/users/src/main/java/com/kryptkode/users/model/User.kt"
+    },
+    {
+      "kind": "contains",
+      "from": "entry:user-list-entities",
+      "to": "entry:user-list-entities#email",
+      "refs": [
+        "core/src/main/java/com/kryptkode/core/remote/mapper/UserRemoteDbMapper.kt:13"
+      ],
+      "file_path": "core/src/main/java/com/kryptkode/core/remote/mapper/UserRemoteDbMapper.kt"
+    },
+    {
+      "kind": "contains",
+      "from": "entry:user-list-entities",
+      "to": "entry:user-list-entities#firstName",
+      "refs": [
+        "core/src/main/java/com/kryptkode/core/remote/mapper/UserRemoteDbMapper.kt:12"
+      ],
+      "file_path": "core/src/main/java/com/kryptkode/core/remote/mapper/UserRemoteDbMapper.kt"
+    },
+    {
+      "kind": "contains",
+      "from": "entry:user-list-entities",
+      "to": "entry:user-list-entities#id",
+      "refs": [
+        "core/src/main/java/com/kryptkode/core/remote/mapper/UserRemoteDbMapper.kt:10"
+      ],
+      "file_path": "core/src/main/java/com/kryptkode/core/remote/mapper/UserRemoteDbMapper.kt"
+    },
+    {
+      "kind": "contains",
+      "from": "entry:user-list-entities",
+      "to": "entry:user-list-entities#lastName",
+      "refs": [
+        "core/src/main/java/com/kryptkode/core/remote/mapper/UserRemoteDbMapper.kt:11"
+      ],
+      "file_path": "core/src/main/java/com/kryptkode/core/remote/mapper/UserRemoteDbMapper.kt"
+    },
+    {
+      "kind": "contains",
+      "from": "entry:user-list-entities",
+      "to": "entry:user-list-entities#picture",
+      "refs": [
+        "core/src/main/java/com/kryptkode/core/remote/mapper/UserRemoteDbMapper.kt:15"
+      ],
+      "file_path": "core/src/main/java/com/kryptkode/core/remote/mapper/UserRemoteDbMapper.kt"
+    },
+    {
+      "kind": "contains",
+      "from": "entry:user-list-entities",
+      "to": "entry:user-list-entities#title",
+      "refs": [
+        "core/src/main/java/com/kryptkode/core/remote/mapper/UserRemoteDbMapper.kt:14"
+      ],
+      "file_path": "core/src/main/java/com/kryptkode/core/remote/mapper/UserRemoteDbMapper.kt"
+    },
+    {
+      "kind": "contains",
+      "from": "entry:user-remote-keys",
+      "to": "entry:user-remote-keys#nextKey",
+      "refs": [
+        "core/src/main/java/com/kryptkode/core/cache/keys/UserRemoteKeys.kt:11"
+      ],
+      "file_path": "core/src/main/java/com/kryptkode/core/cache/keys/UserRemoteKeys.kt"
+    },
+    {
+      "kind": "contains",
+      "from": "entry:user-remote-keys",
+      "to": "entry:user-remote-keys#prevKey",
+      "refs": [
+        "core/src/main/java/com/kryptkode/core/cache/keys/UserRemoteKeys.kt:10"
+      ],
+      "file_path": "core/src/main/java/com/kryptkode/core/cache/keys/UserRemoteKeys.kt"
+    },
+    {
+      "kind": "contains",
+      "from": "entry:user-remote-keys",
+      "to": "entry:user-remote-keys#userId",
+      "refs": [
+        "core/src/main/java/com/kryptkode/core/cache/keys/UserRemoteKeys.kt:9"
+      ],
+      "file_path": "core/src/main/java/com/kryptkode/core/cache/keys/UserRemoteKeys.kt"
+    },
+    {
+      "kind": "contains",
+      "from": "input:user-detail-response",
+      "to": "input:user-detail-response#dateOfBirth",
+      "refs": [
+        "core/src/main/java/com/kryptkode/core/remote/entities/user/UserDetailResponse.kt:18"
+      ],
+      "file_path": "core/src/main/java/com/kryptkode/core/remote/entities/user/UserDetailResponse.kt"
+    },
+    {
+      "kind": "contains",
+      "from": "input:user-detail-response",
+      "to": "input:user-detail-response#email",
+      "refs": [
+        "core/src/main/java/com/kryptkode/core/remote/entities/user/UserDetailResponse.kt:9"
+      ],
+      "file_path": "core/src/main/java/com/kryptkode/core/remote/entities/user/UserDetailResponse.kt"
+    },
+    {
+      "kind": "contains",
+      "from": "input:user-detail-response",
+      "to": "input:user-detail-response#firstName",
+      "refs": [
+        "core/src/main/java/com/kryptkode/core/remote/entities/user/UserDetailResponse.kt:10"
+      ],
+      "file_path": "core/src/main/java/com/kryptkode/core/remote/entities/user/UserDetailResponse.kt"
+    },
+    {
+      "kind": "contains",
+      "from": "input:user-detail-response",
+      "to": "input:user-detail-response#gender",
+      "refs": [
+        "core/src/main/java/com/kryptkode/core/remote/entities/user/UserDetailResponse.kt:15"
+      ],
+      "file_path": "core/src/main/java/com/kryptkode/core/remote/entities/user/UserDetailResponse.kt"
+    },
+    {
+      "kind": "contains",
+      "from": "input:user-detail-response",
+      "to": "input:user-detail-response#id",
+      "refs": [
+        "core/src/main/java/com/kryptkode/core/remote/entities/user/UserDetailResponse.kt:8"
+      ],
+      "file_path": "core/src/main/java/com/kryptkode/core/remote/entities/user/UserDetailResponse.kt"
+    },
+    {
+      "kind": "contains",
+      "from": "input:user-detail-response",
+      "to": "input:user-detail-response#lastName",
+      "refs": [
+        "core/src/main/java/com/kryptkode/core/remote/entities/user/UserDetailResponse.kt:11"
+      ],
+      "file_path": "core/src/main/java/com/kryptkode/core/remote/entities/user/UserDetailResponse.kt"
+    },
+    {
+      "kind": "contains",
+      "from": "input:user-detail-response",
+      "to": "input:user-detail-response#location",
+      "refs": [
+        "core/src/main/java/com/kryptkode/core/remote/entities/user/UserDetailResponse.kt:16",
+        "core/src/main/java/com/kryptkode/core/remote/entities/user/Location.kt:7"
+      ],
+      "file_path": "core/src/main/java/com/kryptkode/core/remote/entities/user/UserDetailResponse.kt"
+    },
+    {
+      "kind": "contains",
+      "from": "input:user-detail-response",
+      "to": "input:user-detail-response#phone",
+      "refs": [
+        "core/src/main/java/com/kryptkode/core/remote/entities/user/UserDetailResponse.kt:14"
+      ],
+      "file_path": "core/src/main/java/com/kryptkode/core/remote/entities/user/UserDetailResponse.kt"
+    },
+    {
+      "kind": "contains",
+      "from": "input:user-detail-response",
+      "to": "input:user-detail-response#picture",
+      "refs": [
+        "core/src/main/java/com/kryptkode/core/remote/entities/user/UserDetailResponse.kt:13"
+      ],
+      "file_path": "core/src/main/java/com/kryptkode/core/remote/entities/user/UserDetailResponse.kt"
+    },
+    {
+      "kind": "contains",
+      "from": "input:user-detail-response",
+      "to": "input:user-detail-response#registerDate",
+      "refs": [
+        "core/src/main/java/com/kryptkode/core/remote/entities/user/UserDetailResponse.kt:17"
+      ],
+      "file_path": "core/src/main/java/com/kryptkode/core/remote/entities/user/UserDetailResponse.kt"
+    },
+    {
+      "kind": "contains",
+      "from": "input:user-detail-response#location",
+      "to": "input:user-detail-response#location.city",
+      "refs": [
+        "core/src/main/java/com/kryptkode/core/remote/entities/user/Location.kt:10"
+      ],
+      "file_path": "core/src/main/java/com/kryptkode/core/remote/entities/user/Location.kt"
+    },
+    {
+      "kind": "contains",
+      "from": "input:user-list-page",
+      "to": "input:user-list-page#data",
+      "refs": [
+        "core/src/main/java/com/kryptkode/core/remote/entities/user/UserResponse.kt:8"
+      ],
+      "file_path": "core/src/main/java/com/kryptkode/core/remote/entities/user/UserResponse.kt"
+    },
+    {
+      "kind": "contains",
+      "from": "input:user-list-page",
+      "to": "input:user-list-page#limit",
+      "refs": [
+        "core/src/main/java/com/kryptkode/core/remote/entities/user/UserResponse.kt:11"
+      ],
+      "file_path": "core/src/main/java/com/kryptkode/core/remote/entities/user/UserResponse.kt"
+    },
+    {
+      "kind": "contains",
+      "from": "input:user-list-page",
+      "to": "input:user-list-page#offset",
+      "refs": [
+        "core/src/main/java/com/kryptkode/core/remote/entities/user/UserResponse.kt:12"
+      ],
+      "file_path": "core/src/main/java/com/kryptkode/core/remote/entities/user/UserResponse.kt"
+    },
+    {
+      "kind": "contains",
+      "from": "input:user-list-page",
+      "to": "input:user-list-page#page",
+      "refs": [
+        "core/src/main/java/com/kryptkode/core/remote/entities/user/UserResponse.kt:10"
+      ],
+      "file_path": "core/src/main/java/com/kryptkode/core/remote/entities/user/UserResponse.kt"
+    },
+    {
+      "kind": "contains",
+      "from": "input:user-list-page",
+      "to": "input:user-list-page#total",
+      "refs": [
+        "core/src/main/java/com/kryptkode/core/remote/entities/user/UserResponse.kt:9"
+      ],
+      "file_path": "core/src/main/java/com/kryptkode/core/remote/entities/user/UserResponse.kt"
+    },
+    {
+      "kind": "contains",
+      "from": "input:user-list-page#data",
+      "to": "input:user-list-page#data.firstName",
+      "refs": [
+        "core/src/main/java/com/kryptkode/core/remote/entities/user/UserRemote.kt:10"
+      ],
+      "file_path": "core/src/main/java/com/kryptkode/core/remote/entities/user/UserRemote.kt"
+    },
+    {
+      "kind": "contains",
+      "from": "input:user-list-page#data",
+      "to": "input:user-list-page#data.id",
+      "refs": [
+        "core/src/main/java/com/kryptkode/core/remote/entities/user/UserRemote.kt:8"
+      ],
+      "file_path": "core/src/main/java/com/kryptkode/core/remote/entities/user/UserRemote.kt"
+    },
+    {
+      "kind": "contains",
+      "from": "input:user-list-page#data",
+      "to": "input:user-list-page#data.lastName",
+      "refs": [
+        "core/src/main/java/com/kryptkode/core/remote/entities/user/UserRemote.kt:9"
+      ],
+      "file_path": "core/src/main/java/com/kryptkode/core/remote/entities/user/UserRemote.kt"
+    },
+    {
+      "kind": "contains",
+      "from": "input:user-list-page#data",
+      "to": "input:user-list-page#data.picture",
+      "refs": [
+        "core/src/main/java/com/kryptkode/core/remote/entities/user/UserRemote.kt:13"
+      ],
+      "file_path": "core/src/main/java/com/kryptkode/core/remote/entities/user/UserRemote.kt"
+    },
+    {
+      "kind": "contains",
+      "from": "storage:user-remote-keys",
+      "to": "storage:user-remote-keys#nextKey",
+      "refs": [
+        "core/src/main/java/com/kryptkode/core/cache/keys/UserRemoteKeys.kt:11"
+      ],
+      "file_path": "core/src/main/java/com/kryptkode/core/cache/keys/UserRemoteKeys.kt"
+    },
+    {
+      "kind": "contains",
+      "from": "storage:user-remote-keys",
+      "to": "storage:user-remote-keys#prevKey",
+      "refs": [
+        "core/src/main/java/com/kryptkode/core/cache/keys/UserRemoteKeys.kt:10"
+      ],
+      "file_path": "core/src/main/java/com/kryptkode/core/cache/keys/UserRemoteKeys.kt"
+    },
+    {
+      "kind": "contains",
+      "from": "storage:user-remote-keys",
+      "to": "storage:user-remote-keys#userId",
+      "refs": [
+        "core/src/main/java/com/kryptkode/core/cache/keys/UserRemoteKeys.kt:9"
+      ],
+      "file_path": "core/src/main/java/com/kryptkode/core/cache/keys/UserRemoteKeys.kt"
+    },
+    {
+      "kind": "contains",
+      "from": "storage:users",
+      "to": "storage:users#dateOfBirth",
+      "refs": [
+        "core/src/main/java/com/kryptkode/core/cache/user/DbUser.kt:23"
+      ],
+      "file_path": "core/src/main/java/com/kryptkode/core/cache/user/DbUser.kt"
+    },
+    {
+      "kind": "contains",
+      "from": "storage:users",
+      "to": "storage:users#email",
+      "refs": [
+        "core/src/main/java/com/kryptkode/core/cache/user/DbUser.kt:16"
+      ],
+      "file_path": "core/src/main/java/com/kryptkode/core/cache/user/DbUser.kt"
+    },
+    {
+      "kind": "contains",
+      "from": "storage:users",
+      "to": "storage:users#firstName",
+      "refs": [
+        "core/src/main/java/com/kryptkode/core/cache/user/DbUser.kt:15"
+      ],
+      "file_path": "core/src/main/java/com/kryptkode/core/cache/user/DbUser.kt"
+    },
+    {
+      "kind": "contains",
+      "from": "storage:users",
+      "to": "storage:users#gender",
+      "refs": [
+        "core/src/main/java/com/kryptkode/core/cache/user/DbUser.kt:19"
+      ],
+      "file_path": "core/src/main/java/com/kryptkode/core/cache/user/DbUser.kt"
+    },
+    {
+      "kind": "contains",
+      "from": "storage:users",
+      "to": "storage:users#id",
+      "refs": [
+        "core/src/main/java/com/kryptkode/core/cache/user/DbUser.kt:13"
+      ],
+      "file_path": "core/src/main/java/com/kryptkode/core/cache/user/DbUser.kt"
+    },
+    {
+      "kind": "contains",
+      "from": "storage:users",
+      "to": "storage:users#lastName",
+      "refs": [
+        "core/src/main/java/com/kryptkode/core/cache/user/DbUser.kt:14"
+      ],
+      "file_path": "core/src/main/java/com/kryptkode/core/cache/user/DbUser.kt"
+    },
+    {
+      "kind": "contains",
+      "from": "storage:users",
+      "to": "storage:users#location",
+      "refs": [
+        "core/src/main/java/com/kryptkode/core/cache/user/DbUser.kt:21",
+        "core/src/main/java/com/kryptkode/core/remote/entities/user/Location.kt:7"
+      ],
+      "file_path": "core/src/main/java/com/kryptkode/core/cache/user/DbUser.kt"
+    },
+    {
+      "kind": "contains",
+      "from": "storage:users",
+      "to": "storage:users#phone",
+      "refs": [
+        "core/src/main/java/com/kryptkode/core/cache/user/DbUser.kt:20"
+      ],
+      "file_path": "core/src/main/java/com/kryptkode/core/cache/user/DbUser.kt"
+    },
+    {
+      "kind": "contains",
+      "from": "storage:users",
+      "to": "storage:users#picture",
+      "refs": [
+        "core/src/main/java/com/kryptkode/core/cache/user/DbUser.kt:18"
+      ],
+      "file_path": "core/src/main/java/com/kryptkode/core/cache/user/DbUser.kt"
+    },
+    {
+      "kind": "contains",
+      "from": "storage:users",
+      "to": "storage:users#registerDate",
+      "refs": [
+        "core/src/main/java/com/kryptkode/core/cache/user/DbUser.kt:22"
+      ],
+      "file_path": "core/src/main/java/com/kryptkode/core/cache/user/DbUser.kt"
+    },
+    {
+      "kind": "contains",
+      "from": "storage:users",
+      "to": "storage:users#title",
+      "refs": [
+        "core/src/main/java/com/kryptkode/core/cache/user/DbUser.kt:17"
+      ],
+      "file_path": "core/src/main/java/com/kryptkode/core/cache/user/DbUser.kt"
+    },
+    {
+      "kind": "contains",
+      "from": "storage:users#location",
+      "to": "storage:users#location.city",
+      "refs": [
+        "core/src/main/java/com/kryptkode/core/cache/user/DbUser.kt:21",
+        "core/src/main/java/com/kryptkode/core/remote/entities/user/Location.kt:10"
+      ],
+      "file_path": "core/src/main/java/com/kryptkode/core/cache/user/DbUser.kt"
+    },
+    {
+      "kind": "flow",
+      "from": "entry:detail-enriched-user",
+      "to": "storage:users",
+      "flow_id": "flow:show-user-detail",
+      "refs": [
+        "features/users/src/main/java/com/kryptkode/users/domain/GetUserDetailUseCase.kt:29",
+        "core/src/main/java/com/kryptkode/core/cache/base/BaseDao.kt:31"
+      ],
+      "file_path": "features/users/src/main/java/com/kryptkode/users/domain/GetUserDetailUseCase.kt",
+      "note": "dao.update persists the enriched DbUser with OnConflictStrategy.REPLACE"
+    },
+    {
+      "kind": "flow",
+      "from": "entry:user-list-entities",
+      "to": "storage:users",
+      "flow_id": "flow:show-users-list",
+      "refs": [
+        "core/src/main/java/com/kryptkode/core/remote/mediator/UserRemoteMediator.kt:72",
+        "core/src/main/java/com/kryptkode/core/cache/base/BaseDao.kt:23"
+      ],
+      "file_path": "core/src/main/java/com/kryptkode/core/remote/mediator/UserRemoteMediator.kt",
+      "note": "mapped DbUser rows inserted into the users table inside withTransaction"
+    },
+    {
+      "kind": "flow",
+      "from": "entry:user-remote-keys",
+      "to": "storage:user-remote-keys",
+      "flow_id": "flow:show-users-list",
+      "refs": [
+        "core/src/main/java/com/kryptkode/core/remote/mediator/UserRemoteMediator.kt:66",
+        "core/src/main/java/com/kryptkode/core/cache/keys/UserRemoteKeysDao.kt:8"
+      ],
+      "file_path": "core/src/main/java/com/kryptkode/core/remote/mediator/UserRemoteMediator.kt",
+      "note": "remote keys inserted into user_remote_keys in the same withTransaction block"
+    },
+    {
+      "kind": "related",
+      "from": "entrypoint:user-list-screen",
+      "to": "entrypoint:user-detail-screen",
+      "description": "Clicking a user in the list navigates to the detail screen with that User passed as arguments",
+      "refs": [
+        "features/users/src/main/java/com/kryptkode/users/ui/list/UserListFragment.kt:55",
+        "app/src/main/java/com/kryptkode/droidarch/navigator/ScreenNavigator.kt:22",
+        "features/users/src/main/java/com/kryptkode/users/ui/detail/UserDetailFragment.kt:73"
+      ],
+      "file_path": "features/users/src/main/java/com/kryptkode/users/ui/list/UserListFragment.kt"
+    },
+    {
+      "kind": "rule",
+      "from": "flow:show-user-detail",
+      "to": "rule:app-id-header",
+      "refs": [
+        "core/src/main/java/com/kryptkode/core/remote/api/AppIdHeaderInterceptor.kt:12"
+      ],
+      "file_path": "core/src/main/java/com/kryptkode/core/remote/api/AppIdHeaderInterceptor.kt"
+    },
+    {
+      "kind": "rule",
+      "from": "flow:show-user-detail",
+      "to": "rule:detail-fallback-condition",
+      "refs": [
+        "features/users/src/main/java/com/kryptkode/users/domain/GetUserDetailUseCase.kt:27"
+      ],
+      "file_path": "features/users/src/main/java/com/kryptkode/users/domain/GetUserDetailUseCase.kt"
+    },
+    {
+      "kind": "rule",
+      "from": "flow:show-user-detail",
+      "to": "rule:http-timeout",
+      "refs": [
+        "core/src/main/java/com/kryptkode/core/remote/api/ApiFactory.kt:41"
+      ],
+      "file_path": "core/src/main/java/com/kryptkode/core/remote/api/ApiFactory.kt"
+    },
+    {
+      "kind": "rule",
+      "from": "flow:show-users-list",
+      "to": "rule:app-id-header",
+      "refs": [
+        "core/src/main/java/com/kryptkode/core/remote/api/AppIdHeaderInterceptor.kt:12"
+      ],
+      "file_path": "core/src/main/java/com/kryptkode/core/remote/api/AppIdHeaderInterceptor.kt"
+    },
+    {
+      "kind": "rule",
+      "from": "flow:show-users-list",
+      "to": "rule:cache-write-transaction",
+      "refs": [
+        "core/src/main/java/com/kryptkode/core/remote/mediator/UserRemoteMediator.kt:57"
+      ],
+      "file_path": "core/src/main/java/com/kryptkode/core/remote/mediator/UserRemoteMediator.kt"
+    },
+    {
+      "kind": "rule",
+      "from": "flow:show-users-list",
+      "to": "rule:http-timeout",
+      "refs": [
+        "core/src/main/java/com/kryptkode/core/remote/api/ApiFactory.kt:40"
+      ],
+      "file_path": "core/src/main/java/com/kryptkode/core/remote/api/ApiFactory.kt"
+    },
+    {
+      "kind": "rule",
+      "from": "flow:show-users-list",
+      "to": "rule:paging-config",
+      "refs": [
+        "features/users/src/main/java/com/kryptkode/users/domain/GetUsersUseCase.kt:27"
+      ],
+      "file_path": "features/users/src/main/java/com/kryptkode/users/domain/GetUsersUseCase.kt"
+    },
+    {
+      "kind": "rule",
+      "from": "flow:show-users-list",
+      "to": "rule:refresh-clears-cache",
+      "refs": [
+        "core/src/main/java/com/kryptkode/core/remote/mediator/UserRemoteMediator.kt:58"
+      ],
+      "file_path": "core/src/main/java/com/kryptkode/core/remote/mediator/UserRemoteMediator.kt"
+    },
+    {
+      "kind": "rule",
+      "from": "flow:show-users-list",
+      "to": "rule:remote-page-keys",
+      "refs": [
+        "core/src/main/java/com/kryptkode/core/remote/mediator/UserRemoteMediator.kt:63"
+      ],
+      "file_path": "core/src/main/java/com/kryptkode/core/remote/mediator/UserRemoteMediator.kt"
+    },
+    {
+      "kind": "transform",
+      "from": "entry:detail-cached-user",
+      "to": "entry:detail-ui-model",
+      "flow_id": "flow:show-user-detail",
+      "refs": [
+        "features/users/src/main/java/com/kryptkode/users/mapper/UserDetailMapper.kt:16",
+        "features/users/src/main/java/com/kryptkode/users/mapper/UserLocationMapper.kt:10",
+        "features/users/src/main/java/com/kryptkode/users/ui/detail/UserDetailViewModel.kt:27"
+      ],
+      "file_path": "features/users/src/main/java/com/kryptkode/users/mapper/UserDetailMapper.kt",
+      "note": "UserDetailMapper and UserLocationMapper map DbUser to UserDetail; Date fields are formatted for display; initial state seeded from the clicked User via UserToDetailMapper"
+    },
+    {
+      "kind": "transform",
+      "from": "entry:paged-db-users",
+      "to": "entry:paged-ui-users",
+      "flow_id": "flow:show-users-list",
+      "refs": [
+        "features/users/src/main/java/com/kryptkode/users/mapper/UserMapper.kt:10",
+        "features/users/src/main/java/com/kryptkode/users/ui/list/UserListViewModel.kt:22"
+      ],
+      "file_path": "features/users/src/main/java/com/kryptkode/users/mapper/UserMapper.kt",
+      "note": "UserMapper.mapFromEntity maps each DbUser to User (id/firstName/lastName/email/title/picture); result cached in UserListViewModel"
+    },
+    {
+      "kind": "transform",
+      "from": "input:user-detail-response",
+      "to": "entry:detail-enriched-user",
+      "flow_id": "flow:show-user-detail",
+      "refs": [
+        "core/src/main/java/com/kryptkode/core/remote/mapper/UserResponseDbMapper.kt:11",
+        "core/src/main/java/com/kryptkode/core/util/ServerDateFormatter.kt:17"
+      ],
+      "file_path": "core/src/main/java/com/kryptkode/core/remote/mapper/UserResponseDbMapper.kt",
+      "note": "UserResponseDbMapper fills a DbUser from the detail response and parses registerDate/dateOfBirth strings to Date"
+    },
+    {
+      "kind": "transform",
+      "from": "input:user-list-page",
+      "to": "entry:user-list-entities",
+      "flow_id": "flow:show-users-list",
+      "refs": [
+        "core/src/main/java/com/kryptkode/core/remote/mediator/UserRemoteMediator.kt:54",
+        "core/src/main/java/com/kryptkode/core/remote/mediator/UserRemoteMediator.kt:72",
+        "core/src/main/java/com/kryptkode/core/remote/mapper/UserRemoteDbMapper.kt:8"
+      ],
+      "file_path": "core/src/main/java/com/kryptkode/core/remote/mediator/UserRemoteMediator.kt",
+      "note": "apiResponse.data items mapped UserRemote -> DbUser by UserRemoteDbMapper; envelope total/page/limit/offset dropped"
+    },
+    {
+      "kind": "transform",
+      "from": "input:user-list-page",
+      "to": "entry:user-remote-keys",
+      "flow_id": "flow:show-users-list",
+      "refs": [
+        "core/src/main/java/com/kryptkode/core/remote/mediator/UserRemoteMediator.kt:56",
+        "core/src/main/java/com/kryptkode/core/remote/mediator/UserRemoteMediator.kt:63",
+        "core/src/main/java/com/kryptkode/core/remote/mediator/UserRemoteMediator.kt:66"
+      ],
+      "file_path": "core/src/main/java/com/kryptkode/core/remote/mediator/UserRemoteMediator.kt",
+      "note": "each data.id becomes userId; prevKey/nextKey derived from page index and empty-data endOfPaginationReached"
+    },
+    {
+      "kind": "transform",
+      "from": "storage:users",
+      "to": "entry:detail-cached-user",
+      "flow_id": "flow:show-user-detail",
+      "refs": [
+        "core/src/main/java/com/kryptkode/core/cache/user/UserDao.kt:15",
+        "features/users/src/main/java/com/kryptkode/users/domain/GetUserDetailUseCase.kt:25",
+        "features/users/src/main/java/com/kryptkode/users/domain/GetUserDetailUseCase.kt:30"
+      ],
+      "file_path": "core/src/main/java/com/kryptkode/core/cache/user/UserDao.kt",
+      "note": "UserDao.getUserByIdAsFlow(userId) emits the cached DbUser row; the same Flow re-emits after the fallback update"
+    },
+    {
+      "kind": "transform",
+      "from": "storage:users",
+      "to": "entry:paged-db-users",
+      "flow_id": "flow:show-users-list",
+      "refs": [
+        "core/src/main/java/com/kryptkode/core/cache/user/UserDao.kt:12",
+        "features/users/src/main/java/com/kryptkode/users/domain/GetUsersUseCase.kt:26",
+        "features/users/src/main/java/com/kryptkode/users/domain/GetUsersUseCase.kt:33"
+      ],
+      "file_path": "features/users/src/main/java/com/kryptkode/users/domain/GetUsersUseCase.kt",
+      "note": "dao.getUsers PagingSource (SELECT * FROM users) is consumed by Pager into PagingData<DbUser> with pageSize 30 and initialLoadSize 40"
+    },
+    {
+      "kind": "trigger",
+      "from": "entrypoint:user-detail-screen",
+      "to": "flow:show-user-detail",
+      "refs": [
+        "features/users/src/main/java/com/kryptkode/users/ui/detail/UserDetailFragment.kt:59"
+      ],
+      "file_path": "features/users/src/main/java/com/kryptkode/users/ui/detail/UserDetailFragment.kt"
+    },
+    {
+      "kind": "trigger",
+      "from": "entrypoint:user-list-screen",
+      "to": "flow:show-users-list",
+      "refs": [
+        "features/users/src/main/java/com/kryptkode/users/ui/list/UserListFragment.kt:31",
+        "features/users/src/main/java/com/kryptkode/users/ui/list/UserListViewModel.kt:22"
+      ],
+      "file_path": "features/users/src/main/java/com/kryptkode/users/ui/list/UserListFragment.kt"
+    },
+    {
+      "kind": "use",
+      "from": "flow:show-user-detail",
+      "to": "entry:detail-cached-user",
+      "refs": [
+        "features/users/src/main/java/com/kryptkode/users/domain/GetUserDetailUseCase.kt:25"
+      ],
+      "file_path": "features/users/src/main/java/com/kryptkode/users/domain/GetUserDetailUseCase.kt"
+    },
+    {
+      "kind": "use",
+      "from": "flow:show-user-detail",
+      "to": "entry:detail-enriched-user",
+      "refs": [
+        "core/src/main/java/com/kryptkode/core/remote/mapper/UserResponseDbMapper.kt:11"
+      ],
+      "file_path": "core/src/main/java/com/kryptkode/core/remote/mapper/UserResponseDbMapper.kt"
+    },
+    {
+      "kind": "use",
+      "from": "flow:show-user-detail",
+      "to": "entry:detail-ui-model",
+      "refs": [
+        "features/users/src/main/java/com/kryptkode/users/mapper/UserDetailMapper.kt:16"
+      ],
+      "file_path": "features/users/src/main/java/com/kryptkode/users/mapper/UserDetailMapper.kt"
+    },
+    {
+      "kind": "use",
+      "from": "flow:show-user-detail",
+      "to": "input:user-detail-response",
+      "refs": [
+        "core/src/main/java/com/kryptkode/core/remote/api/UsersServiceApi.kt:17",
+        "features/users/src/main/java/com/kryptkode/users/domain/GetUserDetailUseCase.kt:28"
+      ],
+      "file_path": "core/src/main/java/com/kryptkode/core/remote/api/UsersServiceApi.kt"
+    },
+    {
+      "kind": "use",
+      "from": "flow:show-user-detail",
+      "to": "storage:users",
+      "refs": [
+        "core/src/main/java/com/kryptkode/core/cache/user/UserDao.kt:15"
+      ],
+      "file_path": "core/src/main/java/com/kryptkode/core/cache/user/UserDao.kt"
+    },
+    {
+      "kind": "use",
+      "from": "flow:show-users-list",
+      "to": "entry:paged-db-users",
+      "refs": [
+        "features/users/src/main/java/com/kryptkode/users/domain/GetUsersUseCase.kt:33"
+      ],
+      "file_path": "features/users/src/main/java/com/kryptkode/users/domain/GetUsersUseCase.kt"
+    },
+    {
+      "kind": "use",
+      "from": "flow:show-users-list",
+      "to": "entry:paged-ui-users",
+      "refs": [
+        "features/users/src/main/java/com/kryptkode/users/ui/list/UserListViewModel.kt:22"
+      ],
+      "file_path": "features/users/src/main/java/com/kryptkode/users/ui/list/UserListViewModel.kt"
+    },
+    {
+      "kind": "use",
+      "from": "flow:show-users-list",
+      "to": "entry:user-list-entities",
+      "refs": [
+        "core/src/main/java/com/kryptkode/core/remote/mapper/UserRemoteDbMapper.kt:8"
+      ],
+      "file_path": "core/src/main/java/com/kryptkode/core/remote/mapper/UserRemoteDbMapper.kt"
+    },
+    {
+      "kind": "use",
+      "from": "flow:show-users-list",
+      "to": "entry:user-remote-keys",
+      "refs": [
+        "core/src/main/java/com/kryptkode/core/remote/mediator/UserRemoteMediator.kt:68"
+      ],
+      "file_path": "core/src/main/java/com/kryptkode/core/remote/mediator/UserRemoteMediator.kt"
+    },
+    {
+      "kind": "use",
+      "from": "flow:show-users-list",
+      "to": "input:user-list-page",
+      "refs": [
+        "core/src/main/java/com/kryptkode/core/remote/mediator/UserRemoteMediator.kt:54"
+      ],
+      "file_path": "core/src/main/java/com/kryptkode/core/remote/mediator/UserRemoteMediator.kt"
+    },
+    {
+      "kind": "use",
+      "from": "flow:show-users-list",
+      "to": "storage:user-remote-keys",
+      "refs": [
+        "core/src/main/java/com/kryptkode/core/cache/keys/UserRemoteKeysDao.kt:10",
+        "core/src/main/java/com/kryptkode/core/remote/mediator/UserRemoteMediator.kt:66"
+      ],
+      "file_path": "core/src/main/java/com/kryptkode/core/cache/keys/UserRemoteKeysDao.kt"
+    },
+    {
+      "kind": "use",
+      "from": "flow:show-users-list",
+      "to": "storage:users",
+      "refs": [
+        "core/src/main/java/com/kryptkode/core/cache/user/UserDao.kt:12",
+        "core/src/main/java/com/kryptkode/core/remote/mediator/UserRemoteMediator.kt:72"
+      ],
+      "file_path": "core/src/main/java/com/kryptkode/core/cache/user/UserDao.kt"
+    }
+  ]
+}

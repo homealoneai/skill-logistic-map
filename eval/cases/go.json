@@ -1,0 +1,36 @@
+{
+  "id": "go",
+  "title": "Go catalog API",
+  "path": "code-sample/go",
+  "scope": "The HTTP catalog API: the routes in openapi.yml and controller/controller.go, the repository layer and the embedded product data. Ignore deployment, telemetry, chaos and scripts.",
+  "hints": [
+    "Entry points are HTTP routes served by gin (see main.go and controller/controller.go).",
+    "repository/repository.go reads products from the database; repository/data.go embeds products.json and tags.json.",
+    "The default runtime uses an in-memory SQLite database; MySQL is the alternative."
+  ],
+  "context_files": [
+    "openapi.yml",
+    "main.go",
+    "controller/controller.go",
+    "repository/repository.go"
+  ],
+  "expect": {
+    "entry_points": [
+      "/catalog/products",
+      "/catalog/products/{id}",
+      "/catalog/search"
+    ],
+    "min_inputs": 3,
+    "min_entries": 2,
+    "min_storages": 1,
+    "min_fields": 6,
+    "min_edges": 3,
+    "files": [
+      "controller/controller.go",
+      "repository/repository.go"
+    ],
+    "min_flows": 1,
+    "min_entrypoints": 1
+  },
+  "rubric": "The catalog service has no queue, cron job or authentication. Penalize maps that invent queues, scheduled jobs or external services. A correct map links the HTTP routes to a transformation and then to the product storage."
+}

@@ -3,3 +3,8 @@ __pycache__/
 *.pyc
 .logistic-map/
 .dataflow/
+
+# local secrets: never commit real credentials
+.env
+.env.*
+!.env.example

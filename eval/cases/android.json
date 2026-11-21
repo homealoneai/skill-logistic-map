@@ -1,0 +1,40 @@
+{
+  "id": "android",
+  "title": "Android users feature",
+  "path": "code-sample/android",
+  "scope": "The users feature data path: Retrofit responses from UsersServiceApi, the paging mediator, mapping to Room entities, and the repository/use case exposing cached users to the UI. Ignore DI wiring, build scripts, tests, image loading and the Star Wars character screens.",
+  "hints": [
+    "core/.../remote/api/UsersServiceApi.kt declares GET user and GET user/{userId}.",
+    "core/.../remote/mediator/UserRemoteMediator.kt fetches pages and writes users and remote keys through Room.",
+    "core/.../cache/AppDatabase.kt and the DAOs own the SQLite storage.",
+    "core/.../repo/UserRepositoryImpl.kt reads the cache and falls back to the detail endpoint.",
+    "features/users/... contains the use cases and ViewModels that expose the cached data to the UI."
+  ],
+  "context_files": [
+    "core/src/main/java/com/kryptkode/core/remote/api/UsersServiceApi.kt",
+    "core/src/main/java/com/kryptkode/core/remote/mediator/UserRemoteMediator.kt",
+    "core/src/main/java/com/kryptkode/core/repo/UserRepositoryImpl.kt",
+    "core/src/main/java/com/kryptkode/core/cache/AppDatabase.kt",
+    "features/users/src/main/java/com/kryptkode/users/ui/list/UserListViewModel.kt"
+  ],
+  "expect": {
+    "entry_points": [
+      "user",
+      "user/{userId}"
+    ],
+    "min_inputs": 2,
+    "min_entries": 3,
+    "min_storages": 1,
+    "min_fields": 8,
+    "min_edges": 4,
+    "files": [
+      "core/src/main/java/com/kryptkode/core/remote/api/UsersServiceApi.kt",
+      "core/src/main/java/com/kryptkode/core/remote/mediator/UserRemoteMediator.kt",
+      "core/src/main/java/com/kryptkode/core/repo/UserRepositoryImpl.kt",
+      "core/src/main/java/com/kryptkode/core/cache/AppDatabase.kt"
+    ],
+    "min_flows": 1,
+    "min_entrypoints": 1
+  },
+  "rubric": "The HTTP responses are inputs and Room is the storage. The mediator, mappers and repository are transformations; the ViewModel is a consumer of cached data, not a new source. The outer EntryPoints are the UI screens/actions that start list and detail retrieval; Retrofit methods, ViewModels, use cases and the mediator are internal participants, not triggers. The detail endpoint is a cache-miss branch of detail retrieval, not a separate pipeline. Penalize maps that invent queues, a remote database or one contract per Kotlin class."
+}

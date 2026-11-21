@@ -1,0 +1,38 @@
+{
+  "id": "node",
+  "title": "Node checkout API",
+  "path": "code-sample/node",
+  "scope": "The checkout HTTP API: checkout.controller.ts, checkout.service.ts, the Redis-backed repository and the order/shipping clients. Ignore web/, android/, monorepo/ and telemetry.",
+  "hints": [
+    "checkout.controller.ts declares the three HTTP routes.",
+    "checkout.service.ts computes totals and calls the orders and shipping services.",
+    "RedisCheckoutRepository persists the checkout under the customer id.",
+    "The generated clients under src/clients/orders are outbound HTTP calls to the orders service."
+  ],
+  "context_files": [
+    "openapi.yml",
+    "src/checkout/checkout.controller.ts",
+    "src/checkout/checkout.service.ts",
+    "src/checkout/repositories/RedisCheckoutRepository.ts"
+  ],
+  "expect": {
+    "entry_points": [
+      "/checkout/{customerId}",
+      "/checkout/{customerId}/update",
+      "/checkout/{customerId}/submit"
+    ],
+    "min_inputs": 3,
+    "min_entries": 2,
+    "min_storages": 1,
+    "min_fields": 8,
+    "min_edges": 4,
+    "files": [
+      "src/checkout/checkout.controller.ts",
+      "src/checkout/checkout.service.ts",
+      "src/checkout/repositories/RedisCheckoutRepository.ts"
+    ],
+    "min_flows": 1,
+    "min_entrypoints": 1
+  },
+  "rubric": "Redis is the checkout storage. The orders and shipping services are outbound boundaries, not local storages. Penalize maps that model the NestJS DTO classes as separate contracts instead of fields of the checkout contract."
+}

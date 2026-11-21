@@ -1,0 +1,48 @@
+{
+  "id": "otel",
+  "title": "OpenTelemetry demo checkout",
+  "path": "code-sample/opentelemetry-demo",
+  "scope": "The checkout journey from the storefront: the checkout form submit, the Next.js POST /api/checkout route, and the Go CheckoutService.PlaceOrder orchestration including cart, product catalog, currency, payment, shipping, email and the orders Kafka event. Downstream services are contracts at the boundary; do not map their internal implementations.",
+  "hints": [
+    "CheckoutForm.tsx submits the form; pages/cart/index.tsx wires it to the API route.",
+    "src/frontend/pages/api/checkout.ts is the HTTP entrypoint; it calls Checkout.gateway.placeOrder and hydrates the response with ProductCatalogService.",
+    "src/checkout/main.go implements CheckoutService.PlaceOrder and orchestrates cart, product catalog, currency, payment, shipping and email over gRPC.",
+    "Cart data is stored in Valkey by src/cart; the checkout service reads and empties it through CartService.",
+    "src/checkout/kafka/producer.go publishes the OrderResult to the orders topic when a broker is configured.",
+    "pb/demo.proto defines the request, cart, money, order and response shapes used across the flow."
+  ],
+  "context_files": [
+    "src/frontend/components/CheckoutForm/CheckoutForm.tsx",
+    "src/frontend/pages/cart/index.tsx",
+    "src/frontend/pages/api/checkout.ts",
+    "src/frontend/gateways/rpc/Checkout.gateway.ts",
+    "src/checkout/main.go",
+    "src/checkout/kafka/producer.go",
+    "src/checkout/money/money.go",
+    "src/cart/src/services/CartService.cs",
+    "src/cart/src/cartstore/ValkeyCartStore.cs",
+    "pb/demo.proto"
+  ],
+  "expect": {
+    "entry_points": [
+      "checkout form",
+      "api/checkout",
+      "placeorder"
+    ],
+    "min_inputs": 4,
+    "min_entries": 3,
+    "min_storages": 1,
+    "min_fields": 8,
+    "min_edges": 4,
+    "files": [
+      "src/frontend/components/CheckoutForm/CheckoutForm.tsx",
+      "src/frontend/pages/api/checkout.ts",
+      "src/checkout/main.go",
+      "src/checkout/kafka/producer.go",
+      "pb/demo.proto"
+    ],
+    "min_flows": 2,
+    "min_entrypoints": 2
+  },
+  "rubric": "This is a two-boundary flow: the storefront submits the form, POST /api/checkout forwards the PlaceOrderRequest to the checkout gRPC service, and CheckoutService.PlaceOrder orchestrates the order. Model the UI form, the HTTP route and the gRPC method as separate EntryPoints; the form reaches the route through a directional RELATED edge, and the route relates to the gRPC method. Put each flow in the cluster of the code that owns it (frontend and checkout-service) and use the downstream services only as boundary contracts: cart-service, product-catalog, currency-service, payment-service, shipping-service, email-service and kafka. The cart storage is Valkey; the orders topic is a queue, not an external service. Outbound gRPC clients inside checkout are participants, not EntryPoints. Penalize one cluster per node, invented services or queues, and splitting cache/conditional branches into extra flows."
+}

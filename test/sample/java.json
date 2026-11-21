@@ -1,0 +1,2593 @@
+{
+  "schema_version": 7,
+  "generated_at": "2026-11-21T00:15:41+00:00",
+  "repo": "https://github.com/homealoneai/skill-logistic-map.git",
+  "commit": "77ff12d",
+  "nodes": [
+    {
+      "id": "entry:order-created-event",
+      "name": "OrderCreatedEvent",
+      "description": "Generated OrderCreatedEvent snapshot built by OrdersEventHandler from the saved order and published through the configured MessagingProvider.",
+      "stage": "published",
+      "cluster": "orders-service",
+      "repo": "https://github.com/homealoneai/skill-logistic-map.git",
+      "commit_sha": "77ff12d",
+      "file_path": "src/main/java/com/amazon/sample/events/orders/OrderCreatedEvent.java",
+      "refs": [
+        "src/main/java/com/amazon/sample/orders/messaging/OrdersEventHandler.java:43",
+        "src/main/java/com/amazon/sample/orders/messaging/OrdersEventHandler.java:48",
+        "src/main/java/com/amazon/sample/events/orders/OrderCreatedEvent.java:34",
+        "src/main/java/com/amazon/sample/events/orders/Order.java:42"
+      ],
+      "kind": "entry"
+    },
+    {
+      "id": "entry:order-entity-new",
+      "name": "OrderEntity before save",
+      "description": "OrderEntity produced by OrderMapper.toOrderEntity; id and createdDate are ignored on input and remain unset until the save callback.",
+      "stage": "mapped",
+      "cluster": "orders-service",
+      "repo": "https://github.com/homealoneai/skill-logistic-map.git",
+      "commit_sha": "77ff12d",
+      "file_path": "src/main/java/com/amazon/sample/orders/entities/OrderEntity.java",
+      "refs": [
+        "src/main/java/com/amazon/sample/orders/entities/OrderEntity.java:29",
+        "src/main/java/com/amazon/sample/orders/entities/OrderEntity.java:37",
+        "src/main/java/com/amazon/sample/orders/entities/OrderEntity.java:41",
+        "src/main/java/com/amazon/sample/orders/web/payload/OrderMapper.java:32"
+      ],
+      "kind": "entry"
+    },
+    {
+      "id": "entry:order-entity-saved",
+      "name": "OrderEntity after save",
+      "description": "OrderEntity returned by OrderRepository.save with UUID id and createdDate assigned by the BeforeConvertCallback.",
+      "stage": "persisted",
+      "cluster": "orders-service",
+      "repo": "https://github.com/homealoneai/skill-logistic-map.git",
+      "commit_sha": "77ff12d",
+      "file_path": "src/main/java/com/amazon/sample/orders/entities/OrderEntity.java",
+      "refs": [
+        "src/main/java/com/amazon/sample/orders/services/OrderService.java:48",
+        "src/main/java/com/amazon/sample/orders/config/PersistenceConfig.java:38",
+        "src/main/java/com/amazon/sample/orders/entities/OrderEntity.java:32"
+      ],
+      "kind": "entry"
+    },
+    {
+      "id": "entry:order-response",
+      "name": "ExistingOrder response",
+      "description": "ExistingOrder JSON payload returned by POST /orders and used as each element of the GET /orders list.",
+      "stage": "response",
+      "cluster": "orders-service",
+      "repo": "https://github.com/homealoneai/skill-logistic-map.git",
+      "commit_sha": "77ff12d",
+      "file_path": "src/main/java/com/amazon/sample/orders/web/payload/ExistingOrder.java",
+      "refs": [
+        "src/main/java/com/amazon/sample/orders/web/payload/ExistingOrder.java:27",
+        "src/main/java/com/amazon/sample/orders/web/payload/ExistingOrder.java:29",
+        "src/main/java/com/amazon/sample/orders/web/payload/ExistingOrder.java:31",
+        "openapi.yml:86"
+      ],
+      "kind": "entry"
+    },
+    {
+      "id": "entrypoint:get-orders",
+      "name": "GET /orders",
+      "description": "HTTP GET /orders handled by OrderController.order(): returns all orders as ExistingOrder JSON.",
+      "cluster": "orders-service",
+      "repo": "https://github.com/homealoneai/skill-logistic-map.git",
+      "commit_sha": "77ff12d",
+      "file_path": "src/main/java/com/amazon/sample/orders/web/OrderController.java",
+      "refs": [
+        "src/main/java/com/amazon/sample/orders/web/OrderController.java:38",
+        "src/main/java/com/amazon/sample/orders/web/OrderController.java:59",
+        "src/main/java/com/amazon/sample/orders/web/OrderController.java:61"
+      ],
+      "kind": "entrypoint"
+    },
+    {
+      "id": "entrypoint:post-orders",
+      "name": "POST /orders",
+      "description": "HTTP POST /orders handled by OrderController.order(Order): accepts an Order JSON body and returns an ExistingOrder.",
+      "cluster": "orders-service",
+      "repo": "https://github.com/homealoneai/skill-logistic-map.git",
+      "commit_sha": "77ff12d",
+      "file_path": "src/main/java/com/amazon/sample/orders/web/OrderController.java",
+      "refs": [
+        "src/main/java/com/amazon/sample/orders/web/OrderController.java:38",
+        "src/main/java/com/amazon/sample/orders/web/OrderController.java:49",
+        "src/main/java/com/amazon/sample/orders/web/OrderController.java:51"
+      ],
+      "kind": "entrypoint"
+    },
+    {
+      "id": "entry:order-created-event#order",
+      "name": "order",
+      "path": "order",
+      "type": "object",
+      "required": true,
+      "source": "declared",
+      "repo": "https://github.com/homealoneai/skill-logistic-map.git",
+      "commit_sha": "77ff12d",
+      "file_path": "src/main/java/com/amazon/sample/events/orders/OrderCreatedEvent.java",
+      "refs": [
+        "src/main/java/com/amazon/sample/events/orders/OrderCreatedEvent.java:43",
+        "events/order-created-event.schema.json:8"
+      ],
+      "kind": "field",
+      "owner": "entry:order-created-event"
+    },
+    {
+      "id": "entry:order-created-event#order.id",
+      "name": "id",
+      "path": "order.id",
+      "type": "string",
+      "required": true,
+      "source": "declared",
+      "repo": "https://github.com/homealoneai/skill-logistic-map.git",
+      "commit_sha": "77ff12d",
+      "file_path": "src/main/java/com/amazon/sample/events/orders/Order.java",
+      "refs": [
+        "src/main/java/com/amazon/sample/events/orders/Order.java:42",
+        "events/order.schema.json:9"
+      ],
+      "kind": "field",
+      "owner": "entry:order-created-event"
+    },
+    {
+      "id": "entry:order-created-event#order.orderItems",
+      "name": "orderItems",
+      "path": "order.orderItems",
+      "type": "array",
+      "required": false,
+      "source": "declared",
+      "repo": "https://github.com/homealoneai/skill-logistic-map.git",
+      "commit_sha": "77ff12d",
+      "file_path": "src/main/java/com/amazon/sample/events/orders/Order.java",
+      "refs": [
+        "src/main/java/com/amazon/sample/events/orders/Order.java:45",
+        "src/main/java/com/amazon/sample/orders/messaging/OrdersEventHandler.java:46"
+      ],
+      "kind": "field",
+      "owner": "entry:order-created-event"
+    },
+    {
+      "id": "entry:order-created-event#order.orderItems.productId",
+      "name": "productId",
+      "path": "order.orderItems.productId",
+      "type": "string",
+      "required": false,
+      "source": "declared",
+      "repo": "https://github.com/homealoneai/skill-logistic-map.git",
+      "commit_sha": "77ff12d",
+      "file_path": "src/main/java/com/amazon/sample/orders/entities/OrderItemEntity.java",
+      "refs": [
+        "src/main/java/com/amazon/sample/orders/entities/OrderItemEntity.java:27"
+      ],
+      "kind": "field",
+      "owner": "entry:order-created-event"
+    },
+    {
+      "id": "entry:order-created-event#order.orderItems.quantity",
+      "name": "quantity",
+      "path": "order.orderItems.quantity",
+      "type": "integer",
+      "required": false,
+      "source": "declared",
+      "repo": "https://github.com/homealoneai/skill-logistic-map.git",
+      "commit_sha": "77ff12d",
+      "file_path": "src/main/java/com/amazon/sample/orders/entities/OrderItemEntity.java",
+      "refs": [
+        "src/main/java/com/amazon/sample/orders/entities/OrderItemEntity.java:30"
+      ],
+      "kind": "field",
+      "owner": "entry:order-created-event"
+    },
+    {
+      "id": "entry:order-created-event#order.orderItems.totalCost",
+      "name": "totalCost",
+      "path": "order.orderItems.totalCost",
+      "type": "integer",
+      "required": false,
+      "source": "declared",
+      "repo": "https://github.com/homealoneai/skill-logistic-map.git",
+      "commit_sha": "77ff12d",
+      "file_path": "src/main/java/com/amazon/sample/orders/entities/OrderItemEntity.java",
+      "refs": [
+        "src/main/java/com/amazon/sample/orders/entities/OrderItemEntity.java:36"
+      ],
+      "kind": "field",
+      "owner": "entry:order-created-event"
+    },
+    {
+      "id": "entry:order-created-event#order.orderItems.unitCost",
+      "name": "unitCost",
+      "path": "order.orderItems.unitCost",
+      "type": "integer",
+      "required": false,
+      "source": "declared",
+      "repo": "https://github.com/homealoneai/skill-logistic-map.git",
+      "commit_sha": "77ff12d",
+      "file_path": "src/main/java/com/amazon/sample/orders/entities/OrderItemEntity.java",
+      "refs": [
+        "src/main/java/com/amazon/sample/orders/entities/OrderItemEntity.java:33"
+      ],
+      "kind": "field",
+      "owner": "entry:order-created-event"
+    },
+    {
+      "id": "entry:order-entity-new#createdDate",
+      "name": "createdDate",
+      "path": "createdDate",
+      "type": "datetime",
+      "required": false,
+      "source": "declared",
+      "repo": "https://github.com/homealoneai/skill-logistic-map.git",
+      "commit_sha": "77ff12d",
+      "file_path": "src/main/java/com/amazon/sample/orders/entities/OrderEntity.java",
+      "refs": [
+        "src/main/java/com/amazon/sample/orders/entities/OrderEntity.java:35"
+      ],
+      "kind": "field",
+      "owner": "entry:order-entity-new"
+    },
+    {
+      "id": "entry:order-entity-new#id",
+      "name": "id",
+      "path": "id",
+      "type": "string",
+      "description": "Null before save; generated by PersistenceConfig when the entity is converted.",
+      "required": false,
+      "source": "declared",
+      "repo": "https://github.com/homealoneai/skill-logistic-map.git",
+      "commit_sha": "77ff12d",
+      "file_path": "src/main/java/com/amazon/sample/orders/entities/OrderEntity.java",
+      "refs": [
+        "src/main/java/com/amazon/sample/orders/entities/OrderEntity.java:32",
+        "src/main/java/com/amazon/sample/orders/config/PersistenceConfig.java:41"
+      ],
+      "kind": "field",
+      "owner": "entry:order-entity-new"
+    },
+    {
+      "id": "entry:order-entity-new#items",
+      "name": "items",
+      "path": "items",
+      "type": "array",
+      "required": false,
+      "source": "declared",
+      "repo": "https://github.com/homealoneai/skill-logistic-map.git",
+      "commit_sha": "77ff12d",
+      "file_path": "src/main/java/com/amazon/sample/orders/entities/OrderEntity.java",
+      "refs": [
+        "src/main/java/com/amazon/sample/orders/entities/OrderEntity.java:40"
+      ],
+      "kind": "field",
+      "owner": "entry:order-entity-new"
+    },
+    {
+      "id": "entry:order-entity-new#items.productId",
+      "name": "productId",
+      "path": "items.productId",
+      "type": "string",
+      "required": false,
+      "source": "declared",
+      "repo": "https://github.com/homealoneai/skill-logistic-map.git",
+      "commit_sha": "77ff12d",
+      "file_path": "src/main/java/com/amazon/sample/orders/entities/OrderItemEntity.java",
+      "refs": [
+        "src/main/java/com/amazon/sample/orders/entities/OrderItemEntity.java:27"
+      ],
+      "kind": "field",
+      "owner": "entry:order-entity-new"
+    },
+    {
+      "id": "entry:order-entity-new#items.quantity",
+      "name": "quantity",
+      "path": "items.quantity",
+      "type": "integer",
+      "required": false,
+      "source": "declared",
+      "repo": "https://github.com/homealoneai/skill-logistic-map.git",
+      "commit_sha": "77ff12d",
+      "file_path": "src/main/java/com/amazon/sample/orders/entities/OrderItemEntity.java",
+      "refs": [
+        "src/main/java/com/amazon/sample/orders/entities/OrderItemEntity.java:30"
+      ],
+      "kind": "field",
+      "owner": "entry:order-entity-new"
+    },
+    {
+      "id": "entry:order-entity-new#items.totalCost",
+      "name": "totalCost",
+      "path": "items.totalCost",
+      "type": "integer",
+      "required": false,
+      "source": "declared",
+      "repo": "https://github.com/homealoneai/skill-logistic-map.git",
+      "commit_sha": "77ff12d",
+      "file_path": "src/main/java/com/amazon/sample/orders/entities/OrderItemEntity.java",
+      "refs": [
+        "src/main/java/com/amazon/sample/orders/entities/OrderItemEntity.java:36"
+      ],
+      "kind": "field",
+      "owner": "entry:order-entity-new"
+    },
+    {
+      "id": "entry:order-entity-new#items.unitCost",
+      "name": "unitCost",
+      "path": "items.unitCost",
+      "type": "integer",
+      "required": false,
+      "source": "declared",
+      "repo": "https://github.com/homealoneai/skill-logistic-map.git",
+      "commit_sha": "77ff12d",
+      "file_path": "src/main/java/com/amazon/sample/orders/entities/OrderItemEntity.java",
+      "refs": [
+        "src/main/java/com/amazon/sample/orders/entities/OrderItemEntity.java:33"
+      ],
+      "kind": "field",
+      "owner": "entry:order-entity-new"
+    },
+    {
+      "id": "entry:order-entity-new#shippingAddress",
+      "name": "shippingAddress",
+      "path": "shippingAddress",
+      "type": "object",
+      "required": false,
+      "source": "declared",
+      "repo": "https://github.com/homealoneai/skill-logistic-map.git",
+      "commit_sha": "77ff12d",
+      "file_path": "src/main/java/com/amazon/sample/orders/entities/OrderEntity.java",
+      "refs": [
+        "src/main/java/com/amazon/sample/orders/entities/OrderEntity.java:37"
+      ],
+      "kind": "field",
+      "owner": "entry:order-entity-new"
+    },
+    {
+      "id": "entry:order-entity-new#shippingAddress.address1",
+      "name": "address1",
+      "path": "shippingAddress.address1",
+      "type": "string",
+      "required": false,
+      "source": "declared",
+      "repo": "https://github.com/homealoneai/skill-logistic-map.git",
+      "commit_sha": "77ff12d",
+      "file_path": "src/main/java/com/amazon/sample/orders/entities/ShippingAddressEntity.java",
+      "refs": [
+        "src/main/java/com/amazon/sample/orders/entities/ShippingAddressEntity.java:36"
+      ],
+      "kind": "field",
+      "owner": "entry:order-entity-new"
+    },
+    {
+      "id": "entry:order-entity-new#shippingAddress.address2",
+      "name": "address2",
+      "path": "shippingAddress.address2",
+      "type": "string",
+      "required": false,
+      "source": "declared",
+      "repo": "https://github.com/homealoneai/skill-logistic-map.git",
+      "commit_sha": "77ff12d",
+      "file_path": "src/main/java/com/amazon/sample/orders/entities/ShippingAddressEntity.java",
+      "refs": [
+        "src/main/java/com/amazon/sample/orders/entities/ShippingAddressEntity.java:39"
+      ],
+      "kind": "field",
+      "owner": "entry:order-entity-new"
+    },
+    {
+      "id": "entry:order-entity-new#shippingAddress.city",
+      "name": "city",
+      "path": "shippingAddress.city",
+      "type": "string",
+      "required": false,
+      "source": "declared",
+      "repo": "https://github.com/homealoneai/skill-logistic-map.git",
+      "commit_sha": "77ff12d",
+      "file_path": "src/main/java/com/amazon/sample/orders/entities/ShippingAddressEntity.java",
+      "refs": [
+        "src/main/java/com/amazon/sample/orders/entities/ShippingAddressEntity.java:42"
+      ],
+      "kind": "field",
+      "owner": "entry:order-entity-new"
+    },
+    {
+      "id": "entry:order-entity-new#shippingAddress.email",
+      "name": "email",
+      "path": "shippingAddress.email",
+      "type": "string",
+      "required": false,
+      "source": "declared",
+      "repo": "https://github.com/homealoneai/skill-logistic-map.git",
+      "commit_sha": "77ff12d",
+      "file_path": "src/main/java/com/amazon/sample/orders/entities/ShippingAddressEntity.java",
+      "refs": [
+        "src/main/java/com/amazon/sample/orders/entities/ShippingAddressEntity.java:33"
+      ],
+      "kind": "field",
+      "owner": "entry:order-entity-new"
+    },
+    {
+      "id": "entry:order-entity-new#shippingAddress.firstName",
+      "name": "firstName",
+      "path": "shippingAddress.firstName",
+      "type": "string",
+      "required": false,
+      "source": "declared",
+      "repo": "https://github.com/homealoneai/skill-logistic-map.git",
+      "commit_sha": "77ff12d",
+      "file_path": "src/main/java/com/amazon/sample/orders/entities/ShippingAddressEntity.java",
+      "refs": [
+        "src/main/java/com/amazon/sample/orders/entities/ShippingAddressEntity.java:27"
+      ],
+      "kind": "field",
+      "owner": "entry:order-entity-new"
+    },
+    {
+      "id": "entry:order-entity-new#shippingAddress.lastName",
+      "name": "lastName",
+      "path": "shippingAddress.lastName",
+      "type": "string",
+      "required": false,
+      "source": "declared",
+      "repo": "https://github.com/homealoneai/skill-logistic-map.git",
+      "commit_sha": "77ff12d",
+      "file_path": "src/main/java/com/amazon/sample/orders/entities/ShippingAddressEntity.java",
+      "refs": [
+        "src/main/java/com/amazon/sample/orders/entities/ShippingAddressEntity.java:30"
+      ],
+      "kind": "field",
+      "owner": "entry:order-entity-new"
+    },
+    {
+      "id": "entry:order-entity-new#shippingAddress.state",
+      "name": "state",
+      "path": "shippingAddress.state",
+      "type": "string",
+      "required": false,
+      "source": "declared",
+      "repo": "https://github.com/homealoneai/skill-logistic-map.git",
+      "commit_sha": "77ff12d",
+      "file_path": "src/main/java/com/amazon/sample/orders/entities/ShippingAddressEntity.java",
+      "refs": [
+        "src/main/java/com/amazon/sample/orders/entities/ShippingAddressEntity.java:48"
+      ],
+      "kind": "field",
+      "owner": "entry:order-entity-new"
+    },
+    {
+      "id": "entry:order-entity-new#shippingAddress.zipCode",
+      "name": "zipCode",
+      "path": "shippingAddress.zipCode",
+      "type": "string",
+      "required": false,
+      "source": "declared",
+      "repo": "https://github.com/homealoneai/skill-logistic-map.git",
+      "commit_sha": "77ff12d",
+      "file_path": "src/main/java/com/amazon/sample/orders/entities/ShippingAddressEntity.java",
+      "refs": [
+        "src/main/java/com/amazon/sample/orders/entities/ShippingAddressEntity.java:45"
+      ],
+      "kind": "field",
+      "owner": "entry:order-entity-new"
+    },
+    {
+      "id": "entry:order-entity-saved#createdDate",
+      "name": "createdDate",
+      "path": "createdDate",
+      "type": "datetime",
+      "required": false,
+      "source": "declared",
+      "repo": "https://github.com/homealoneai/skill-logistic-map.git",
+      "commit_sha": "77ff12d",
+      "file_path": "src/main/java/com/amazon/sample/orders/entities/OrderEntity.java",
+      "refs": [
+        "src/main/java/com/amazon/sample/orders/entities/OrderEntity.java:35",
+        "src/main/java/com/amazon/sample/orders/config/PersistenceConfig.java:43"
+      ],
+      "kind": "field",
+      "owner": "entry:order-entity-saved"
+    },
+    {
+      "id": "entry:order-entity-saved#id",
+      "name": "id",
+      "path": "id",
+      "type": "string",
+      "required": true,
+      "source": "declared",
+      "repo": "https://github.com/homealoneai/skill-logistic-map.git",
+      "commit_sha": "77ff12d",
+      "file_path": "src/main/java/com/amazon/sample/orders/entities/OrderEntity.java",
+      "refs": [
+        "src/main/java/com/amazon/sample/orders/entities/OrderEntity.java:32",
+        "src/main/java/com/amazon/sample/orders/config/PersistenceConfig.java:41"
+      ],
+      "kind": "field",
+      "owner": "entry:order-entity-saved"
+    },
+    {
+      "id": "entry:order-entity-saved#items",
+      "name": "items",
+      "path": "items",
+      "type": "array",
+      "required": false,
+      "source": "declared",
+      "repo": "https://github.com/homealoneai/skill-logistic-map.git",
+      "commit_sha": "77ff12d",
+      "file_path": "src/main/java/com/amazon/sample/orders/entities/OrderEntity.java",
+      "refs": [
+        "src/main/java/com/amazon/sample/orders/entities/OrderEntity.java:40"
+      ],
+      "kind": "field",
+      "owner": "entry:order-entity-saved"
+    },
+    {
+      "id": "entry:order-entity-saved#items.productId",
+      "name": "productId",
+      "path": "items.productId",
+      "type": "string",
+      "required": false,
+      "source": "declared",
+      "repo": "https://github.com/homealoneai/skill-logistic-map.git",
+      "commit_sha": "77ff12d",
+      "file_path": "src/main/java/com/amazon/sample/orders/entities/OrderItemEntity.java",
+      "refs": [
+        "src/main/java/com/amazon/sample/orders/entities/OrderItemEntity.java:27"
+      ],
+      "kind": "field",
+      "owner": "entry:order-entity-saved"
+    },
+    {
+      "id": "entry:order-entity-saved#items.quantity",
+      "name": "quantity",
+      "path": "items.quantity",
+      "type": "integer",
+      "required": false,
+      "source": "declared",
+      "repo": "https://github.com/homealoneai/skill-logistic-map.git",
+      "commit_sha": "77ff12d",
+      "file_path": "src/main/java/com/amazon/sample/orders/entities/OrderItemEntity.java",
+      "refs": [
+        "src/main/java/com/amazon/sample/orders/entities/OrderItemEntity.java:30"
+      ],
+      "kind": "field",
+      "owner": "entry:order-entity-saved"
+    },
+    {
+      "id": "entry:order-entity-saved#items.totalCost",
+      "name": "totalCost",
+      "path": "items.totalCost",
+      "type": "integer",
+      "required": false,
+      "source": "declared",
+      "repo": "https://github.com/homealoneai/skill-logistic-map.git",
+      "commit_sha": "77ff12d",
+      "file_path": "src/main/java/com/amazon/sample/orders/entities/OrderItemEntity.java",
+      "refs": [
+        "src/main/java/com/amazon/sample/orders/entities/OrderItemEntity.java:36"
+      ],
+      "kind": "field",
+      "owner": "entry:order-entity-saved"
+    },
+    {
+      "id": "entry:order-entity-saved#items.unitCost",
+      "name": "unitCost",
+      "path": "items.unitCost",
+      "type": "integer",
+      "required": false,
+      "source": "declared",
+      "repo": "https://github.com/homealoneai/skill-logistic-map.git",
+      "commit_sha": "77ff12d",
+      "file_path": "src/main/java/com/amazon/sample/orders/entities/OrderItemEntity.java",
+      "refs": [
+        "src/main/java/com/amazon/sample/orders/entities/OrderItemEntity.java:33"
+      ],
+      "kind": "field",
+      "owner": "entry:order-entity-saved"
+    },
+    {
+      "id": "entry:order-entity-saved#shippingAddress",
+      "name": "shippingAddress",
+      "path": "shippingAddress",
+      "type": "object",
+      "required": false,
+      "source": "declared",
+      "repo": "https://github.com/homealoneai/skill-logistic-map.git",
+      "commit_sha": "77ff12d",
+      "file_path": "src/main/java/com/amazon/sample/orders/entities/OrderEntity.java",
+      "refs": [
+        "src/main/java/com/amazon/sample/orders/entities/OrderEntity.java:37"
+      ],
+      "kind": "field",
+      "owner": "entry:order-entity-saved"
+    },
+    {
+      "id": "entry:order-entity-saved#shippingAddress.address1",
+      "name": "address1",
+      "path": "shippingAddress.address1",
+      "type": "string",
+      "required": false,
+      "source": "declared",
+      "repo": "https://github.com/homealoneai/skill-logistic-map.git",
+      "commit_sha": "77ff12d",
+      "file_path": "src/main/java/com/amazon/sample/orders/entities/ShippingAddressEntity.java",
+      "refs": [
+        "src/main/java/com/amazon/sample/orders/entities/ShippingAddressEntity.java:36"
+      ],
+      "kind": "field",
+      "owner": "entry:order-entity-saved"
+    },
+    {
+      "id": "entry:order-entity-saved#shippingAddress.address2",
+      "name": "address2",
+      "path": "shippingAddress.address2",
+      "type": "string",
+      "required": false,
+      "source": "declared",
+      "repo": "https://github.com/homealoneai/skill-logistic-map.git",
+      "commit_sha": "77ff12d",
+      "file_path": "src/main/java/com/amazon/sample/orders/entities/ShippingAddressEntity.java",
+      "refs": [
+        "src/main/java/com/amazon/sample/orders/entities/ShippingAddressEntity.java:39"
+      ],
+      "kind": "field",
+      "owner": "entry:order-entity-saved"
+    },
+    {
+      "id": "entry:order-entity-saved#shippingAddress.city",
+      "name": "city",
+      "path": "shippingAddress.city",
+      "type": "string",
+      "required": false,
+      "source": "declared",
+      "repo": "https://github.com/homealoneai/skill-logistic-map.git",
+      "commit_sha": "77ff12d",
+      "file_path": "src/main/java/com/amazon/sample/orders/entities/ShippingAddressEntity.java",
+      "refs": [
+        "src/main/java/com/amazon/sample/orders/entities/ShippingAddressEntity.java:42"
+      ],
+      "kind": "field",
+      "owner": "entry:order-entity-saved"
+    },
+    {
+      "id": "entry:order-entity-saved#shippingAddress.email",
+      "name": "email",
+      "path": "shippingAddress.email",
+      "type": "string",
+      "required": false,
+      "source": "declared",
+      "repo": "https://github.com/homealoneai/skill-logistic-map.git",
+      "commit_sha": "77ff12d",
+      "file_path": "src/main/java/com/amazon/sample/orders/entities/ShippingAddressEntity.java",
+      "refs": [
+        "src/main/java/com/amazon/sample/orders/entities/ShippingAddressEntity.java:33"
+      ],
+      "kind": "field",
+      "owner": "entry:order-entity-saved"
+    },
+    {
+      "id": "entry:order-entity-saved#shippingAddress.firstName",
+      "name": "firstName",
+      "path": "shippingAddress.firstName",
+      "type": "string",
+      "required": false,
+      "source": "declared",
+      "repo": "https://github.com/homealoneai/skill-logistic-map.git",
+      "commit_sha": "77ff12d",
+      "file_path": "src/main/java/com/amazon/sample/orders/entities/ShippingAddressEntity.java",
+      "refs": [
+        "src/main/java/com/amazon/sample/orders/entities/ShippingAddressEntity.java:27"
+      ],
+      "kind": "field",
+      "owner": "entry:order-entity-saved"
+    },
+    {
+      "id": "entry:order-entity-saved#shippingAddress.lastName",
+      "name": "lastName",
+      "path": "shippingAddress.lastName",
+      "type": "string",
+      "required": false,
+      "source": "declared",
+      "repo": "https://github.com/homealoneai/skill-logistic-map.git",
+      "commit_sha": "77ff12d",
+      "file_path": "src/main/java/com/amazon/sample/orders/entities/ShippingAddressEntity.java",
+      "refs": [
+        "src/main/java/com/amazon/sample/orders/entities/ShippingAddressEntity.java:30"
+      ],
+      "kind": "field",
+      "owner": "entry:order-entity-saved"
+    },
+    {
+      "id": "entry:order-entity-saved#shippingAddress.state",
+      "name": "state",
+      "path": "shippingAddress.state",
+      "type": "string",
+      "required": false,
+      "source": "declared",
+      "repo": "https://github.com/homealoneai/skill-logistic-map.git",
+      "commit_sha": "77ff12d",
+      "file_path": "src/main/java/com/amazon/sample/orders/entities/ShippingAddressEntity.java",
+      "refs": [
+        "src/main/java/com/amazon/sample/orders/entities/ShippingAddressEntity.java:48"
+      ],
+      "kind": "field",
+      "owner": "entry:order-entity-saved"
+    },
+    {
+      "id": "entry:order-entity-saved#shippingAddress.zipCode",
+      "name": "zipCode",
+      "path": "shippingAddress.zipCode",
+      "type": "string",
+      "required": false,
+      "source": "declared",
+      "repo": "https://github.com/homealoneai/skill-logistic-map.git",
+      "commit_sha": "77ff12d",
+      "file_path": "src/main/java/com/amazon/sample/orders/entities/ShippingAddressEntity.java",
+      "refs": [
+        "src/main/java/com/amazon/sample/orders/entities/ShippingAddressEntity.java:45"
+      ],
+      "kind": "field",
+      "owner": "entry:order-entity-saved"
+    },
+    {
+      "id": "entry:order-response#createdDate",
+      "name": "createdDate",
+      "path": "createdDate",
+      "type": "datetime",
+      "required": false,
+      "source": "declared",
+      "repo": "https://github.com/homealoneai/skill-logistic-map.git",
+      "commit_sha": "77ff12d",
+      "file_path": "src/main/java/com/amazon/sample/orders/web/payload/ExistingOrder.java",
+      "refs": [
+        "src/main/java/com/amazon/sample/orders/web/payload/ExistingOrder.java:31",
+        "openapi.yml:97"
+      ],
+      "kind": "field",
+      "owner": "entry:order-response"
+    },
+    {
+      "id": "entry:order-response#id",
+      "name": "id",
+      "path": "id",
+      "type": "string",
+      "required": true,
+      "source": "declared",
+      "repo": "https://github.com/homealoneai/skill-logistic-map.git",
+      "commit_sha": "77ff12d",
+      "file_path": "src/main/java/com/amazon/sample/orders/web/payload/ExistingOrder.java",
+      "refs": [
+        "src/main/java/com/amazon/sample/orders/web/payload/ExistingOrder.java:29",
+        "openapi.yml:95"
+      ],
+      "kind": "field",
+      "owner": "entry:order-response"
+    },
+    {
+      "id": "entry:order-response#items",
+      "name": "items",
+      "path": "items",
+      "type": "array",
+      "required": false,
+      "source": "declared",
+      "repo": "https://github.com/homealoneai/skill-logistic-map.git",
+      "commit_sha": "77ff12d",
+      "file_path": "src/main/java/com/amazon/sample/orders/web/payload/Order.java",
+      "refs": [
+        "src/main/java/com/amazon/sample/orders/web/payload/Order.java:29",
+        "openapi.yml:91"
+      ],
+      "kind": "field",
+      "owner": "entry:order-response"
+    },
+    {
+      "id": "entry:order-response#items.productId",
+      "name": "productId",
+      "path": "items.productId",
+      "type": "string",
+      "required": false,
+      "source": "declared",
+      "repo": "https://github.com/homealoneai/skill-logistic-map.git",
+      "commit_sha": "77ff12d",
+      "file_path": "src/main/java/com/amazon/sample/orders/web/payload/OrderItem.java",
+      "refs": [
+        "src/main/java/com/amazon/sample/orders/web/payload/OrderItem.java:26"
+      ],
+      "kind": "field",
+      "owner": "entry:order-response"
+    },
+    {
+      "id": "entry:order-response#items.quantity",
+      "name": "quantity",
+      "path": "items.quantity",
+      "type": "integer",
+      "required": false,
+      "source": "declared",
+      "repo": "https://github.com/homealoneai/skill-logistic-map.git",
+      "commit_sha": "77ff12d",
+      "file_path": "src/main/java/com/amazon/sample/orders/web/payload/OrderItem.java",
+      "refs": [
+        "src/main/java/com/amazon/sample/orders/web/payload/OrderItem.java:28"
+      ],
+      "kind": "field",
+      "owner": "entry:order-response"
+    },
+    {
+      "id": "entry:order-response#items.totalCost",
+      "name": "totalCost",
+      "path": "items.totalCost",
+      "type": "integer",
+      "required": false,
+      "source": "declared",
+      "repo": "https://github.com/homealoneai/skill-logistic-map.git",
+      "commit_sha": "77ff12d",
+      "file_path": "src/main/java/com/amazon/sample/orders/web/payload/OrderItem.java",
+      "refs": [
+        "src/main/java/com/amazon/sample/orders/web/payload/OrderItem.java:30"
+      ],
+      "kind": "field",
+      "owner": "entry:order-response"
+    },
+    {
+      "id": "entry:order-response#items.unitCost",
+      "name": "unitCost",
+      "path": "items.unitCost",
+      "type": "integer",
+      "required": false,
+      "source": "declared",
+      "repo": "https://github.com/homealoneai/skill-logistic-map.git",
+      "commit_sha": "77ff12d",
+      "file_path": "src/main/java/com/amazon/sample/orders/web/payload/OrderItem.java",
+      "refs": [
+        "src/main/java/com/amazon/sample/orders/web/payload/OrderItem.java:32"
+      ],
+      "kind": "field",
+      "owner": "entry:order-response"
+    },
+    {
+      "id": "entry:order-response#shippingAddress",
+      "name": "shippingAddress",
+      "path": "shippingAddress",
+      "type": "object",
+      "required": false,
+      "source": "declared",
+      "repo": "https://github.com/homealoneai/skill-logistic-map.git",
+      "commit_sha": "77ff12d",
+      "file_path": "src/main/java/com/amazon/sample/orders/web/payload/Order.java",
+      "refs": [
+        "src/main/java/com/amazon/sample/orders/web/payload/Order.java:27",
+        "openapi.yml:89"
+      ],
+      "kind": "field",
+      "owner": "entry:order-response"
+    },
+    {
+      "id": "entry:order-response#shippingAddress.address1",
+      "name": "address1",
+      "path": "shippingAddress.address1",
+      "type": "string",
+      "required": false,
+      "source": "declared",
+      "repo": "https://github.com/homealoneai/skill-logistic-map.git",
+      "commit_sha": "77ff12d",
+      "file_path": "src/main/java/com/amazon/sample/orders/web/payload/ShippingAddress.java",
+      "refs": [
+        "src/main/java/com/amazon/sample/orders/web/payload/ShippingAddress.java:32"
+      ],
+      "kind": "field",
+      "owner": "entry:order-response"
+    },
+    {
+      "id": "entry:order-response#shippingAddress.address2",
+      "name": "address2",
+      "path": "shippingAddress.address2",
+      "type": "string",
+      "required": false,
+      "source": "declared",
+      "repo": "https://github.com/homealoneai/skill-logistic-map.git",
+      "commit_sha": "77ff12d",
+      "file_path": "src/main/java/com/amazon/sample/orders/web/payload/ShippingAddress.java",
+      "refs": [
+        "src/main/java/com/amazon/sample/orders/web/payload/ShippingAddress.java:34"
+      ],
+      "kind": "field",
+      "owner": "entry:order-response"
+    },
+    {
+      "id": "entry:order-response#shippingAddress.city",
+      "name": "city",
+      "path": "shippingAddress.city",
+      "type": "string",
+      "required": false,
+      "source": "declared",
+      "repo": "https://github.com/homealoneai/skill-logistic-map.git",
+      "commit_sha": "77ff12d",
+      "file_path": "src/main/java/com/amazon/sample/orders/web/payload/ShippingAddress.java",
+      "refs": [
+        "src/main/java/com/amazon/sample/orders/web/payload/ShippingAddress.java:36"
+      ],
+      "kind": "field",
+      "owner": "entry:order-response"
+    },
+    {
+      "id": "entry:order-response#shippingAddress.email",
+      "name": "email",
+      "path": "shippingAddress.email",
+      "type": "string",
+      "required": false,
+      "source": "declared",
+      "repo": "https://github.com/homealoneai/skill-logistic-map.git",
+      "commit_sha": "77ff12d",
+      "file_path": "src/main/java/com/amazon/sample/orders/web/payload/ShippingAddress.java",
+      "refs": [
+        "src/main/java/com/amazon/sample/orders/web/payload/ShippingAddress.java:30"
+      ],
+      "kind": "field",
+      "owner": "entry:order-response"
+    },
+    {
+      "id": "entry:order-response#shippingAddress.firstName",
+      "name": "firstName",
+      "path": "shippingAddress.firstName",
+      "type": "string",
+      "required": false,
+      "source": "declared",
+      "repo": "https://github.com/homealoneai/skill-logistic-map.git",
+      "commit_sha": "77ff12d",
+      "file_path": "src/main/java/com/amazon/sample/orders/web/payload/ShippingAddress.java",
+      "refs": [
+        "src/main/java/com/amazon/sample/orders/web/payload/ShippingAddress.java:26"
+      ],
+      "kind": "field",
+      "owner": "entry:order-response"
+    },
+    {
+      "id": "entry:order-response#shippingAddress.lastName",
+      "name": "lastName",
+      "path": "shippingAddress.lastName",
+      "type": "string",
+      "required": false,
+      "source": "declared",
+      "repo": "https://github.com/homealoneai/skill-logistic-map.git",
+      "commit_sha": "77ff12d",
+      "file_path": "src/main/java/com/amazon/sample/orders/web/payload/ShippingAddress.java",
+      "refs": [
+        "src/main/java/com/amazon/sample/orders/web/payload/ShippingAddress.java:27"
+      ],
+      "kind": "field",
+      "owner": "entry:order-response"
+    },
+    {
+      "id": "entry:order-response#shippingAddress.state",
+      "name": "state",
+      "path": "shippingAddress.state",
+      "type": "string",
+      "required": false,
+      "source": "declared",
+      "repo": "https://github.com/homealoneai/skill-logistic-map.git",
+      "commit_sha": "77ff12d",
+      "file_path": "src/main/java/com/amazon/sample/orders/web/payload/ShippingAddress.java",
+      "refs": [
+        "src/main/java/com/amazon/sample/orders/web/payload/ShippingAddress.java:40"
+      ],
+      "kind": "field",
+      "owner": "entry:order-response"
+    },
+    {
+      "id": "entry:order-response#shippingAddress.zipCode",
+      "name": "zipCode",
+      "path": "shippingAddress.zipCode",
+      "type": "string",
+      "required": false,
+      "source": "declared",
+      "repo": "https://github.com/homealoneai/skill-logistic-map.git",
+      "commit_sha": "77ff12d",
+      "file_path": "src/main/java/com/amazon/sample/orders/web/payload/ShippingAddress.java",
+      "refs": [
+        "src/main/java/com/amazon/sample/orders/web/payload/ShippingAddress.java:38"
+      ],
+      "kind": "field",
+      "owner": "entry:order-response"
+    },
+    {
+      "id": "input:create-order-request#items",
+      "name": "items",
+      "path": "items",
+      "type": "array",
+      "required": false,
+      "source": "declared",
+      "repo": "https://github.com/homealoneai/skill-logistic-map.git",
+      "commit_sha": "77ff12d",
+      "file_path": "src/main/java/com/amazon/sample/orders/web/payload/Order.java",
+      "refs": [
+        "src/main/java/com/amazon/sample/orders/web/payload/Order.java:29"
+      ],
+      "kind": "field",
+      "owner": "input:create-order-request"
+    },
+    {
+      "id": "input:create-order-request#items.productId",
+      "name": "productId",
+      "path": "items.productId",
+      "type": "string",
+      "required": false,
+      "source": "declared",
+      "repo": "https://github.com/homealoneai/skill-logistic-map.git",
+      "commit_sha": "77ff12d",
+      "file_path": "src/main/java/com/amazon/sample/orders/web/payload/OrderItem.java",
+      "refs": [
+        "src/main/java/com/amazon/sample/orders/web/payload/OrderItem.java:26"
+      ],
+      "kind": "field",
+      "owner": "input:create-order-request"
+    },
+    {
+      "id": "input:create-order-request#items.quantity",
+      "name": "quantity",
+      "path": "items.quantity",
+      "type": "integer",
+      "required": false,
+      "source": "declared",
+      "repo": "https://github.com/homealoneai/skill-logistic-map.git",
+      "commit_sha": "77ff12d",
+      "file_path": "src/main/java/com/amazon/sample/orders/web/payload/OrderItem.java",
+      "refs": [
+        "src/main/java/com/amazon/sample/orders/web/payload/OrderItem.java:28"
+      ],
+      "kind": "field",
+      "owner": "input:create-order-request"
+    },
+    {
+      "id": "input:create-order-request#items.totalCost",
+      "name": "totalCost",
+      "path": "items.totalCost",
+      "type": "integer",
+      "required": false,
+      "source": "declared",
+      "repo": "https://github.com/homealoneai/skill-logistic-map.git",
+      "commit_sha": "77ff12d",
+      "file_path": "src/main/java/com/amazon/sample/orders/web/payload/OrderItem.java",
+      "refs": [
+        "src/main/java/com/amazon/sample/orders/web/payload/OrderItem.java:30"
+      ],
+      "kind": "field",
+      "owner": "input:create-order-request"
+    },
+    {
+      "id": "input:create-order-request#items.unitCost",
+      "name": "unitCost",
+      "path": "items.unitCost",
+      "type": "integer",
+      "required": false,
+      "source": "declared",
+      "repo": "https://github.com/homealoneai/skill-logistic-map.git",
+      "commit_sha": "77ff12d",
+      "file_path": "src/main/java/com/amazon/sample/orders/web/payload/OrderItem.java",
+      "refs": [
+        "src/main/java/com/amazon/sample/orders/web/payload/OrderItem.java:32"
+      ],
+      "kind": "field",
+      "owner": "input:create-order-request"
+    },
+    {
+      "id": "input:create-order-request#shippingAddress",
+      "name": "shippingAddress",
+      "path": "shippingAddress",
+      "type": "object",
+      "required": false,
+      "source": "declared",
+      "repo": "https://github.com/homealoneai/skill-logistic-map.git",
+      "commit_sha": "77ff12d",
+      "file_path": "src/main/java/com/amazon/sample/orders/web/payload/Order.java",
+      "refs": [
+        "src/main/java/com/amazon/sample/orders/web/payload/Order.java:27"
+      ],
+      "kind": "field",
+      "owner": "input:create-order-request"
+    },
+    {
+      "id": "input:create-order-request#shippingAddress.address1",
+      "name": "address1",
+      "path": "shippingAddress.address1",
+      "type": "string",
+      "required": false,
+      "source": "declared",
+      "repo": "https://github.com/homealoneai/skill-logistic-map.git",
+      "commit_sha": "77ff12d",
+      "file_path": "src/main/java/com/amazon/sample/orders/web/payload/ShippingAddress.java",
+      "refs": [
+        "src/main/java/com/amazon/sample/orders/web/payload/ShippingAddress.java:32"
+      ],
+      "kind": "field",
+      "owner": "input:create-order-request"
+    },
+    {
+      "id": "input:create-order-request#shippingAddress.address2",
+      "name": "address2",
+      "path": "shippingAddress.address2",
+      "type": "string",
+      "required": false,
+      "source": "declared",
+      "repo": "https://github.com/homealoneai/skill-logistic-map.git",
+      "commit_sha": "77ff12d",
+      "file_path": "src/main/java/com/amazon/sample/orders/web/payload/ShippingAddress.java",
+      "refs": [
+        "src/main/java/com/amazon/sample/orders/web/payload/ShippingAddress.java:34"
+      ],
+      "kind": "field",
+      "owner": "input:create-order-request"
+    },
+    {
+      "id": "input:create-order-request#shippingAddress.city",
+      "name": "city",
+      "path": "shippingAddress.city",
+      "type": "string",
+      "required": false,
+      "source": "declared",
+      "repo": "https://github.com/homealoneai/skill-logistic-map.git",
+      "commit_sha": "77ff12d",
+      "file_path": "src/main/java/com/amazon/sample/orders/web/payload/ShippingAddress.java",
+      "refs": [
+        "src/main/java/com/amazon/sample/orders/web/payload/ShippingAddress.java:36"
+      ],
+      "kind": "field",
+      "owner": "input:create-order-request"
+    },
+    {
+      "id": "input:create-order-request#shippingAddress.email",
+      "name": "email",
+      "path": "shippingAddress.email",
+      "type": "string",
+      "required": false,
+      "source": "declared",
+      "repo": "https://github.com/homealoneai/skill-logistic-map.git",
+      "commit_sha": "77ff12d",
+      "file_path": "src/main/java/com/amazon/sample/orders/web/payload/ShippingAddress.java",
+      "refs": [
+        "src/main/java/com/amazon/sample/orders/web/payload/ShippingAddress.java:30"
+      ],
+      "kind": "field",
+      "owner": "input:create-order-request"
+    },
+    {
+      "id": "input:create-order-request#shippingAddress.firstName",
+      "name": "firstName",
+      "path": "shippingAddress.firstName",
+      "type": "string",
+      "required": false,
+      "source": "declared",
+      "repo": "https://github.com/homealoneai/skill-logistic-map.git",
+      "commit_sha": "77ff12d",
+      "file_path": "src/main/java/com/amazon/sample/orders/web/payload/ShippingAddress.java",
+      "refs": [
+        "src/main/java/com/amazon/sample/orders/web/payload/ShippingAddress.java:26"
+      ],
+      "kind": "field",
+      "owner": "input:create-order-request"
+    },
+    {
+      "id": "input:create-order-request#shippingAddress.lastName",
+      "name": "lastName",
+      "path": "shippingAddress.lastName",
+      "type": "string",
+      "required": false,
+      "source": "declared",
+      "repo": "https://github.com/homealoneai/skill-logistic-map.git",
+      "commit_sha": "77ff12d",
+      "file_path": "src/main/java/com/amazon/sample/orders/web/payload/ShippingAddress.java",
+      "refs": [
+        "src/main/java/com/amazon/sample/orders/web/payload/ShippingAddress.java:27"
+      ],
+      "kind": "field",
+      "owner": "input:create-order-request"
+    },
+    {
+      "id": "input:create-order-request#shippingAddress.state",
+      "name": "state",
+      "path": "shippingAddress.state",
+      "type": "string",
+      "required": false,
+      "source": "declared",
+      "repo": "https://github.com/homealoneai/skill-logistic-map.git",
+      "commit_sha": "77ff12d",
+      "file_path": "src/main/java/com/amazon/sample/orders/web/payload/ShippingAddress.java",
+      "refs": [
+        "src/main/java/com/amazon/sample/orders/web/payload/ShippingAddress.java:40"
+      ],
+      "kind": "field",
+      "owner": "input:create-order-request"
+    },
+    {
+      "id": "input:create-order-request#shippingAddress.zipCode",
+      "name": "zipCode",
+      "path": "shippingAddress.zipCode",
+      "type": "string",
+      "required": false,
+      "source": "declared",
+      "repo": "https://github.com/homealoneai/skill-logistic-map.git",
+      "commit_sha": "77ff12d",
+      "file_path": "src/main/java/com/amazon/sample/orders/web/payload/ShippingAddress.java",
+      "refs": [
+        "src/main/java/com/amazon/sample/orders/web/payload/ShippingAddress.java:38"
+      ],
+      "kind": "field",
+      "owner": "input:create-order-request"
+    },
+    {
+      "id": "storage:orders-db#createdDate",
+      "name": "createdDate",
+      "path": "createdDate",
+      "type": "timestamp",
+      "required": false,
+      "source": "declared",
+      "repo": "https://github.com/homealoneai/skill-logistic-map.git",
+      "commit_sha": "77ff12d",
+      "file_path": "src/main/resources/db/migration/V1__Initial.sql",
+      "refs": [
+        "src/main/resources/db/migration/V1__Initial.sql:3"
+      ],
+      "kind": "field",
+      "owner": "storage:orders-db"
+    },
+    {
+      "id": "storage:orders-db#id",
+      "name": "id",
+      "path": "id",
+      "type": "string",
+      "required": true,
+      "source": "declared",
+      "repo": "https://github.com/homealoneai/skill-logistic-map.git",
+      "commit_sha": "77ff12d",
+      "file_path": "src/main/resources/db/migration/V1__Initial.sql",
+      "refs": [
+        "src/main/resources/db/migration/V1__Initial.sql:2",
+        "src/main/resources/db/migration/V1__Initial.sql:4"
+      ],
+      "kind": "field",
+      "owner": "storage:orders-db"
+    },
+    {
+      "id": "storage:orders-db#items",
+      "name": "items",
+      "path": "items",
+      "type": "array",
+      "required": false,
+      "source": "declared",
+      "repo": "https://github.com/homealoneai/skill-logistic-map.git",
+      "commit_sha": "77ff12d",
+      "file_path": "src/main/resources/db/migration/V1__Initial.sql",
+      "refs": [
+        "src/main/resources/db/migration/V1__Initial.sql:7"
+      ],
+      "kind": "field",
+      "owner": "storage:orders-db"
+    },
+    {
+      "id": "storage:orders-db#items.productId",
+      "name": "productId",
+      "path": "items.productId",
+      "type": "string",
+      "required": true,
+      "source": "declared",
+      "repo": "https://github.com/homealoneai/skill-logistic-map.git",
+      "commit_sha": "77ff12d",
+      "file_path": "src/main/resources/db/migration/V1__Initial.sql",
+      "refs": [
+        "src/main/resources/db/migration/V1__Initial.sql:8"
+      ],
+      "kind": "field",
+      "owner": "storage:orders-db"
+    },
+    {
+      "id": "storage:orders-db#items.quantity",
+      "name": "quantity",
+      "path": "items.quantity",
+      "type": "integer",
+      "required": false,
+      "source": "declared",
+      "repo": "https://github.com/homealoneai/skill-logistic-map.git",
+      "commit_sha": "77ff12d",
+      "file_path": "src/main/resources/db/migration/V1__Initial.sql",
+      "refs": [
+        "src/main/resources/db/migration/V1__Initial.sql:9"
+      ],
+      "kind": "field",
+      "owner": "storage:orders-db"
+    },
+    {
+      "id": "storage:orders-db#items.totalCost",
+      "name": "totalCost",
+      "path": "items.totalCost",
+      "type": "integer",
+      "required": false,
+      "source": "declared",
+      "repo": "https://github.com/homealoneai/skill-logistic-map.git",
+      "commit_sha": "77ff12d",
+      "file_path": "src/main/resources/db/migration/V1__Initial.sql",
+      "refs": [
+        "src/main/resources/db/migration/V1__Initial.sql:11"
+      ],
+      "kind": "field",
+      "owner": "storage:orders-db"
+    },
+    {
+      "id": "storage:orders-db#items.unitCost",
+      "name": "unitCost",
+      "path": "items.unitCost",
+      "type": "integer",
+      "required": false,
+      "source": "declared",
+      "repo": "https://github.com/homealoneai/skill-logistic-map.git",
+      "commit_sha": "77ff12d",
+      "file_path": "src/main/resources/db/migration/V1__Initial.sql",
+      "refs": [
+        "src/main/resources/db/migration/V1__Initial.sql:10"
+      ],
+      "kind": "field",
+      "owner": "storage:orders-db"
+    },
+    {
+      "id": "storage:orders-db#shippingAddress",
+      "name": "shippingAddress",
+      "path": "shippingAddress",
+      "type": "object",
+      "required": false,
+      "source": "declared",
+      "repo": "https://github.com/homealoneai/skill-logistic-map.git",
+      "commit_sha": "77ff12d",
+      "file_path": "src/main/resources/db/migration/V1__Initial.sql",
+      "refs": [
+        "src/main/java/com/amazon/sample/orders/entities/OrderEntity.java:37",
+        "src/main/resources/db/migration/V1__Initial.sql:15"
+      ],
+      "kind": "field",
+      "owner": "storage:orders-db"
+    },
+    {
+      "id": "storage:orders-db#shippingAddress.address1",
+      "name": "address1",
+      "path": "shippingAddress.address1",
+      "type": "string",
+      "required": true,
+      "source": "declared",
+      "repo": "https://github.com/homealoneai/skill-logistic-map.git",
+      "commit_sha": "77ff12d",
+      "file_path": "src/main/resources/db/migration/V1__Initial.sql",
+      "refs": [
+        "src/main/resources/db/migration/V1__Initial.sql:20"
+      ],
+      "kind": "field",
+      "owner": "storage:orders-db"
+    },
+    {
+      "id": "storage:orders-db#shippingAddress.address2",
+      "name": "address2",
+      "path": "shippingAddress.address2",
+      "type": "string",
+      "required": false,
+      "source": "declared",
+      "repo": "https://github.com/homealoneai/skill-logistic-map.git",
+      "commit_sha": "77ff12d",
+      "file_path": "src/main/resources/db/migration/V1__Initial.sql",
+      "refs": [
+        "src/main/resources/db/migration/V1__Initial.sql:21"
+      ],
+      "kind": "field",
+      "owner": "storage:orders-db"
+    },
+    {
+      "id": "storage:orders-db#shippingAddress.city",
+      "name": "city",
+      "path": "shippingAddress.city",
+      "type": "string",
+      "required": true,
+      "source": "declared",
+      "repo": "https://github.com/homealoneai/skill-logistic-map.git",
+      "commit_sha": "77ff12d",
+      "file_path": "src/main/resources/db/migration/V1__Initial.sql",
+      "refs": [
+        "src/main/resources/db/migration/V1__Initial.sql:22"
+      ],
+      "kind": "field",
+      "owner": "storage:orders-db"
+    },
+    {
+      "id": "storage:orders-db#shippingAddress.email",
+      "name": "email",
+      "path": "shippingAddress.email",
+      "type": "string",
+      "required": true,
+      "source": "declared",
+      "repo": "https://github.com/homealoneai/skill-logistic-map.git",
+      "commit_sha": "77ff12d",
+      "file_path": "src/main/resources/db/migration/V1__Initial.sql",
+      "refs": [
+        "src/main/resources/db/migration/V1__Initial.sql:19"
+      ],
+      "kind": "field",
+      "owner": "storage:orders-db"
+    },
+    {
+      "id": "storage:orders-db#shippingAddress.firstName",
+      "name": "firstName",
+      "path": "shippingAddress.firstName",
+      "type": "string",
+      "required": true,
+      "source": "declared",
+      "repo": "https://github.com/homealoneai/skill-logistic-map.git",
+      "commit_sha": "77ff12d",
+      "file_path": "src/main/resources/db/migration/V1__Initial.sql",
+      "refs": [
+        "src/main/resources/db/migration/V1__Initial.sql:17"
+      ],
+      "kind": "field",
+      "owner": "storage:orders-db"
+    },
+    {
+      "id": "storage:orders-db#shippingAddress.lastName",
+      "name": "lastName",
+      "path": "shippingAddress.lastName",
+      "type": "string",
+      "required": true,
+      "source": "declared",
+      "repo": "https://github.com/homealoneai/skill-logistic-map.git",
+      "commit_sha": "77ff12d",
+      "file_path": "src/main/resources/db/migration/V1__Initial.sql",
+      "refs": [
+        "src/main/resources/db/migration/V1__Initial.sql:18"
+      ],
+      "kind": "field",
+      "owner": "storage:orders-db"
+    },
+    {
+      "id": "storage:orders-db#shippingAddress.state",
+      "name": "state",
+      "path": "shippingAddress.state",
+      "type": "string",
+      "required": true,
+      "source": "declared",
+      "repo": "https://github.com/homealoneai/skill-logistic-map.git",
+      "commit_sha": "77ff12d",
+      "file_path": "src/main/resources/db/migration/V1__Initial.sql",
+      "refs": [
+        "src/main/resources/db/migration/V1__Initial.sql:24"
+      ],
+      "kind": "field",
+      "owner": "storage:orders-db"
+    },
+    {
+      "id": "storage:orders-db#shippingAddress.zipCode",
+      "name": "zipCode",
+      "path": "shippingAddress.zipCode",
+      "type": "string",
+      "required": true,
+      "source": "declared",
+      "repo": "https://github.com/homealoneai/skill-logistic-map.git",
+      "commit_sha": "77ff12d",
+      "file_path": "src/main/resources/db/migration/V1__Initial.sql",
+      "refs": [
+        "src/main/resources/db/migration/V1__Initial.sql:23"
+      ],
+      "kind": "field",
+      "owner": "storage:orders-db"
+    },
+    {
+      "id": "flow:create-order",
+      "name": "Create order",
+      "description": "POST /orders: map the Order payload to an OrderEntity, persist it, map the saved entity to an ExistingOrder response, and publish OrderCreatedEvent through the configured MessagingProvider.",
+      "cluster": "orders-service",
+      "repo": "https://github.com/homealoneai/skill-logistic-map.git",
+      "commit_sha": "77ff12d",
+      "file_path": "src/main/java/com/amazon/sample/orders/web/OrderController.java",
+      "refs": [
+        "src/main/java/com/amazon/sample/orders/web/OrderController.java:51",
+        "src/main/java/com/amazon/sample/orders/services/OrderService.java:45",
+        "src/main/java/com/amazon/sample/orders/messaging/OrdersEventHandler.java:40"
+      ],
+      "kind": "flow"
+    },
+    {
+      "id": "flow:list-orders",
+      "name": "List orders",
+      "description": "GET /orders: read all persisted orders through OrderRepository and map each OrderEntity to an ExistingOrder response element.",
+      "cluster": "orders-service",
+      "repo": "https://github.com/homealoneai/skill-logistic-map.git",
+      "commit_sha": "77ff12d",
+      "file_path": "src/main/java/com/amazon/sample/orders/web/OrderController.java",
+      "refs": [
+        "src/main/java/com/amazon/sample/orders/web/OrderController.java:61",
+        "src/main/java/com/amazon/sample/orders/services/OrderService.java:53"
+      ],
+      "kind": "flow"
+    },
+    {
+      "id": "input:create-order-request",
+      "name": "Order request body",
+      "description": "Wire Order JSON body received by POST /orders (web/payload.Order; OpenAPI Order schema).",
+      "cluster": "orders-service",
+      "repo": "https://github.com/homealoneai/skill-logistic-map.git",
+      "commit_sha": "77ff12d",
+      "file_path": "src/main/java/com/amazon/sample/orders/web/payload/Order.java",
+      "refs": [
+        "src/main/java/com/amazon/sample/orders/web/payload/Order.java:25",
+        "src/main/java/com/amazon/sample/orders/web/payload/Order.java:27",
+        "src/main/java/com/amazon/sample/orders/web/payload/Order.java:29",
+        "openapi.yml:44"
+      ],
+      "kind": "input"
+    },
+    {
+      "id": "rule:event-after-commit",
+      "name": "After-commit event publishing",
+      "description": "OrdersEventHandler.onOrderCreated is a @TransactionalEventListener, so OrderCreatedEvent is sent to the MessagingProvider after the transaction commits.",
+      "cluster": "orders-service",
+      "repo": "https://github.com/homealoneai/skill-logistic-map.git",
+      "commit_sha": "77ff12d",
+      "file_path": "src/main/java/com/amazon/sample/orders/messaging/OrdersEventHandler.java",
+      "refs": [
+        "src/main/java/com/amazon/sample/orders/messaging/OrdersEventHandler.java:38",
+        "src/main/java/com/amazon/sample/orders/messaging/OrdersEventHandler.java:40"
+      ],
+      "kind": "rule"
+    },
+    {
+      "id": "rule:messaging-provider",
+      "name": "Messaging provider selection",
+      "description": "retail.orders.messaging.provider selects the provider: in-memory by default, rabbitmq or sqs when configured; each config bean is gated by @ConditionalOnProperty.",
+      "cluster": "orders-service",
+      "repo": "https://github.com/homealoneai/skill-logistic-map.git",
+      "commit_sha": "77ff12d",
+      "file_path": "src/main/resources/application.yml",
+      "refs": [
+        "src/main/resources/application.yml:25",
+        "src/main/java/com/amazon/sample/orders/config/messaging/InMemoryMessagingConfig.java:30",
+        "src/main/java/com/amazon/sample/orders/config/messaging/RabbitMQMessagingConfig.java:47",
+        "src/main/java/com/amazon/sample/orders/config/messaging/SqsMessagingConfig.java:34"
+      ],
+      "kind": "rule"
+    },
+    {
+      "id": "rule:order-id-generation",
+      "name": "Order id and created date generation",
+      "description": "PersistenceConfig's BeforeConvertCallback assigns a random UUID id and current createdDate only when the incoming OrderEntity id is null.",
+      "cluster": "orders-service",
+      "repo": "https://github.com/homealoneai/skill-logistic-map.git",
+      "commit_sha": "77ff12d",
+      "file_path": "src/main/java/com/amazon/sample/orders/config/PersistenceConfig.java",
+      "refs": [
+        "src/main/java/com/amazon/sample/orders/config/PersistenceConfig.java:38",
+        "src/main/java/com/amazon/sample/orders/config/PersistenceConfig.java:41",
+        "src/main/java/com/amazon/sample/orders/config/PersistenceConfig.java:43"
+      ],
+      "kind": "rule"
+    },
+    {
+      "id": "rule:persistence-provider",
+      "name": "Persistence provider selection",
+      "description": "retail.orders.persistence.provider is 'in-memory' by default; the PostgreSQL DataSource bean is created only when it is set to 'postgres'.",
+      "cluster": "orders-service",
+      "repo": "https://github.com/homealoneai/skill-logistic-map.git",
+      "commit_sha": "77ff12d",
+      "file_path": "src/main/resources/application.yml",
+      "refs": [
+        "src/main/resources/application.yml:18",
+        "src/main/java/com/amazon/sample/orders/config/DataSourceConfig.java:14"
+      ],
+      "kind": "rule"
+    },
+    {
+      "id": "rule:sqs-publish-delay",
+      "name": "SQS publish delay",
+      "description": "When SQS is configured, SqsMessagingProvider serializes the event to JSON and sends it with delaySeconds(10).",
+      "cluster": "orders-service",
+      "repo": "https://github.com/homealoneai/skill-logistic-map.git",
+      "commit_sha": "77ff12d",
+      "file_path": "src/main/java/com/amazon/sample/orders/messaging/sqs/SqsMessagingProvider.java",
+      "refs": [
+        "src/main/java/com/amazon/sample/orders/messaging/sqs/SqsMessagingProvider.java:28",
+        "src/main/java/com/amazon/sample/orders/messaging/sqs/SqsMessagingProvider.java:46",
+        "src/main/java/com/amazon/sample/orders/messaging/sqs/SqsMessagingProvider.java:51"
+      ],
+      "kind": "rule"
+    },
+    {
+      "id": "rule:transactional-create",
+      "name": "Transactional create",
+      "description": "OrderService.create is annotated @Transactional, so the repository save and the after-save event publication share one transaction boundary.",
+      "cluster": "orders-service",
+      "repo": "https://github.com/homealoneai/skill-logistic-map.git",
+      "commit_sha": "77ff12d",
+      "file_path": "src/main/java/com/amazon/sample/orders/services/OrderService.java",
+      "refs": [
+        "src/main/java/com/amazon/sample/orders/services/OrderService.java:44",
+        "src/main/java/com/amazon/sample/orders/services/OrderService.java:60"
+      ],
+      "kind": "rule"
+    },
+    {
+      "id": "storage:orders-db",
+      "name": "orders relational store",
+      "description": "Spring Data JDBC tables orders, order_items and shipping_addresses; embedded H2 by default, PostgreSQL when configured.",
+      "location": "sql://orders",
+      "store_type": "sql",
+      "cluster": "orders-service",
+      "repo": "https://github.com/homealoneai/skill-logistic-map.git",
+      "commit_sha": "77ff12d",
+      "file_path": "src/main/resources/db/migration/V1__Initial.sql",
+      "refs": [
+        "src/main/java/com/amazon/sample/orders/repositories/OrderRepository.java:26",
+        "src/main/resources/db/migration/V1__Initial.sql:1",
+        "src/main/resources/db/migration/V1__Initial.sql:7",
+        "src/main/resources/db/migration/V1__Initial.sql:15"
+      ],
+      "kind": "storage"
+    }
+  ],
+  "edges": [
+    {
+      "kind": "contains",
+      "from": "entry:order-created-event",
+      "to": "entry:order-created-event#order",
+      "refs": [
+        "src/main/java/com/amazon/sample/events/orders/OrderCreatedEvent.java:43",
+        "events/order-created-event.schema.json:8"
+      ],
+      "file_path": "src/main/java/com/amazon/sample/events/orders/OrderCreatedEvent.java"
+    },
+    {
+      "kind": "contains",
+      "from": "entry:order-created-event#order",
+      "to": "entry:order-created-event#order.id",
+      "refs": [
+        "src/main/java/com/amazon/sample/events/orders/Order.java:42",
+        "events/order.schema.json:9"
+      ],
+      "file_path": "src/main/java/com/amazon/sample/events/orders/Order.java"
+    },
+    {
+      "kind": "contains",
+      "from": "entry:order-created-event#order",
+      "to": "entry:order-created-event#order.orderItems",
+      "refs": [
+        "src/main/java/com/amazon/sample/events/orders/Order.java:45",
+        "src/main/java/com/amazon/sample/orders/messaging/OrdersEventHandler.java:46"
+      ],
+      "file_path": "src/main/java/com/amazon/sample/events/orders/Order.java"
+    },
+    {
+      "kind": "contains",
+      "from": "entry:order-created-event#order.orderItems",
+      "to": "entry:order-created-event#order.orderItems.productId",
+      "refs": [
+        "src/main/java/com/amazon/sample/orders/entities/OrderItemEntity.java:27"
+      ],
+      "file_path": "src/main/java/com/amazon/sample/orders/entities/OrderItemEntity.java"
+    },
+    {
+      "kind": "contains",
+      "from": "entry:order-created-event#order.orderItems",
+      "to": "entry:order-created-event#order.orderItems.quantity",
+      "refs": [
+        "src/main/java/com/amazon/sample/orders/entities/OrderItemEntity.java:30"
+      ],
+      "file_path": "src/main/java/com/amazon/sample/orders/entities/OrderItemEntity.java"
+    },
+    {
+      "kind": "contains",
+      "from": "entry:order-created-event#order.orderItems",
+      "to": "entry:order-created-event#order.orderItems.totalCost",
+      "refs": [
+        "src/main/java/com/amazon/sample/orders/entities/OrderItemEntity.java:36"
+      ],
+      "file_path": "src/main/java/com/amazon/sample/orders/entities/OrderItemEntity.java"
+    },
+    {
+      "kind": "contains",
+      "from": "entry:order-created-event#order.orderItems",
+      "to": "entry:order-created-event#order.orderItems.unitCost",
+      "refs": [
+        "src/main/java/com/amazon/sample/orders/entities/OrderItemEntity.java:33"
+      ],
+      "file_path": "src/main/java/com/amazon/sample/orders/entities/OrderItemEntity.java"
+    },
+    {
+      "kind": "contains",
+      "from": "entry:order-entity-new",
+      "to": "entry:order-entity-new#createdDate",
+      "refs": [
+        "src/main/java/com/amazon/sample/orders/entities/OrderEntity.java:35"
+      ],
+      "file_path": "src/main/java/com/amazon/sample/orders/entities/OrderEntity.java"
+    },
+    {
+      "kind": "contains",
+      "from": "entry:order-entity-new",
+      "to": "entry:order-entity-new#id",
+      "refs": [
+        "src/main/java/com/amazon/sample/orders/entities/OrderEntity.java:32",
+        "src/main/java/com/amazon/sample/orders/config/PersistenceConfig.java:41"
+      ],
+      "file_path": "src/main/java/com/amazon/sample/orders/entities/OrderEntity.java"
+    },
+    {
+      "kind": "contains",
+      "from": "entry:order-entity-new",
+      "to": "entry:order-entity-new#items",
+      "refs": [
+        "src/main/java/com/amazon/sample/orders/entities/OrderEntity.java:40"
+      ],
+      "file_path": "src/main/java/com/amazon/sample/orders/entities/OrderEntity.java"
+    },
+    {
+      "kind": "contains",
+      "from": "entry:order-entity-new",
+      "to": "entry:order-entity-new#shippingAddress",
+      "refs": [
+        "src/main/java/com/amazon/sample/orders/entities/OrderEntity.java:37"
+      ],
+      "file_path": "src/main/java/com/amazon/sample/orders/entities/OrderEntity.java"
+    },
+    {
+      "kind": "contains",
+      "from": "entry:order-entity-new#items",
+      "to": "entry:order-entity-new#items.productId",
+      "refs": [
+        "src/main/java/com/amazon/sample/orders/entities/OrderItemEntity.java:27"
+      ],
+      "file_path": "src/main/java/com/amazon/sample/orders/entities/OrderItemEntity.java"
+    },
+    {
+      "kind": "contains",
+      "from": "entry:order-entity-new#items",
+      "to": "entry:order-entity-new#items.quantity",
+      "refs": [
+        "src/main/java/com/amazon/sample/orders/entities/OrderItemEntity.java:30"
+      ],
+      "file_path": "src/main/java/com/amazon/sample/orders/entities/OrderItemEntity.java"
+    },
+    {
+      "kind": "contains",
+      "from": "entry:order-entity-new#items",
+      "to": "entry:order-entity-new#items.totalCost",
+      "refs": [
+        "src/main/java/com/amazon/sample/orders/entities/OrderItemEntity.java:36"
+      ],
+      "file_path": "src/main/java/com/amazon/sample/orders/entities/OrderItemEntity.java"
+    },
+    {
+      "kind": "contains",
+      "from": "entry:order-entity-new#items",
+      "to": "entry:order-entity-new#items.unitCost",
+      "refs": [
+        "src/main/java/com/amazon/sample/orders/entities/OrderItemEntity.java:33"
+      ],
+      "file_path": "src/main/java/com/amazon/sample/orders/entities/OrderItemEntity.java"
+    },
+    {
+      "kind": "contains",
+      "from": "entry:order-entity-new#shippingAddress",
+      "to": "entry:order-entity-new#shippingAddress.address1",
+      "refs": [
+        "src/main/java/com/amazon/sample/orders/entities/ShippingAddressEntity.java:36"
+      ],
+      "file_path": "src/main/java/com/amazon/sample/orders/entities/ShippingAddressEntity.java"
+    },
+    {
+      "kind": "contains",
+      "from": "entry:order-entity-new#shippingAddress",
+      "to": "entry:order-entity-new#shippingAddress.address2",
+      "refs": [
+        "src/main/java/com/amazon/sample/orders/entities/ShippingAddressEntity.java:39"
+      ],
+      "file_path": "src/main/java/com/amazon/sample/orders/entities/ShippingAddressEntity.java"
+    },
+    {
+      "kind": "contains",
+      "from": "entry:order-entity-new#shippingAddress",
+      "to": "entry:order-entity-new#shippingAddress.city",
+      "refs": [
+        "src/main/java/com/amazon/sample/orders/entities/ShippingAddressEntity.java:42"
+      ],
+      "file_path": "src/main/java/com/amazon/sample/orders/entities/ShippingAddressEntity.java"
+    },
+    {
+      "kind": "contains",
+      "from": "entry:order-entity-new#shippingAddress",
+      "to": "entry:order-entity-new#shippingAddress.email",
+      "refs": [
+        "src/main/java/com/amazon/sample/orders/entities/ShippingAddressEntity.java:33"
+      ],
+      "file_path": "src/main/java/com/amazon/sample/orders/entities/ShippingAddressEntity.java"
+    },
+    {
+      "kind": "contains",
+      "from": "entry:order-entity-new#shippingAddress",
+      "to": "entry:order-entity-new#shippingAddress.firstName",
+      "refs": [
+        "src/main/java/com/amazon/sample/orders/entities/ShippingAddressEntity.java:27"
+      ],
+      "file_path": "src/main/java/com/amazon/sample/orders/entities/ShippingAddressEntity.java"
+    },
+    {
+      "kind": "contains",
+      "from": "entry:order-entity-new#shippingAddress",
+      "to": "entry:order-entity-new#shippingAddress.lastName",
+      "refs": [
+        "src/main/java/com/amazon/sample/orders/entities/ShippingAddressEntity.java:30"
+      ],
+      "file_path": "src/main/java/com/amazon/sample/orders/entities/ShippingAddressEntity.java"
+    },
+    {
+      "kind": "contains",
+      "from": "entry:order-entity-new#shippingAddress",
+      "to": "entry:order-entity-new#shippingAddress.state",
+      "refs": [
+        "src/main/java/com/amazon/sample/orders/entities/ShippingAddressEntity.java:48"
+      ],
+      "file_path": "src/main/java/com/amazon/sample/orders/entities/ShippingAddressEntity.java"
+    },
+    {
+      "kind": "contains",
+      "from": "entry:order-entity-new#shippingAddress",
+      "to": "entry:order-entity-new#shippingAddress.zipCode",
+      "refs": [
+        "src/main/java/com/amazon/sample/orders/entities/ShippingAddressEntity.java:45"
+      ],
+      "file_path": "src/main/java/com/amazon/sample/orders/entities/ShippingAddressEntity.java"
+    },
+    {
+      "kind": "contains",
+      "from": "entry:order-entity-saved",
+      "to": "entry:order-entity-saved#createdDate",
+      "refs": [
+        "src/main/java/com/amazon/sample/orders/entities/OrderEntity.java:35",
+        "src/main/java/com/amazon/sample/orders/config/PersistenceConfig.java:43"
+      ],
+      "file_path": "src/main/java/com/amazon/sample/orders/entities/OrderEntity.java"
+    },
+    {
+      "kind": "contains",
+      "from": "entry:order-entity-saved",
+      "to": "entry:order-entity-saved#id",
+      "refs": [
+        "src/main/java/com/amazon/sample/orders/entities/OrderEntity.java:32",
+        "src/main/java/com/amazon/sample/orders/config/PersistenceConfig.java:41"
+      ],
+      "file_path": "src/main/java/com/amazon/sample/orders/entities/OrderEntity.java"
+    },
+    {
+      "kind": "contains",
+      "from": "entry:order-entity-saved",
+      "to": "entry:order-entity-saved#items",
+      "refs": [
+        "src/main/java/com/amazon/sample/orders/entities/OrderEntity.java:40"
+      ],
+      "file_path": "src/main/java/com/amazon/sample/orders/entities/OrderEntity.java"
+    },
+    {
+      "kind": "contains",
+      "from": "entry:order-entity-saved",
+      "to": "entry:order-entity-saved#shippingAddress",
+      "refs": [
+        "src/main/java/com/amazon/sample/orders/entities/OrderEntity.java:37"
+      ],
+      "file_path": "src/main/java/com/amazon/sample/orders/entities/OrderEntity.java"
+    },
+    {
+      "kind": "contains",
+      "from": "entry:order-entity-saved#items",
+      "to": "entry:order-entity-saved#items.productId",
+      "refs": [
+        "src/main/java/com/amazon/sample/orders/entities/OrderItemEntity.java:27"
+      ],
+      "file_path": "src/main/java/com/amazon/sample/orders/entities/OrderItemEntity.java"
+    },
+    {
+      "kind": "contains",
+      "from": "entry:order-entity-saved#items",
+      "to": "entry:order-entity-saved#items.quantity",
+      "refs": [
+        "src/main/java/com/amazon/sample/orders/entities/OrderItemEntity.java:30"
+      ],
+      "file_path": "src/main/java/com/amazon/sample/orders/entities/OrderItemEntity.java"
+    },
+    {
+      "kind": "contains",
+      "from": "entry:order-entity-saved#items",
+      "to": "entry:order-entity-saved#items.totalCost",
+      "refs": [
+        "src/main/java/com/amazon/sample/orders/entities/OrderItemEntity.java:36"
+      ],
+      "file_path": "src/main/java/com/amazon/sample/orders/entities/OrderItemEntity.java"
+    },
+    {
+      "kind": "contains",
+      "from": "entry:order-entity-saved#items",
+      "to": "entry:order-entity-saved#items.unitCost",
+      "refs": [
+        "src/main/java/com/amazon/sample/orders/entities/OrderItemEntity.java:33"
+      ],
+      "file_path": "src/main/java/com/amazon/sample/orders/entities/OrderItemEntity.java"
+    },
+    {
+      "kind": "contains",
+      "from": "entry:order-entity-saved#shippingAddress",
+      "to": "entry:order-entity-saved#shippingAddress.address1",
+      "refs": [
+        "src/main/java/com/amazon/sample/orders/entities/ShippingAddressEntity.java:36"
+      ],
+      "file_path": "src/main/java/com/amazon/sample/orders/entities/ShippingAddressEntity.java"
+    },
+    {
+      "kind": "contains",
+      "from": "entry:order-entity-saved#shippingAddress",
+      "to": "entry:order-entity-saved#shippingAddress.address2",
+      "refs": [
+        "src/main/java/com/amazon/sample/orders/entities/ShippingAddressEntity.java:39"
+      ],
+      "file_path": "src/main/java/com/amazon/sample/orders/entities/ShippingAddressEntity.java"
+    },
+    {
+      "kind": "contains",
+      "from": "entry:order-entity-saved#shippingAddress",
+      "to": "entry:order-entity-saved#shippingAddress.city",
+      "refs": [
+        "src/main/java/com/amazon/sample/orders/entities/ShippingAddressEntity.java:42"
+      ],
+      "file_path": "src/main/java/com/amazon/sample/orders/entities/ShippingAddressEntity.java"
+    },
+    {
+      "kind": "contains",
+      "from": "entry:order-entity-saved#shippingAddress",
+      "to": "entry:order-entity-saved#shippingAddress.email",
+      "refs": [
+        "src/main/java/com/amazon/sample/orders/entities/ShippingAddressEntity.java:33"
+      ],
+      "file_path": "src/main/java/com/amazon/sample/orders/entities/ShippingAddressEntity.java"
+    },
+    {
+      "kind": "contains",
+      "from": "entry:order-entity-saved#shippingAddress",
+      "to": "entry:order-entity-saved#shippingAddress.firstName",
+      "refs": [
+        "src/main/java/com/amazon/sample/orders/entities/ShippingAddressEntity.java:27"
+      ],
+      "file_path": "src/main/java/com/amazon/sample/orders/entities/ShippingAddressEntity.java"
+    },
+    {
+      "kind": "contains",
+      "from": "entry:order-entity-saved#shippingAddress",
+      "to": "entry:order-entity-saved#shippingAddress.lastName",
+      "refs": [
+        "src/main/java/com/amazon/sample/orders/entities/ShippingAddressEntity.java:30"
+      ],
+      "file_path": "src/main/java/com/amazon/sample/orders/entities/ShippingAddressEntity.java"
+    },
+    {
+      "kind": "contains",
+      "from": "entry:order-entity-saved#shippingAddress",
+      "to": "entry:order-entity-saved#shippingAddress.state",
+      "refs": [
+        "src/main/java/com/amazon/sample/orders/entities/ShippingAddressEntity.java:48"
+      ],
+      "file_path": "src/main/java/com/amazon/sample/orders/entities/ShippingAddressEntity.java"
+    },
+    {
+      "kind": "contains",
+      "from": "entry:order-entity-saved#shippingAddress",
+      "to": "entry:order-entity-saved#shippingAddress.zipCode",
+      "refs": [
+        "src/main/java/com/amazon/sample/orders/entities/ShippingAddressEntity.java:45"
+      ],
+      "file_path": "src/main/java/com/amazon/sample/orders/entities/ShippingAddressEntity.java"
+    },
+    {
+      "kind": "contains",
+      "from": "entry:order-response",
+      "to": "entry:order-response#createdDate",
+      "refs": [
+        "src/main/java/com/amazon/sample/orders/web/payload/ExistingOrder.java:31",
+        "openapi.yml:97"
+      ],
+      "file_path": "src/main/java/com/amazon/sample/orders/web/payload/ExistingOrder.java"
+    },
+    {
+      "kind": "contains",
+      "from": "entry:order-response",
+      "to": "entry:order-response#id",
+      "refs": [
+        "src/main/java/com/amazon/sample/orders/web/payload/ExistingOrder.java:29",
+        "openapi.yml:95"
+      ],
+      "file_path": "src/main/java/com/amazon/sample/orders/web/payload/ExistingOrder.java"
+    },
+    {
+      "kind": "contains",
+      "from": "entry:order-response",
+      "to": "entry:order-response#items",
+      "refs": [
+        "src/main/java/com/amazon/sample/orders/web/payload/Order.java:29",
+        "openapi.yml:91"
+      ],
+      "file_path": "src/main/java/com/amazon/sample/orders/web/payload/Order.java"
+    },
+    {
+      "kind": "contains",
+      "from": "entry:order-response",
+      "to": "entry:order-response#shippingAddress",
+      "refs": [
+        "src/main/java/com/amazon/sample/orders/web/payload/Order.java:27",
+        "openapi.yml:89"
+      ],
+      "file_path": "src/main/java/com/amazon/sample/orders/web/payload/Order.java"
+    },
+    {
+      "kind": "contains",
+      "from": "entry:order-response#items",
+      "to": "entry:order-response#items.productId",
+      "refs": [
+        "src/main/java/com/amazon/sample/orders/web/payload/OrderItem.java:26"
+      ],
+      "file_path": "src/main/java/com/amazon/sample/orders/web/payload/OrderItem.java"
+    },
+    {
+      "kind": "contains",
+      "from": "entry:order-response#items",
+      "to": "entry:order-response#items.quantity",
+      "refs": [
+        "src/main/java/com/amazon/sample/orders/web/payload/OrderItem.java:28"
+      ],
+      "file_path": "src/main/java/com/amazon/sample/orders/web/payload/OrderItem.java"
+    },
+    {
+      "kind": "contains",
+      "from": "entry:order-response#items",
+      "to": "entry:order-response#items.totalCost",
+      "refs": [
+        "src/main/java/com/amazon/sample/orders/web/payload/OrderItem.java:30"
+      ],
+      "file_path": "src/main/java/com/amazon/sample/orders/web/payload/OrderItem.java"
+    },
+    {
+      "kind": "contains",
+      "from": "entry:order-response#items",
+      "to": "entry:order-response#items.unitCost",
+      "refs": [
+        "src/main/java/com/amazon/sample/orders/web/payload/OrderItem.java:32"
+      ],
+      "file_path": "src/main/java/com/amazon/sample/orders/web/payload/OrderItem.java"
+    },
+    {
+      "kind": "contains",
+      "from": "entry:order-response#shippingAddress",
+      "to": "entry:order-response#shippingAddress.address1",
+      "refs": [
+        "src/main/java/com/amazon/sample/orders/web/payload/ShippingAddress.java:32"
+      ],
+      "file_path": "src/main/java/com/amazon/sample/orders/web/payload/ShippingAddress.java"
+    },
+    {
+      "kind": "contains",
+      "from": "entry:order-response#shippingAddress",
+      "to": "entry:order-response#shippingAddress.address2",
+      "refs": [
+        "src/main/java/com/amazon/sample/orders/web/payload/ShippingAddress.java:34"
+      ],
+      "file_path": "src/main/java/com/amazon/sample/orders/web/payload/ShippingAddress.java"
+    },
+    {
+      "kind": "contains",
+      "from": "entry:order-response#shippingAddress",
+      "to": "entry:order-response#shippingAddress.city",
+      "refs": [
+        "src/main/java/com/amazon/sample/orders/web/payload/ShippingAddress.java:36"
+      ],
+      "file_path": "src/main/java/com/amazon/sample/orders/web/payload/ShippingAddress.java"
+    },
+    {
+      "kind": "contains",
+      "from": "entry:order-response#shippingAddress",
+      "to": "entry:order-response#shippingAddress.email",
+      "refs": [
+        "src/main/java/com/amazon/sample/orders/web/payload/ShippingAddress.java:30"
+      ],
+      "file_path": "src/main/java/com/amazon/sample/orders/web/payload/ShippingAddress.java"
+    },
+    {
+      "kind": "contains",
+      "from": "entry:order-response#shippingAddress",
+      "to": "entry:order-response#shippingAddress.firstName",
+      "refs": [
+        "src/main/java/com/amazon/sample/orders/web/payload/ShippingAddress.java:26"
+      ],
+      "file_path": "src/main/java/com/amazon/sample/orders/web/payload/ShippingAddress.java"
+    },
+    {
+      "kind": "contains",
+      "from": "entry:order-response#shippingAddress",
+      "to": "entry:order-response#shippingAddress.lastName",
+      "refs": [
+        "src/main/java/com/amazon/sample/orders/web/payload/ShippingAddress.java:27"
+      ],
+      "file_path": "src/main/java/com/amazon/sample/orders/web/payload/ShippingAddress.java"
+    },
+    {
+      "kind": "contains",
+      "from": "entry:order-response#shippingAddress",
+      "to": "entry:order-response#shippingAddress.state",
+      "refs": [
+        "src/main/java/com/amazon/sample/orders/web/payload/ShippingAddress.java:40"
+      ],
+      "file_path": "src/main/java/com/amazon/sample/orders/web/payload/ShippingAddress.java"
+    },
+    {
+      "kind": "contains",
+      "from": "entry:order-response#shippingAddress",
+      "to": "entry:order-response#shippingAddress.zipCode",
+      "refs": [
+        "src/main/java/com/amazon/sample/orders/web/payload/ShippingAddress.java:38"
+      ],
+      "file_path": "src/main/java/com/amazon/sample/orders/web/payload/ShippingAddress.java"
+    },
+    {
+      "kind": "contains",
+      "from": "input:create-order-request",
+      "to": "input:create-order-request#items",
+      "refs": [
+        "src/main/java/com/amazon/sample/orders/web/payload/Order.java:29"
+      ],
+      "file_path": "src/main/java/com/amazon/sample/orders/web/payload/Order.java"
+    },
+    {
+      "kind": "contains",
+      "from": "input:create-order-request",
+      "to": "input:create-order-request#shippingAddress",
+      "refs": [
+        "src/main/java/com/amazon/sample/orders/web/payload/Order.java:27"
+      ],
+      "file_path": "src/main/java/com/amazon/sample/orders/web/payload/Order.java"
+    },
+    {
+      "kind": "contains",
+      "from": "input:create-order-request#items",
+      "to": "input:create-order-request#items.productId",
+      "refs": [
+        "src/main/java/com/amazon/sample/orders/web/payload/OrderItem.java:26"
+      ],
+      "file_path": "src/main/java/com/amazon/sample/orders/web/payload/OrderItem.java"
+    },
+    {
+      "kind": "contains",
+      "from": "input:create-order-request#items",
+      "to": "input:create-order-request#items.quantity",
+      "refs": [
+        "src/main/java/com/amazon/sample/orders/web/payload/OrderItem.java:28"
+      ],
+      "file_path": "src/main/java/com/amazon/sample/orders/web/payload/OrderItem.java"
+    },
+    {
+      "kind": "contains",
+      "from": "input:create-order-request#items",
+      "to": "input:create-order-request#items.totalCost",
+      "refs": [
+        "src/main/java/com/amazon/sample/orders/web/payload/OrderItem.java:30"
+      ],
+      "file_path": "src/main/java/com/amazon/sample/orders/web/payload/OrderItem.java"
+    },
+    {
+      "kind": "contains",
+      "from": "input:create-order-request#items",
+      "to": "input:create-order-request#items.unitCost",
+      "refs": [
+        "src/main/java/com/amazon/sample/orders/web/payload/OrderItem.java:32"
+      ],
+      "file_path": "src/main/java/com/amazon/sample/orders/web/payload/OrderItem.java"
+    },
+    {
+      "kind": "contains",
+      "from": "input:create-order-request#shippingAddress",
+      "to": "input:create-order-request#shippingAddress.address1",
+      "refs": [
+        "src/main/java/com/amazon/sample/orders/web/payload/ShippingAddress.java:32"
+      ],
+      "file_path": "src/main/java/com/amazon/sample/orders/web/payload/ShippingAddress.java"
+    },
+    {
+      "kind": "contains",
+      "from": "input:create-order-request#shippingAddress",
+      "to": "input:create-order-request#shippingAddress.address2",
+      "refs": [
+        "src/main/java/com/amazon/sample/orders/web/payload/ShippingAddress.java:34"
+      ],
+      "file_path": "src/main/java/com/amazon/sample/orders/web/payload/ShippingAddress.java"
+    },
+    {
+      "kind": "contains",
+      "from": "input:create-order-request#shippingAddress",
+      "to": "input:create-order-request#shippingAddress.city",
+      "refs": [
+        "src/main/java/com/amazon/sample/orders/web/payload/ShippingAddress.java:36"
+      ],
+      "file_path": "src/main/java/com/amazon/sample/orders/web/payload/ShippingAddress.java"
+    },
+    {
+      "kind": "contains",
+      "from": "input:create-order-request#shippingAddress",
+      "to": "input:create-order-request#shippingAddress.email",
+      "refs": [
+        "src/main/java/com/amazon/sample/orders/web/payload/ShippingAddress.java:30"
+      ],
+      "file_path": "src/main/java/com/amazon/sample/orders/web/payload/ShippingAddress.java"
+    },
+    {
+      "kind": "contains",
+      "from": "input:create-order-request#shippingAddress",
+      "to": "input:create-order-request#shippingAddress.firstName",
+      "refs": [
+        "src/main/java/com/amazon/sample/orders/web/payload/ShippingAddress.java:26"
+      ],
+      "file_path": "src/main/java/com/amazon/sample/orders/web/payload/ShippingAddress.java"
+    },
+    {
+      "kind": "contains",
+      "from": "input:create-order-request#shippingAddress",
+      "to": "input:create-order-request#shippingAddress.lastName",
+      "refs": [
+        "src/main/java/com/amazon/sample/orders/web/payload/ShippingAddress.java:27"
+      ],
+      "file_path": "src/main/java/com/amazon/sample/orders/web/payload/ShippingAddress.java"
+    },
+    {
+      "kind": "contains",
+      "from": "input:create-order-request#shippingAddress",
+      "to": "input:create-order-request#shippingAddress.state",
+      "refs": [
+        "src/main/java/com/amazon/sample/orders/web/payload/ShippingAddress.java:40"
+      ],
+      "file_path": "src/main/java/com/amazon/sample/orders/web/payload/ShippingAddress.java"
+    },
+    {
+      "kind": "contains",
+      "from": "input:create-order-request#shippingAddress",
+      "to": "input:create-order-request#shippingAddress.zipCode",
+      "refs": [
+        "src/main/java/com/amazon/sample/orders/web/payload/ShippingAddress.java:38"
+      ],
+      "file_path": "src/main/java/com/amazon/sample/orders/web/payload/ShippingAddress.java"
+    },
+    {
+      "kind": "contains",
+      "from": "storage:orders-db",
+      "to": "storage:orders-db#createdDate",
+      "refs": [
+        "src/main/resources/db/migration/V1__Initial.sql:3"
+      ],
+      "file_path": "src/main/resources/db/migration/V1__Initial.sql"
+    },
+    {
+      "kind": "contains",
+      "from": "storage:orders-db",
+      "to": "storage:orders-db#id",
+      "refs": [
+        "src/main/resources/db/migration/V1__Initial.sql:2",
+        "src/main/resources/db/migration/V1__Initial.sql:4"
+      ],
+      "file_path": "src/main/resources/db/migration/V1__Initial.sql"
+    },
+    {
+      "kind": "contains",
+      "from": "storage:orders-db",
+      "to": "storage:orders-db#items",
+      "refs": [
+        "src/main/resources/db/migration/V1__Initial.sql:7"
+      ],
+      "file_path": "src/main/resources/db/migration/V1__Initial.sql"
+    },
+    {
+      "kind": "contains",
+      "from": "storage:orders-db",
+      "to": "storage:orders-db#shippingAddress",
+      "refs": [
+        "src/main/java/com/amazon/sample/orders/entities/OrderEntity.java:37",
+        "src/main/resources/db/migration/V1__Initial.sql:15"
+      ],
+      "file_path": "src/main/resources/db/migration/V1__Initial.sql"
+    },
+    {
+      "kind": "contains",
+      "from": "storage:orders-db#items",
+      "to": "storage:orders-db#items.productId",
+      "refs": [
+        "src/main/resources/db/migration/V1__Initial.sql:8"
+      ],
+      "file_path": "src/main/resources/db/migration/V1__Initial.sql"
+    },
+    {
+      "kind": "contains",
+      "from": "storage:orders-db#items",
+      "to": "storage:orders-db#items.quantity",
+      "refs": [
+        "src/main/resources/db/migration/V1__Initial.sql:9"
+      ],
+      "file_path": "src/main/resources/db/migration/V1__Initial.sql"
+    },
+    {
+      "kind": "contains",
+      "from": "storage:orders-db#items",
+      "to": "storage:orders-db#items.totalCost",
+      "refs": [
+        "src/main/resources/db/migration/V1__Initial.sql:11"
+      ],
+      "file_path": "src/main/resources/db/migration/V1__Initial.sql"
+    },
+    {
+      "kind": "contains",
+      "from": "storage:orders-db#items",
+      "to": "storage:orders-db#items.unitCost",
+      "refs": [
+        "src/main/resources/db/migration/V1__Initial.sql:10"
+      ],
+      "file_path": "src/main/resources/db/migration/V1__Initial.sql"
+    },
+    {
+      "kind": "contains",
+      "from": "storage:orders-db#shippingAddress",
+      "to": "storage:orders-db#shippingAddress.address1",
+      "refs": [
+        "src/main/resources/db/migration/V1__Initial.sql:20"
+      ],
+      "file_path": "src/main/resources/db/migration/V1__Initial.sql"
+    },
+    {
+      "kind": "contains",
+      "from": "storage:orders-db#shippingAddress",
+      "to": "storage:orders-db#shippingAddress.address2",
+      "refs": [
+        "src/main/resources/db/migration/V1__Initial.sql:21"
+      ],
+      "file_path": "src/main/resources/db/migration/V1__Initial.sql"
+    },
+    {
+      "kind": "contains",
+      "from": "storage:orders-db#shippingAddress",
+      "to": "storage:orders-db#shippingAddress.city",
+      "refs": [
+        "src/main/resources/db/migration/V1__Initial.sql:22"
+      ],
+      "file_path": "src/main/resources/db/migration/V1__Initial.sql"
+    },
+    {
+      "kind": "contains",
+      "from": "storage:orders-db#shippingAddress",
+      "to": "storage:orders-db#shippingAddress.email",
+      "refs": [
+        "src/main/resources/db/migration/V1__Initial.sql:19"
+      ],
+      "file_path": "src/main/resources/db/migration/V1__Initial.sql"
+    },
+    {
+      "kind": "contains",
+      "from": "storage:orders-db#shippingAddress",
+      "to": "storage:orders-db#shippingAddress.firstName",
+      "refs": [
+        "src/main/resources/db/migration/V1__Initial.sql:17"
+      ],
+      "file_path": "src/main/resources/db/migration/V1__Initial.sql"
+    },
+    {
+      "kind": "contains",
+      "from": "storage:orders-db#shippingAddress",
+      "to": "storage:orders-db#shippingAddress.lastName",
+      "refs": [
+        "src/main/resources/db/migration/V1__Initial.sql:18"
+      ],
+      "file_path": "src/main/resources/db/migration/V1__Initial.sql"
+    },
+    {
+      "kind": "contains",
+      "from": "storage:orders-db#shippingAddress",
+      "to": "storage:orders-db#shippingAddress.state",
+      "refs": [
+        "src/main/resources/db/migration/V1__Initial.sql:24"
+      ],
+      "file_path": "src/main/resources/db/migration/V1__Initial.sql"
+    },
+    {
+      "kind": "contains",
+      "from": "storage:orders-db#shippingAddress",
+      "to": "storage:orders-db#shippingAddress.zipCode",
+      "refs": [
+        "src/main/resources/db/migration/V1__Initial.sql:23"
+      ],
+      "file_path": "src/main/resources/db/migration/V1__Initial.sql"
+    },
+    {
+      "kind": "flow",
+      "from": "entry:order-entity-new",
+      "to": "storage:orders-db",
+      "flow_id": "flow:create-order",
+      "refs": [
+        "src/main/java/com/amazon/sample/orders/services/OrderService.java:48",
+        "src/main/java/com/amazon/sample/orders/repositories/OrderRepository.java:26",
+        "src/main/resources/db/migration/V1__Initial.sql:1"
+      ],
+      "note": "OrderRepository.save persists the aggregate into orders, shipping_addresses and order_items."
+    },
+    {
+      "kind": "flow",
+      "from": "storage:orders-db",
+      "to": "entry:order-entity-saved",
+      "flow_id": "flow:create-order",
+      "refs": [
+        "src/main/java/com/amazon/sample/orders/services/OrderService.java:48",
+        "src/main/java/com/amazon/sample/orders/config/PersistenceConfig.java:38"
+      ],
+      "note": "repository.save returns the persisted entity; the BeforeConvertCallback assigned id and createdDate beforehand."
+    },
+    {
+      "kind": "flow",
+      "from": "storage:orders-db",
+      "to": "entry:order-response",
+      "flow_id": "flow:list-orders",
+      "refs": [
+        "src/main/java/com/amazon/sample/orders/services/OrderService.java:53",
+        "src/main/java/com/amazon/sample/orders/web/OrderController.java:62"
+      ],
+      "note": "repository.findAll() entities are mapped one-by-one with OrderMapper.toExistingOrder."
+    },
+    {
+      "kind": "rule",
+      "from": "flow:create-order",
+      "to": "rule:event-after-commit",
+      "refs": [
+        "src/main/java/com/amazon/sample/orders/messaging/OrdersEventHandler.java:38"
+      ]
+    },
+    {
+      "kind": "rule",
+      "from": "flow:create-order",
+      "to": "rule:messaging-provider",
+      "refs": [
+        "src/main/resources/application.yml:25"
+      ]
+    },
+    {
+      "kind": "rule",
+      "from": "flow:create-order",
+      "to": "rule:order-id-generation",
+      "refs": [
+        "src/main/java/com/amazon/sample/orders/config/PersistenceConfig.java:38"
+      ]
+    },
+    {
+      "kind": "rule",
+      "from": "flow:create-order",
+      "to": "rule:persistence-provider",
+      "refs": [
+        "src/main/resources/application.yml:18"
+      ]
+    },
+    {
+      "kind": "rule",
+      "from": "flow:create-order",
+      "to": "rule:sqs-publish-delay",
+      "refs": [
+        "src/main/java/com/amazon/sample/orders/messaging/sqs/SqsMessagingProvider.java:51"
+      ]
+    },
+    {
+      "kind": "rule",
+      "from": "flow:create-order",
+      "to": "rule:transactional-create",
+      "refs": [
+        "src/main/java/com/amazon/sample/orders/services/OrderService.java:44"
+      ]
+    },
+    {
+      "kind": "rule",
+      "from": "flow:list-orders",
+      "to": "rule:persistence-provider",
+      "refs": [
+        "src/main/java/com/amazon/sample/orders/config/DataSourceConfig.java:14"
+      ]
+    },
+    {
+      "kind": "transform",
+      "from": "entry:order-entity-saved",
+      "to": "entry:order-created-event",
+      "flow_id": "flow:create-order",
+      "refs": [
+        "src/main/java/com/amazon/sample/orders/services/OrderService.java:60",
+        "src/main/java/com/amazon/sample/orders/messaging/OrdersEventHandler.java:43",
+        "src/main/java/com/amazon/sample/orders/messaging/OrdersEventHandler.java:51"
+      ],
+      "note": "AfterSaveEvent -> postCreatedEvent copies entity.id and items into the generated Order/OrderCreatedEvent; onOrderCreated publishes it via MessagingProvider."
+    },
+    {
+      "kind": "transform",
+      "from": "entry:order-entity-saved",
+      "to": "entry:order-response",
+      "flow_id": "flow:create-order",
+      "refs": [
+        "src/main/java/com/amazon/sample/orders/web/OrderController.java:54",
+        "src/main/java/com/amazon/sample/orders/web/payload/OrderMapper.java:30"
+      ],
+      "note": "OrderMapper.toExistingOrder converts the saved OrderEntity to the ExistingOrder response payload."
+    },
+    {
+      "kind": "transform",
+      "from": "input:create-order-request",
+      "to": "entry:order-entity-new",
+      "flow_id": "flow:create-order",
+      "refs": [
+        "src/main/java/com/amazon/sample/orders/web/payload/OrderMapper.java:30",
+        "src/main/java/com/amazon/sample/orders/web/payload/OrderMapper.java:32",
+        "src/main/java/com/amazon/sample/orders/web/OrderController.java:55"
+      ],
+      "note": "OrderMapper.toOrderEntity copies shippingAddress/items via their mappers; id and createdDate are ignored on the incoming payload."
+    },
+    {
+      "kind": "trigger",
+      "from": "entrypoint:get-orders",
+      "to": "flow:list-orders",
+      "refs": []
+    },
+    {
+      "kind": "trigger",
+      "from": "entrypoint:post-orders",
+      "to": "flow:create-order",
+      "refs": []
+    },
+    {
+      "kind": "use",
+      "from": "flow:create-order",
+      "to": "entry:order-created-event",
+      "refs": []
+    },
+    {
+      "kind": "use",
+      "from": "flow:create-order",
+      "to": "entry:order-entity-new",
+      "refs": []
+    },
+    {
+      "kind": "use",
+      "from": "flow:create-order",
+      "to": "entry:order-entity-saved",
+      "refs": []
+    },
+    {
+      "kind": "use",
+      "from": "flow:create-order",
+      "to": "entry:order-response",
+      "refs": []
+    },
+    {
+      "kind": "use",
+      "from": "flow:create-order",
+      "to": "input:create-order-request",
+      "refs": []
+    },
+    {
+      "kind": "use",
+      "from": "flow:create-order",
+      "to": "storage:orders-db",
+      "refs": []
+    },
+    {
+      "kind": "use",
+      "from": "flow:list-orders",
+      "to": "entry:order-response",
+      "refs": []
+    },
+    {
+      "kind": "use",
+      "from": "flow:list-orders",
+      "to": "storage:orders-db",
+      "refs": []
+    }
+  ]
+}

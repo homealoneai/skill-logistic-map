@@ -1,0 +1,2493 @@
+{
+  "schema_version": 7,
+  "generated_at": "2026-11-21T00:15:33+00:00",
+  "repo": "https://github.com/homealoneai/skill-logistic-map.git",
+  "commit": "77ff12d",
+  "nodes": [
+    {
+      "id": "entry:catalog-size",
+      "name": "Catalog size response",
+      "description": "CatalogSizeResponse payload containing the product count.",
+      "stage": "response",
+      "cluster": "catalog-service",
+      "repo": "https://github.com/homealoneai/skill-logistic-map.git",
+      "commit_sha": "77ff12d",
+      "file_path": "model/products.go",
+      "refs": [
+        "model/products.go:27",
+        "controller/controller.go:140",
+        "openapi.yml:236"
+      ],
+      "kind": "entry"
+    },
+    {
+      "id": "entry:product",
+      "name": "Product response",
+      "description": "model.Product payload returned in JSON by the product list, product detail and search routes.",
+      "stage": "response",
+      "cluster": "catalog-service",
+      "repo": "https://github.com/homealoneai/skill-logistic-map.git",
+      "commit_sha": "77ff12d",
+      "file_path": "model/products.go",
+      "refs": [
+        "model/products.go:19",
+        "controller/controller.go:87",
+        "openapi.yml:241"
+      ],
+      "kind": "entry"
+    },
+    {
+      "id": "entry:product-document",
+      "name": "Product document",
+      "description": "ProductDocument (and equivalent ProductData) with string tag names, used to write the search index and as the seed for SQL products.",
+      "stage": "normalized",
+      "cluster": "catalog-service",
+      "repo": "https://github.com/homealoneai/skill-logistic-map.git",
+      "commit_sha": "77ff12d",
+      "file_path": "repository/opensearch.go",
+      "refs": [
+        "repository/opensearch.go:46",
+        "repository/opensearch.go:224",
+        "repository/data.go:15"
+      ],
+      "kind": "entry"
+    },
+    {
+      "id": "entry:product-query",
+      "name": "Parsed product query",
+      "description": "Argument tuple tags []string, order, page and size passed from the controller through CatalogAPI to the repository.",
+      "stage": "query",
+      "cluster": "catalog-service",
+      "repo": "https://github.com/homealoneai/skill-logistic-map.git",
+      "commit_sha": "77ff12d",
+      "file_path": "controller/controller.go",
+      "refs": [
+        "controller/controller.go:59",
+        "controller/controller.go:82",
+        "api/catalog.go:33"
+      ],
+      "kind": "entry"
+    },
+    {
+      "id": "entry:size-query",
+      "name": "Parsed tag filter for count",
+      "description": "Tag-name slice passed to CountProducts after splitting the CSV query parameter.",
+      "stage": "query",
+      "cluster": "catalog-service",
+      "repo": "https://github.com/homealoneai/skill-logistic-map.git",
+      "commit_sha": "77ff12d",
+      "file_path": "controller/controller.go",
+      "refs": [
+        "controller/controller.go:126",
+        "controller/controller.go:135",
+        "api/catalog.go:49"
+      ],
+      "kind": "entry"
+    },
+    {
+      "id": "entry:tag-list",
+      "name": "Tag list response",
+      "description": "JSON array of model.Tag returned by GET /catalog/tags.",
+      "stage": "response",
+      "cluster": "catalog-service",
+      "repo": "https://github.com/homealoneai/skill-logistic-map.git",
+      "commit_sha": "77ff12d",
+      "file_path": "model/tags.go",
+      "refs": [
+        "model/tags.go:19",
+        "controller/controller.go:162",
+        "openapi.yml:256"
+      ],
+      "kind": "entry"
+    },
+    {
+      "id": "entry:tag-seed",
+      "name": "Tag seed entity",
+      "description": "model.Tag value created from embedded ProductTagData before it is saved.",
+      "stage": "normalized",
+      "cluster": "catalog-service",
+      "repo": "https://github.com/homealoneai/skill-logistic-map.git",
+      "commit_sha": "77ff12d",
+      "file_path": "repository/repository.go",
+      "refs": [
+        "repository/repository.go:86",
+        "model/tags.go:19"
+      ],
+      "kind": "entry"
+    },
+    {
+      "id": "entrypoint:catalog-size",
+      "name": "GET /catalog/size",
+      "description": "Gin route handled by Controller.CatalogSize; returns the product count, optionally filtered by tags.",
+      "cluster": "catalog-service",
+      "repo": "https://github.com/homealoneai/skill-logistic-map.git",
+      "commit_sha": "77ff12d",
+      "file_path": "controller/controller.go",
+      "refs": [
+        "main.go:132",
+        "controller/controller.go:125",
+        "openapi.yml:155"
+      ],
+      "kind": "entrypoint"
+    },
+    {
+      "id": "entrypoint:get-product",
+      "name": "GET /catalog/products/:id",
+      "description": "Gin route handled by Controller.GetProduct; looks up one product by its path id.",
+      "cluster": "catalog-service",
+      "repo": "https://github.com/homealoneai/skill-logistic-map.git",
+      "commit_sha": "77ff12d",
+      "file_path": "controller/controller.go",
+      "refs": [
+        "main.go:134",
+        "controller/controller.go:102",
+        "openapi.yml:117"
+      ],
+      "kind": "entrypoint"
+    },
+    {
+      "id": "entrypoint:list-products",
+      "name": "GET /catalog/products",
+      "description": "Gin route handled by Controller.GetProducts; parses catalog filters and returns a JSON product list.",
+      "cluster": "catalog-service",
+      "repo": "https://github.com/homealoneai/skill-logistic-map.git",
+      "commit_sha": "77ff12d",
+      "file_path": "controller/controller.go",
+      "refs": [
+        "main.go:130",
+        "controller/controller.go:58",
+        "openapi.yml:14"
+      ],
+      "kind": "entrypoint"
+    },
+    {
+      "id": "entrypoint:list-tags",
+      "name": "GET /catalog/tags",
+      "description": "Gin route handled by Controller.ListTags; returns all catalog tags as JSON.",
+      "cluster": "catalog-service",
+      "repo": "https://github.com/homealoneai/skill-logistic-map.git",
+      "commit_sha": "77ff12d",
+      "file_path": "controller/controller.go",
+      "refs": [
+        "main.go:133",
+        "controller/controller.go:156",
+        "openapi.yml:192"
+      ],
+      "kind": "entrypoint"
+    },
+    {
+      "id": "entrypoint:reindex-products",
+      "name": "POST /catalog/reindex",
+      "description": "Gin route handled by Controller.ReindexProducts; recreates the OpenSearch product index from embedded data.",
+      "cluster": "catalog-service",
+      "repo": "https://github.com/homealoneai/skill-logistic-map.git",
+      "commit_sha": "77ff12d",
+      "file_path": "controller/controller.go",
+      "refs": [
+        "main.go:136",
+        "controller/controller.go:227"
+      ],
+      "kind": "entrypoint"
+    },
+    {
+      "id": "entrypoint:search-products",
+      "name": "GET /catalog/search",
+      "description": "Gin route handled by Controller.SearchProducts; searches the OpenSearch product index by keyword.",
+      "cluster": "catalog-service",
+      "repo": "https://github.com/homealoneai/skill-logistic-map.git",
+      "commit_sha": "77ff12d",
+      "file_path": "controller/controller.go",
+      "refs": [
+        "main.go:135",
+        "controller/controller.go:179",
+        "openapi.yml:68"
+      ],
+      "kind": "entrypoint"
+    },
+    {
+      "id": "entrypoint:service-startup",
+      "name": "Service startup (main)",
+      "description": "main() constructs the catalog repository, which seeds the SQL store from embedded JSON, and initializes the OpenSearch index when search is enabled.",
+      "cluster": "catalog-service",
+      "repo": "https://github.com/homealoneai/skill-logistic-map.git",
+      "commit_sha": "77ff12d",
+      "file_path": "main.go",
+      "refs": [
+        "main.go:61",
+        "main.go:78",
+        "main.go:87",
+        "main.go:92"
+      ],
+      "kind": "entrypoint"
+    },
+    {
+      "id": "entry:catalog-size#size",
+      "name": "size",
+      "path": "size",
+      "type": "integer",
+      "required": false,
+      "source": "declared",
+      "repo": "https://github.com/homealoneai/skill-logistic-map.git",
+      "commit_sha": "77ff12d",
+      "file_path": "model/products.go",
+      "refs": [
+        "model/products.go:28",
+        "controller/controller.go:141"
+      ],
+      "kind": "field",
+      "owner": "entry:catalog-size"
+    },
+    {
+      "id": "entry:product#description",
+      "name": "description",
+      "path": "description",
+      "type": "string",
+      "required": false,
+      "source": "declared",
+      "repo": "https://github.com/homealoneai/skill-logistic-map.git",
+      "commit_sha": "77ff12d",
+      "file_path": "model/products.go",
+      "refs": [
+        "model/products.go:22",
+        "openapi.yml:244"
+      ],
+      "kind": "field",
+      "owner": "entry:product"
+    },
+    {
+      "id": "entry:product#id",
+      "name": "id",
+      "path": "id",
+      "type": "string",
+      "required": false,
+      "source": "declared",
+      "repo": "https://github.com/homealoneai/skill-logistic-map.git",
+      "commit_sha": "77ff12d",
+      "file_path": "model/products.go",
+      "refs": [
+        "model/products.go:20",
+        "openapi.yml:246"
+      ],
+      "kind": "field",
+      "owner": "entry:product"
+    },
+    {
+      "id": "entry:product#name",
+      "name": "name",
+      "path": "name",
+      "type": "string",
+      "required": false,
+      "source": "declared",
+      "repo": "https://github.com/homealoneai/skill-logistic-map.git",
+      "commit_sha": "77ff12d",
+      "file_path": "model/products.go",
+      "refs": [
+        "model/products.go:21",
+        "openapi.yml:248"
+      ],
+      "kind": "field",
+      "owner": "entry:product"
+    },
+    {
+      "id": "entry:product#price",
+      "name": "price",
+      "path": "price",
+      "type": "integer",
+      "required": false,
+      "source": "declared",
+      "repo": "https://github.com/homealoneai/skill-logistic-map.git",
+      "commit_sha": "77ff12d",
+      "file_path": "model/products.go",
+      "refs": [
+        "model/products.go:23",
+        "openapi.yml:250"
+      ],
+      "kind": "field",
+      "owner": "entry:product"
+    },
+    {
+      "id": "entry:product#tags",
+      "name": "tags",
+      "path": "tags",
+      "type": "array",
+      "required": false,
+      "source": "declared",
+      "repo": "https://github.com/homealoneai/skill-logistic-map.git",
+      "commit_sha": "77ff12d",
+      "file_path": "model/products.go",
+      "refs": [
+        "model/products.go:24",
+        "openapi.yml:252"
+      ],
+      "kind": "field",
+      "owner": "entry:product"
+    },
+    {
+      "id": "entry:product#tags.displayName",
+      "name": "displayName",
+      "path": "tags.displayName",
+      "type": "string",
+      "required": false,
+      "source": "declared",
+      "repo": "https://github.com/homealoneai/skill-logistic-map.git",
+      "commit_sha": "77ff12d",
+      "file_path": "model/tags.go",
+      "refs": [
+        "model/tags.go:21",
+        "openapi.yml:259"
+      ],
+      "kind": "field",
+      "owner": "entry:product"
+    },
+    {
+      "id": "entry:product#tags.name",
+      "name": "name",
+      "path": "tags.name",
+      "type": "string",
+      "required": false,
+      "source": "declared",
+      "repo": "https://github.com/homealoneai/skill-logistic-map.git",
+      "commit_sha": "77ff12d",
+      "file_path": "model/tags.go",
+      "refs": [
+        "model/tags.go:20",
+        "openapi.yml:261"
+      ],
+      "kind": "field",
+      "owner": "entry:product"
+    },
+    {
+      "id": "entry:product-document#description",
+      "name": "description",
+      "path": "description",
+      "type": "string",
+      "required": false,
+      "source": "declared",
+      "repo": "https://github.com/homealoneai/skill-logistic-map.git",
+      "commit_sha": "77ff12d",
+      "file_path": "repository/opensearch.go",
+      "refs": [
+        "repository/opensearch.go:50",
+        "repository/data.go:17"
+      ],
+      "kind": "field",
+      "owner": "entry:product-document"
+    },
+    {
+      "id": "entry:product-document#id",
+      "name": "id",
+      "path": "id",
+      "type": "string",
+      "required": false,
+      "source": "declared",
+      "repo": "https://github.com/homealoneai/skill-logistic-map.git",
+      "commit_sha": "77ff12d",
+      "file_path": "repository/opensearch.go",
+      "refs": [
+        "repository/opensearch.go:48",
+        "repository/data.go:18"
+      ],
+      "kind": "field",
+      "owner": "entry:product-document"
+    },
+    {
+      "id": "entry:product-document#name",
+      "name": "name",
+      "path": "name",
+      "type": "string",
+      "required": false,
+      "source": "declared",
+      "repo": "https://github.com/homealoneai/skill-logistic-map.git",
+      "commit_sha": "77ff12d",
+      "file_path": "repository/opensearch.go",
+      "refs": [
+        "repository/opensearch.go:49",
+        "repository/data.go:16"
+      ],
+      "kind": "field",
+      "owner": "entry:product-document"
+    },
+    {
+      "id": "entry:product-document#price",
+      "name": "price",
+      "path": "price",
+      "type": "integer",
+      "required": false,
+      "source": "declared",
+      "repo": "https://github.com/homealoneai/skill-logistic-map.git",
+      "commit_sha": "77ff12d",
+      "file_path": "repository/opensearch.go",
+      "refs": [
+        "repository/opensearch.go:51",
+        "repository/data.go:19"
+      ],
+      "kind": "field",
+      "owner": "entry:product-document"
+    },
+    {
+      "id": "entry:product-document#tags",
+      "name": "tags",
+      "path": "tags",
+      "type": "array",
+      "required": false,
+      "source": "declared",
+      "repo": "https://github.com/homealoneai/skill-logistic-map.git",
+      "commit_sha": "77ff12d",
+      "file_path": "repository/opensearch.go",
+      "refs": [
+        "repository/opensearch.go:52",
+        "repository/data.go:20"
+      ],
+      "kind": "field",
+      "owner": "entry:product-document"
+    },
+    {
+      "id": "entry:product-query#order",
+      "name": "order",
+      "path": "order",
+      "type": "string",
+      "required": false,
+      "source": "declared",
+      "repo": "https://github.com/homealoneai/skill-logistic-map.git",
+      "commit_sha": "77ff12d",
+      "file_path": "controller/controller.go",
+      "refs": [
+        "controller/controller.go:68",
+        "api/catalog.go:33"
+      ],
+      "kind": "field",
+      "owner": "entry:product-query"
+    },
+    {
+      "id": "entry:product-query#page",
+      "name": "page",
+      "path": "page",
+      "type": "integer",
+      "required": false,
+      "source": "declared",
+      "repo": "https://github.com/homealoneai/skill-logistic-map.git",
+      "commit_sha": "77ff12d",
+      "file_path": "controller/controller.go",
+      "refs": [
+        "controller/controller.go:70",
+        "api/catalog.go:33"
+      ],
+      "kind": "field",
+      "owner": "entry:product-query"
+    },
+    {
+      "id": "entry:product-query#size",
+      "name": "size",
+      "path": "size",
+      "type": "integer",
+      "required": false,
+      "source": "declared",
+      "repo": "https://github.com/homealoneai/skill-logistic-map.git",
+      "commit_sha": "77ff12d",
+      "file_path": "controller/controller.go",
+      "refs": [
+        "controller/controller.go:76",
+        "api/catalog.go:33"
+      ],
+      "kind": "field",
+      "owner": "entry:product-query"
+    },
+    {
+      "id": "entry:product-query#tags",
+      "name": "tags",
+      "path": "tags",
+      "type": "array",
+      "required": false,
+      "source": "declared",
+      "repo": "https://github.com/homealoneai/skill-logistic-map.git",
+      "commit_sha": "77ff12d",
+      "file_path": "controller/controller.go",
+      "refs": [
+        "controller/controller.go:63",
+        "api/catalog.go:33"
+      ],
+      "kind": "field",
+      "owner": "entry:product-query"
+    },
+    {
+      "id": "entry:size-query#tags",
+      "name": "tags",
+      "path": "tags",
+      "type": "array",
+      "required": false,
+      "source": "declared",
+      "repo": "https://github.com/homealoneai/skill-logistic-map.git",
+      "commit_sha": "77ff12d",
+      "file_path": "controller/controller.go",
+      "refs": [
+        "controller/controller.go:130",
+        "api/catalog.go:49"
+      ],
+      "kind": "field",
+      "owner": "entry:size-query"
+    },
+    {
+      "id": "entry:tag-list#displayName",
+      "name": "displayName",
+      "path": "displayName",
+      "type": "string",
+      "required": false,
+      "source": "declared",
+      "repo": "https://github.com/homealoneai/skill-logistic-map.git",
+      "commit_sha": "77ff12d",
+      "file_path": "model/tags.go",
+      "refs": [
+        "model/tags.go:21",
+        "openapi.yml:259"
+      ],
+      "kind": "field",
+      "owner": "entry:tag-list"
+    },
+    {
+      "id": "entry:tag-list#name",
+      "name": "name",
+      "path": "name",
+      "type": "string",
+      "required": false,
+      "source": "declared",
+      "repo": "https://github.com/homealoneai/skill-logistic-map.git",
+      "commit_sha": "77ff12d",
+      "file_path": "model/tags.go",
+      "refs": [
+        "model/tags.go:20",
+        "openapi.yml:261"
+      ],
+      "kind": "field",
+      "owner": "entry:tag-list"
+    },
+    {
+      "id": "entry:tag-seed#displayName",
+      "name": "displayName",
+      "path": "displayName",
+      "type": "string",
+      "required": false,
+      "source": "declared",
+      "repo": "https://github.com/homealoneai/skill-logistic-map.git",
+      "commit_sha": "77ff12d",
+      "file_path": "repository/repository.go",
+      "refs": [
+        "repository/repository.go:87",
+        "model/tags.go:21"
+      ],
+      "kind": "field",
+      "owner": "entry:tag-seed"
+    },
+    {
+      "id": "entry:tag-seed#name",
+      "name": "name",
+      "path": "name",
+      "type": "string",
+      "required": false,
+      "source": "declared",
+      "repo": "https://github.com/homealoneai/skill-logistic-map.git",
+      "commit_sha": "77ff12d",
+      "file_path": "repository/repository.go",
+      "refs": [
+        "repository/repository.go:87",
+        "model/tags.go:20"
+      ],
+      "kind": "field",
+      "owner": "entry:tag-seed"
+    },
+    {
+      "id": "input:embedded-products#description",
+      "name": "description",
+      "path": "description",
+      "type": "string",
+      "required": false,
+      "source": "declared",
+      "repo": "https://github.com/homealoneai/skill-logistic-map.git",
+      "commit_sha": "77ff12d",
+      "file_path": "repository/data.go",
+      "refs": [
+        "repository/data.go:17",
+        "repository/products.json:5"
+      ],
+      "kind": "field",
+      "owner": "input:embedded-products"
+    },
+    {
+      "id": "input:embedded-products#id",
+      "name": "id",
+      "path": "id",
+      "type": "string",
+      "required": false,
+      "source": "declared",
+      "repo": "https://github.com/homealoneai/skill-logistic-map.git",
+      "commit_sha": "77ff12d",
+      "file_path": "repository/data.go",
+      "refs": [
+        "repository/data.go:18",
+        "repository/products.json:3"
+      ],
+      "kind": "field",
+      "owner": "input:embedded-products"
+    },
+    {
+      "id": "input:embedded-products#name",
+      "name": "name",
+      "path": "name",
+      "type": "string",
+      "required": false,
+      "source": "declared",
+      "repo": "https://github.com/homealoneai/skill-logistic-map.git",
+      "commit_sha": "77ff12d",
+      "file_path": "repository/data.go",
+      "refs": [
+        "repository/data.go:16",
+        "repository/products.json:4"
+      ],
+      "kind": "field",
+      "owner": "input:embedded-products"
+    },
+    {
+      "id": "input:embedded-products#price",
+      "name": "price",
+      "path": "price",
+      "type": "integer",
+      "required": false,
+      "source": "declared",
+      "repo": "https://github.com/homealoneai/skill-logistic-map.git",
+      "commit_sha": "77ff12d",
+      "file_path": "repository/data.go",
+      "refs": [
+        "repository/data.go:19",
+        "repository/products.json:6"
+      ],
+      "kind": "field",
+      "owner": "input:embedded-products"
+    },
+    {
+      "id": "input:embedded-products#tags",
+      "name": "tags",
+      "path": "tags",
+      "type": "array",
+      "required": false,
+      "source": "declared",
+      "repo": "https://github.com/homealoneai/skill-logistic-map.git",
+      "commit_sha": "77ff12d",
+      "file_path": "repository/data.go",
+      "refs": [
+        "repository/data.go:20",
+        "repository/products.json:7"
+      ],
+      "kind": "field",
+      "owner": "input:embedded-products"
+    },
+    {
+      "id": "input:embedded-tags#displayName",
+      "name": "displayName",
+      "path": "displayName",
+      "type": "string",
+      "required": false,
+      "source": "declared",
+      "repo": "https://github.com/homealoneai/skill-logistic-map.git",
+      "commit_sha": "77ff12d",
+      "file_path": "repository/data.go",
+      "refs": [
+        "repository/data.go:25",
+        "repository/tags.json:2"
+      ],
+      "kind": "field",
+      "owner": "input:embedded-tags"
+    },
+    {
+      "id": "input:embedded-tags#name",
+      "name": "name",
+      "path": "name",
+      "type": "string",
+      "required": false,
+      "source": "declared",
+      "repo": "https://github.com/homealoneai/skill-logistic-map.git",
+      "commit_sha": "77ff12d",
+      "file_path": "repository/data.go",
+      "refs": [
+        "repository/data.go:24",
+        "repository/tags.json:2"
+      ],
+      "kind": "field",
+      "owner": "input:embedded-tags"
+    },
+    {
+      "id": "input:list-products-query#order",
+      "name": "order",
+      "path": "order",
+      "type": "string",
+      "required": false,
+      "source": "declared",
+      "repo": "https://github.com/homealoneai/skill-logistic-map.git",
+      "commit_sha": "77ff12d",
+      "file_path": "controller/controller.go",
+      "refs": [
+        "controller/controller.go:68",
+        "openapi.yml:26"
+      ],
+      "kind": "field",
+      "owner": "input:list-products-query"
+    },
+    {
+      "id": "input:list-products-query#page",
+      "name": "page",
+      "path": "page",
+      "type": "integer",
+      "required": false,
+      "source": "declared",
+      "repo": "https://github.com/homealoneai/skill-logistic-map.git",
+      "commit_sha": "77ff12d",
+      "file_path": "controller/controller.go",
+      "refs": [
+        "controller/controller.go:70",
+        "openapi.yml:31"
+      ],
+      "kind": "field",
+      "owner": "input:list-products-query"
+    },
+    {
+      "id": "input:list-products-query#size",
+      "name": "size",
+      "path": "size",
+      "type": "integer",
+      "required": false,
+      "source": "declared",
+      "repo": "https://github.com/homealoneai/skill-logistic-map.git",
+      "commit_sha": "77ff12d",
+      "file_path": "controller/controller.go",
+      "refs": [
+        "controller/controller.go:76",
+        "openapi.yml:36"
+      ],
+      "kind": "field",
+      "owner": "input:list-products-query"
+    },
+    {
+      "id": "input:list-products-query#tags",
+      "name": "tags",
+      "path": "tags",
+      "type": "string",
+      "required": false,
+      "source": "declared",
+      "repo": "https://github.com/homealoneai/skill-logistic-map.git",
+      "commit_sha": "77ff12d",
+      "file_path": "controller/controller.go",
+      "refs": [
+        "controller/controller.go:61",
+        "openapi.yml:21"
+      ],
+      "kind": "field",
+      "owner": "input:list-products-query"
+    },
+    {
+      "id": "input:product-id#id",
+      "name": "id",
+      "path": "id",
+      "type": "string",
+      "required": true,
+      "source": "declared",
+      "repo": "https://github.com/homealoneai/skill-logistic-map.git",
+      "commit_sha": "77ff12d",
+      "file_path": "controller/controller.go",
+      "refs": [
+        "controller/controller.go:103",
+        "openapi.yml:124"
+      ],
+      "kind": "field",
+      "owner": "input:product-id"
+    },
+    {
+      "id": "input:search-query#keyword",
+      "name": "keyword",
+      "path": "keyword",
+      "type": "string",
+      "required": true,
+      "source": "declared",
+      "repo": "https://github.com/homealoneai/skill-logistic-map.git",
+      "commit_sha": "77ff12d",
+      "file_path": "controller/controller.go",
+      "refs": [
+        "controller/controller.go:185",
+        "openapi.yml:75"
+      ],
+      "kind": "field",
+      "owner": "input:search-query"
+    },
+    {
+      "id": "input:search-query#page",
+      "name": "page",
+      "path": "page",
+      "type": "integer",
+      "required": false,
+      "source": "declared",
+      "repo": "https://github.com/homealoneai/skill-logistic-map.git",
+      "commit_sha": "77ff12d",
+      "file_path": "controller/controller.go",
+      "refs": [
+        "controller/controller.go:192",
+        "openapi.yml:80"
+      ],
+      "kind": "field",
+      "owner": "input:search-query"
+    },
+    {
+      "id": "input:search-query#size",
+      "name": "size",
+      "path": "size",
+      "type": "integer",
+      "required": false,
+      "source": "declared",
+      "repo": "https://github.com/homealoneai/skill-logistic-map.git",
+      "commit_sha": "77ff12d",
+      "file_path": "controller/controller.go",
+      "refs": [
+        "controller/controller.go:198",
+        "openapi.yml:85"
+      ],
+      "kind": "field",
+      "owner": "input:search-query"
+    },
+    {
+      "id": "input:size-query#tags",
+      "name": "tags",
+      "path": "tags",
+      "type": "string",
+      "required": false,
+      "source": "declared",
+      "repo": "https://github.com/homealoneai/skill-logistic-map.git",
+      "commit_sha": "77ff12d",
+      "file_path": "controller/controller.go",
+      "refs": [
+        "controller/controller.go:128",
+        "openapi.yml:162"
+      ],
+      "kind": "field",
+      "owner": "input:size-query"
+    },
+    {
+      "id": "storage:catalog-products#description",
+      "name": "description",
+      "path": "description",
+      "type": "string",
+      "required": false,
+      "source": "declared",
+      "repo": "https://github.com/homealoneai/skill-logistic-map.git",
+      "commit_sha": "77ff12d",
+      "file_path": "model/products.go",
+      "refs": [
+        "model/products.go:22",
+        "repository/repository.go:112"
+      ],
+      "kind": "field",
+      "owner": "storage:catalog-products"
+    },
+    {
+      "id": "storage:catalog-products#id",
+      "name": "id",
+      "path": "id",
+      "type": "string",
+      "required": false,
+      "source": "declared",
+      "repo": "https://github.com/homealoneai/skill-logistic-map.git",
+      "commit_sha": "77ff12d",
+      "file_path": "model/products.go",
+      "refs": [
+        "model/products.go:20",
+        "repository/repository.go:109"
+      ],
+      "kind": "field",
+      "owner": "storage:catalog-products"
+    },
+    {
+      "id": "storage:catalog-products#name",
+      "name": "name",
+      "path": "name",
+      "type": "string",
+      "required": false,
+      "source": "declared",
+      "repo": "https://github.com/homealoneai/skill-logistic-map.git",
+      "commit_sha": "77ff12d",
+      "file_path": "model/products.go",
+      "refs": [
+        "model/products.go:21",
+        "repository/repository.go:111"
+      ],
+      "kind": "field",
+      "owner": "storage:catalog-products"
+    },
+    {
+      "id": "storage:catalog-products#price",
+      "name": "price",
+      "path": "price",
+      "type": "integer",
+      "required": false,
+      "source": "declared",
+      "repo": "https://github.com/homealoneai/skill-logistic-map.git",
+      "commit_sha": "77ff12d",
+      "file_path": "model/products.go",
+      "refs": [
+        "model/products.go:23",
+        "repository/repository.go:113"
+      ],
+      "kind": "field",
+      "owner": "storage:catalog-products"
+    },
+    {
+      "id": "storage:catalog-products#tags",
+      "name": "tags",
+      "path": "tags",
+      "type": "array",
+      "required": false,
+      "source": "declared",
+      "repo": "https://github.com/homealoneai/skill-logistic-map.git",
+      "commit_sha": "77ff12d",
+      "file_path": "model/products.go",
+      "refs": [
+        "model/products.go:24",
+        "repository/repository.go:114"
+      ],
+      "kind": "field",
+      "owner": "storage:catalog-products"
+    },
+    {
+      "id": "storage:catalog-products#tags.displayName",
+      "name": "displayName",
+      "path": "tags.displayName",
+      "type": "string",
+      "required": false,
+      "source": "declared",
+      "repo": "https://github.com/homealoneai/skill-logistic-map.git",
+      "commit_sha": "77ff12d",
+      "file_path": "model/tags.go",
+      "refs": [
+        "model/tags.go:21",
+        "repository/repository.go:87"
+      ],
+      "kind": "field",
+      "owner": "storage:catalog-products"
+    },
+    {
+      "id": "storage:catalog-products#tags.name",
+      "name": "name",
+      "path": "tags.name",
+      "type": "string",
+      "required": false,
+      "source": "declared",
+      "repo": "https://github.com/homealoneai/skill-logistic-map.git",
+      "commit_sha": "77ff12d",
+      "file_path": "model/tags.go",
+      "refs": [
+        "model/tags.go:20",
+        "repository/repository.go:114"
+      ],
+      "kind": "field",
+      "owner": "storage:catalog-products"
+    },
+    {
+      "id": "storage:catalog-tags#displayName",
+      "name": "displayName",
+      "path": "displayName",
+      "type": "string",
+      "required": false,
+      "source": "declared",
+      "repo": "https://github.com/homealoneai/skill-logistic-map.git",
+      "commit_sha": "77ff12d",
+      "file_path": "model/tags.go",
+      "refs": [
+        "model/tags.go:21",
+        "repository/repository.go:87"
+      ],
+      "kind": "field",
+      "owner": "storage:catalog-tags"
+    },
+    {
+      "id": "storage:catalog-tags#name",
+      "name": "name",
+      "path": "name",
+      "type": "string",
+      "required": false,
+      "source": "declared",
+      "repo": "https://github.com/homealoneai/skill-logistic-map.git",
+      "commit_sha": "77ff12d",
+      "file_path": "model/tags.go",
+      "refs": [
+        "model/tags.go:20",
+        "repository/repository.go:87"
+      ],
+      "kind": "field",
+      "owner": "storage:catalog-tags"
+    },
+    {
+      "id": "storage:search-index#description",
+      "name": "description",
+      "path": "description",
+      "type": "string",
+      "required": false,
+      "source": "declared",
+      "repo": "https://github.com/homealoneai/skill-logistic-map.git",
+      "commit_sha": "77ff12d",
+      "file_path": "repository/opensearch.go",
+      "refs": [
+        "repository/opensearch.go:50",
+        "repository/opensearch.go:183"
+      ],
+      "kind": "field",
+      "owner": "storage:search-index"
+    },
+    {
+      "id": "storage:search-index#id",
+      "name": "id",
+      "path": "id",
+      "type": "string",
+      "required": false,
+      "source": "declared",
+      "repo": "https://github.com/homealoneai/skill-logistic-map.git",
+      "commit_sha": "77ff12d",
+      "file_path": "repository/opensearch.go",
+      "refs": [
+        "repository/opensearch.go:48",
+        "repository/opensearch.go:175"
+      ],
+      "kind": "field",
+      "owner": "storage:search-index"
+    },
+    {
+      "id": "storage:search-index#name",
+      "name": "name",
+      "path": "name",
+      "type": "string",
+      "required": false,
+      "source": "declared",
+      "repo": "https://github.com/homealoneai/skill-logistic-map.git",
+      "commit_sha": "77ff12d",
+      "file_path": "repository/opensearch.go",
+      "refs": [
+        "repository/opensearch.go:49",
+        "repository/opensearch.go:176"
+      ],
+      "kind": "field",
+      "owner": "storage:search-index"
+    },
+    {
+      "id": "storage:search-index#price",
+      "name": "price",
+      "path": "price",
+      "type": "integer",
+      "required": false,
+      "source": "declared",
+      "repo": "https://github.com/homealoneai/skill-logistic-map.git",
+      "commit_sha": "77ff12d",
+      "file_path": "repository/opensearch.go",
+      "refs": [
+        "repository/opensearch.go:51",
+        "repository/opensearch.go:187"
+      ],
+      "kind": "field",
+      "owner": "storage:search-index"
+    },
+    {
+      "id": "storage:search-index#tags",
+      "name": "tags",
+      "path": "tags",
+      "type": "array",
+      "required": false,
+      "source": "declared",
+      "repo": "https://github.com/homealoneai/skill-logistic-map.git",
+      "commit_sha": "77ff12d",
+      "file_path": "repository/opensearch.go",
+      "refs": [
+        "repository/opensearch.go:52",
+        "repository/opensearch.go:188"
+      ],
+      "kind": "field",
+      "owner": "storage:search-index"
+    },
+    {
+      "id": "flow:catalog-size",
+      "name": "Count catalog products",
+      "description": "Count products with an optional tag-name filter and wrap the result in CatalogSizeResponse.",
+      "cluster": "catalog-service",
+      "repo": "https://github.com/homealoneai/skill-logistic-map.git",
+      "commit_sha": "77ff12d",
+      "file_path": "controller/controller.go",
+      "refs": [
+        "controller/controller.go:125",
+        "api/catalog.go:49",
+        "repository/repository.go:174"
+      ],
+      "kind": "flow"
+    },
+    {
+      "id": "flow:get-product",
+      "name": "Get product by id",
+      "description": "Pass the id path parameter to the repository, preload tags and return the single product as JSON.",
+      "cluster": "catalog-service",
+      "repo": "https://github.com/homealoneai/skill-logistic-map.git",
+      "commit_sha": "77ff12d",
+      "file_path": "controller/controller.go",
+      "refs": [
+        "controller/controller.go:102",
+        "api/catalog.go:41",
+        "repository/repository.go:159"
+      ],
+      "kind": "flow"
+    },
+    {
+      "id": "flow:list-products",
+      "name": "List catalog products",
+      "description": "Parse tags/order/page/size, query products with tag joins, ordering and pagination, and return model.Product values as JSON.",
+      "cluster": "catalog-service",
+      "repo": "https://github.com/homealoneai/skill-logistic-map.git",
+      "commit_sha": "77ff12d",
+      "file_path": "controller/controller.go",
+      "refs": [
+        "controller/controller.go:58",
+        "api/catalog.go:33",
+        "repository/repository.go:123"
+      ],
+      "kind": "flow"
+    },
+    {
+      "id": "flow:list-tags",
+      "name": "List catalog tags",
+      "description": "Read tags from the SQL store ordered by displayName and return them as a JSON array.",
+      "cluster": "catalog-service",
+      "repo": "https://github.com/homealoneai/skill-logistic-map.git",
+      "commit_sha": "77ff12d",
+      "file_path": "controller/controller.go",
+      "refs": [
+        "controller/controller.go:156",
+        "api/catalog.go:45",
+        "repository/repository.go:195"
+      ],
+      "kind": "flow"
+    },
+    {
+      "id": "flow:reindex-products",
+      "name": "Reindex product search data",
+      "description": "Require search to be enabled, delete the existing product index and repopulate it from embedded product data.",
+      "cluster": "catalog-service",
+      "repo": "https://github.com/homealoneai/skill-logistic-map.git",
+      "commit_sha": "77ff12d",
+      "file_path": "controller/controller.go",
+      "refs": [
+        "controller/controller.go:227",
+        "api/catalog.go:64",
+        "repository/opensearch.go:258"
+      ],
+      "kind": "flow"
+    },
+    {
+      "id": "flow:search-products",
+      "name": "Search catalog products",
+      "description": "Require search to be enabled and a non-empty keyword, query OpenSearch with fuzziness and pagination, then map hits to model.Product.",
+      "cluster": "catalog-service",
+      "repo": "https://github.com/homealoneai/skill-logistic-map.git",
+      "commit_sha": "77ff12d",
+      "file_path": "controller/controller.go",
+      "refs": [
+        "controller/controller.go:179",
+        "api/catalog.go:57",
+        "repository/opensearch.go:282"
+      ],
+      "kind": "flow"
+    },
+    {
+      "id": "flow:seed-catalog-store",
+      "name": "Seed catalog stores at startup",
+      "description": "Load embedded JSON tags and products, normalize them, and populate the SQL catalog tables and (when search is enabled) the OpenSearch index.",
+      "cluster": "catalog-service",
+      "repo": "https://github.com/homealoneai/skill-logistic-map.git",
+      "commit_sha": "77ff12d",
+      "file_path": "repository/repository.go",
+      "refs": [
+        "repository/repository.go:45",
+        "repository/repository.go:72",
+        "repository/opensearch.go:108",
+        "main.go:78"
+      ],
+      "kind": "flow"
+    },
+    {
+      "id": "input:embedded-products",
+      "name": "Embedded products.json contents",
+      "description": "Product records embedded at compile time by go:embed and decoded by LoadProductData.",
+      "cluster": "catalog-service",
+      "repo": "https://github.com/homealoneai/skill-logistic-map.git",
+      "commit_sha": "77ff12d",
+      "file_path": "repository/data.go",
+      "refs": [
+        "repository/data.go:9",
+        "repository/data.go:15",
+        "repository/data.go:28",
+        "repository/products.json:1"
+      ],
+      "kind": "input"
+    },
+    {
+      "id": "input:embedded-tags",
+      "name": "Embedded tags.json contents",
+      "description": "Tag records embedded at compile time by go:embed and decoded by LoadProductTagData.",
+      "cluster": "catalog-service",
+      "repo": "https://github.com/homealoneai/skill-logistic-map.git",
+      "commit_sha": "77ff12d",
+      "file_path": "repository/data.go",
+      "refs": [
+        "repository/data.go:12",
+        "repository/data.go:23",
+        "repository/data.go:41",
+        "repository/tags.json:1"
+      ],
+      "kind": "input"
+    },
+    {
+      "id": "input:list-products-query",
+      "name": "GET /catalog/products query parameters",
+      "description": "tags, order, page and size query parameters of the product-list request.",
+      "cluster": "catalog-service",
+      "repo": "https://github.com/homealoneai/skill-logistic-map.git",
+      "commit_sha": "77ff12d",
+      "file_path": "controller/controller.go",
+      "refs": [
+        "controller/controller.go:61",
+        "controller/controller.go:68",
+        "controller/controller.go:70",
+        "controller/controller.go:76",
+        "openapi.yml:20"
+      ],
+      "kind": "input"
+    },
+    {
+      "id": "input:product-id",
+      "name": "Product id path parameter",
+      "description": "Required id path parameter of GET /catalog/products/{id}.",
+      "cluster": "catalog-service",
+      "repo": "https://github.com/homealoneai/skill-logistic-map.git",
+      "commit_sha": "77ff12d",
+      "file_path": "controller/controller.go",
+      "refs": [
+        "controller/controller.go:103",
+        "openapi.yml:124"
+      ],
+      "kind": "input"
+    },
+    {
+      "id": "input:search-query",
+      "name": "GET /catalog/search query parameters",
+      "description": "keyword, page and size query parameters of the catalog search request.",
+      "cluster": "catalog-service",
+      "repo": "https://github.com/homealoneai/skill-logistic-map.git",
+      "commit_sha": "77ff12d",
+      "file_path": "controller/controller.go",
+      "refs": [
+        "controller/controller.go:185",
+        "controller/controller.go:192",
+        "controller/controller.go:198",
+        "openapi.yml:75"
+      ],
+      "kind": "input"
+    },
+    {
+      "id": "input:size-query",
+      "name": "GET /catalog/size query parameters",
+      "description": "tags query parameter used to filter the product count.",
+      "cluster": "catalog-service",
+      "repo": "https://github.com/homealoneai/skill-logistic-map.git",
+      "commit_sha": "77ff12d",
+      "file_path": "controller/controller.go",
+      "refs": [
+        "controller/controller.go:128",
+        "openapi.yml:162"
+      ],
+      "kind": "input"
+    },
+    {
+      "id": "rule:index-skip-if-populated",
+      "name": "Skip index initialization when populated",
+      "description": "Startup OpenSearch initialization skips index creation when the index already exists and contains documents.",
+      "cluster": "catalog-service",
+      "repo": "https://github.com/homealoneai/skill-logistic-map.git",
+      "commit_sha": "77ff12d",
+      "file_path": "repository/opensearch.go",
+      "refs": [
+        "repository/opensearch.go:121",
+        "repository/opensearch.go:132",
+        "repository/opensearch.go:137"
+      ],
+      "kind": "rule"
+    },
+    {
+      "id": "rule:integer-query-validation",
+      "name": "Integer query validation",
+      "description": "page and size must parse as integers through getQueryInt; otherwise the handler returns HTTP 400.",
+      "cluster": "catalog-service",
+      "repo": "https://github.com/homealoneai/skill-logistic-map.git",
+      "commit_sha": "77ff12d",
+      "file_path": "controller/controller.go",
+      "refs": [
+        "controller/controller.go:70",
+        "controller/controller.go:76",
+        "controller/controller.go:192",
+        "controller/controller.go:198",
+        "controller/controller.go:241"
+      ],
+      "kind": "rule"
+    },
+    {
+      "id": "rule:keyword-required",
+      "name": "Search keyword required",
+      "description": "GET /catalog/search rejects an empty keyword query parameter with HTTP 400.",
+      "cluster": "catalog-service",
+      "repo": "https://github.com/homealoneai/skill-logistic-map.git",
+      "commit_sha": "77ff12d",
+      "file_path": "controller/controller.go",
+      "refs": [
+        "controller/controller.go:185",
+        "controller/controller.go:187"
+      ],
+      "kind": "rule"
+    },
+    {
+      "id": "rule:pagination",
+      "name": "Pagination defaults and limit",
+      "description": "page defaults to 1 and size to 10; SQL applies OFFSET=(page-1)*size with LIMIT size and OpenSearch applies from=(page-1)*size with size.",
+      "cluster": "catalog-service",
+      "repo": "https://github.com/homealoneai/skill-logistic-map.git",
+      "commit_sha": "77ff12d",
+      "file_path": "controller/controller.go",
+      "refs": [
+        "controller/controller.go:70",
+        "controller/controller.go:76",
+        "controller/controller.go:192",
+        "controller/controller.go:198",
+        "repository/repository.go:146",
+        "repository/opensearch.go:283"
+      ],
+      "kind": "rule"
+    },
+    {
+      "id": "rule:search-enabled",
+      "name": "Search feature gate",
+      "description": "Search and reindex require a configured OpenSearch SearchRepository; otherwise the routes return HTTP 503 (search is disabled by default).",
+      "cluster": "catalog-service",
+      "repo": "https://github.com/homealoneai/skill-logistic-map.git",
+      "commit_sha": "77ff12d",
+      "file_path": "controller/controller.go",
+      "refs": [
+        "controller/controller.go:180",
+        "controller/controller.go:228",
+        "api/catalog.go:53",
+        "api/catalog.go:64",
+        "config/config.go:38"
+      ],
+      "kind": "rule"
+    },
+    {
+      "id": "storage:catalog-products",
+      "name": "Catalog products table",
+      "description": "GORM products table with a many2many product_tags join to tags; backed by in-memory SQLite by default or MySQL when configured.",
+      "location": "sql://catalog.products (file::memory:?cache=shared default; mysql endpoint alternative)",
+      "store_type": "sql",
+      "cluster": "catalog-service",
+      "repo": "https://github.com/homealoneai/skill-logistic-map.git",
+      "commit_sha": "77ff12d",
+      "file_path": "repository/repository.go",
+      "refs": [
+        "repository/repository.go:45",
+        "repository/repository.go:68",
+        "repository/repository.go:109",
+        "repository/repository.go:126"
+      ],
+      "kind": "storage"
+    },
+    {
+      "id": "storage:catalog-tags",
+      "name": "Catalog tags table",
+      "description": "GORM tags table seeded from embedded tags.json and read by GET /catalog/tags.",
+      "location": "sql://catalog.tags (file::memory:?cache=shared default; mysql endpoint alternative)",
+      "store_type": "sql",
+      "cluster": "catalog-service",
+      "repo": "https://github.com/homealoneai/skill-logistic-map.git",
+      "commit_sha": "77ff12d",
+      "file_path": "repository/repository.go",
+      "refs": [
+        "repository/repository.go:86",
+        "repository/repository.go:195"
+      ],
+      "kind": "storage"
+    },
+    {
+      "id": "storage:search-index",
+      "name": "OpenSearch product index",
+      "description": "OpenSearch index of product documents with keyword/text mappings on name, description and tags.",
+      "location": "opensearch://localhost:9200/products",
+      "store_type": "search-index",
+      "cluster": "catalog-service",
+      "repo": "https://github.com/homealoneai/skill-logistic-map.git",
+      "commit_sha": "77ff12d",
+      "file_path": "repository/opensearch.go",
+      "refs": [
+        "repository/opensearch.go:47",
+        "repository/opensearch.go:159",
+        "repository/opensearch.go:282"
+      ],
+      "kind": "storage"
+    }
+  ],
+  "edges": [
+    {
+      "kind": "contains",
+      "from": "entry:catalog-size",
+      "to": "entry:catalog-size#size",
+      "refs": [
+        "model/products.go:28",
+        "controller/controller.go:141"
+      ],
+      "file_path": "model/products.go"
+    },
+    {
+      "kind": "contains",
+      "from": "entry:product",
+      "to": "entry:product#description",
+      "refs": [
+        "model/products.go:22",
+        "openapi.yml:244"
+      ],
+      "file_path": "model/products.go"
+    },
+    {
+      "kind": "contains",
+      "from": "entry:product",
+      "to": "entry:product#id",
+      "refs": [
+        "model/products.go:20",
+        "openapi.yml:246"
+      ],
+      "file_path": "model/products.go"
+    },
+    {
+      "kind": "contains",
+      "from": "entry:product",
+      "to": "entry:product#name",
+      "refs": [
+        "model/products.go:21",
+        "openapi.yml:248"
+      ],
+      "file_path": "model/products.go"
+    },
+    {
+      "kind": "contains",
+      "from": "entry:product",
+      "to": "entry:product#price",
+      "refs": [
+        "model/products.go:23",
+        "openapi.yml:250"
+      ],
+      "file_path": "model/products.go"
+    },
+    {
+      "kind": "contains",
+      "from": "entry:product",
+      "to": "entry:product#tags",
+      "refs": [
+        "model/products.go:24",
+        "openapi.yml:252"
+      ],
+      "file_path": "model/products.go"
+    },
+    {
+      "kind": "contains",
+      "from": "entry:product#tags",
+      "to": "entry:product#tags.displayName",
+      "refs": [
+        "model/tags.go:21",
+        "openapi.yml:259"
+      ],
+      "file_path": "model/tags.go"
+    },
+    {
+      "kind": "contains",
+      "from": "entry:product#tags",
+      "to": "entry:product#tags.name",
+      "refs": [
+        "model/tags.go:20",
+        "openapi.yml:261"
+      ],
+      "file_path": "model/tags.go"
+    },
+    {
+      "kind": "contains",
+      "from": "entry:product-document",
+      "to": "entry:product-document#description",
+      "refs": [
+        "repository/opensearch.go:50",
+        "repository/data.go:17"
+      ],
+      "file_path": "repository/opensearch.go"
+    },
+    {
+      "kind": "contains",
+      "from": "entry:product-document",
+      "to": "entry:product-document#id",
+      "refs": [
+        "repository/opensearch.go:48",
+        "repository/data.go:18"
+      ],
+      "file_path": "repository/opensearch.go"
+    },
+    {
+      "kind": "contains",
+      "from": "entry:product-document",
+      "to": "entry:product-document#name",
+      "refs": [
+        "repository/opensearch.go:49",
+        "repository/data.go:16"
+      ],
+      "file_path": "repository/opensearch.go"
+    },
+    {
+      "kind": "contains",
+      "from": "entry:product-document",
+      "to": "entry:product-document#price",
+      "refs": [
+        "repository/opensearch.go:51",
+        "repository/data.go:19"
+      ],
+      "file_path": "repository/opensearch.go"
+    },
+    {
+      "kind": "contains",
+      "from": "entry:product-document",
+      "to": "entry:product-document#tags",
+      "refs": [
+        "repository/opensearch.go:52",
+        "repository/data.go:20"
+      ],
+      "file_path": "repository/opensearch.go"
+    },
+    {
+      "kind": "contains",
+      "from": "entry:product-query",
+      "to": "entry:product-query#order",
+      "refs": [
+        "controller/controller.go:68",
+        "api/catalog.go:33"
+      ],
+      "file_path": "controller/controller.go"
+    },
+    {
+      "kind": "contains",
+      "from": "entry:product-query",
+      "to": "entry:product-query#page",
+      "refs": [
+        "controller/controller.go:70",
+        "api/catalog.go:33"
+      ],
+      "file_path": "controller/controller.go"
+    },
+    {
+      "kind": "contains",
+      "from": "entry:product-query",
+      "to": "entry:product-query#size",
+      "refs": [
+        "controller/controller.go:76",
+        "api/catalog.go:33"
+      ],
+      "file_path": "controller/controller.go"
+    },
+    {
+      "kind": "contains",
+      "from": "entry:product-query",
+      "to": "entry:product-query#tags",
+      "refs": [
+        "controller/controller.go:63",
+        "api/catalog.go:33"
+      ],
+      "file_path": "controller/controller.go"
+    },
+    {
+      "kind": "contains",
+      "from": "entry:size-query",
+      "to": "entry:size-query#tags",
+      "refs": [
+        "controller/controller.go:130",
+        "api/catalog.go:49"
+      ],
+      "file_path": "controller/controller.go"
+    },
+    {
+      "kind": "contains",
+      "from": "entry:tag-list",
+      "to": "entry:tag-list#displayName",
+      "refs": [
+        "model/tags.go:21",
+        "openapi.yml:259"
+      ],
+      "file_path": "model/tags.go"
+    },
+    {
+      "kind": "contains",
+      "from": "entry:tag-list",
+      "to": "entry:tag-list#name",
+      "refs": [
+        "model/tags.go:20",
+        "openapi.yml:261"
+      ],
+      "file_path": "model/tags.go"
+    },
+    {
+      "kind": "contains",
+      "from": "entry:tag-seed",
+      "to": "entry:tag-seed#displayName",
+      "refs": [
+        "repository/repository.go:87",
+        "model/tags.go:21"
+      ],
+      "file_path": "repository/repository.go"
+    },
+    {
+      "kind": "contains",
+      "from": "entry:tag-seed",
+      "to": "entry:tag-seed#name",
+      "refs": [
+        "repository/repository.go:87",
+        "model/tags.go:20"
+      ],
+      "file_path": "repository/repository.go"
+    },
+    {
+      "kind": "contains",
+      "from": "input:embedded-products",
+      "to": "input:embedded-products#description",
+      "refs": [
+        "repository/data.go:17",
+        "repository/products.json:5"
+      ],
+      "file_path": "repository/data.go"
+    },
+    {
+      "kind": "contains",
+      "from": "input:embedded-products",
+      "to": "input:embedded-products#id",
+      "refs": [
+        "repository/data.go:18",
+        "repository/products.json:3"
+      ],
+      "file_path": "repository/data.go"
+    },
+    {
+      "kind": "contains",
+      "from": "input:embedded-products",
+      "to": "input:embedded-products#name",
+      "refs": [
+        "repository/data.go:16",
+        "repository/products.json:4"
+      ],
+      "file_path": "repository/data.go"
+    },
+    {
+      "kind": "contains",
+      "from": "input:embedded-products",
+      "to": "input:embedded-products#price",
+      "refs": [
+        "repository/data.go:19",
+        "repository/products.json:6"
+      ],
+      "file_path": "repository/data.go"
+    },
+    {
+      "kind": "contains",
+      "from": "input:embedded-products",
+      "to": "input:embedded-products#tags",
+      "refs": [
+        "repository/data.go:20",
+        "repository/products.json:7"
+      ],
+      "file_path": "repository/data.go"
+    },
+    {
+      "kind": "contains",
+      "from": "input:embedded-tags",
+      "to": "input:embedded-tags#displayName",
+      "refs": [
+        "repository/data.go:25",
+        "repository/tags.json:2"
+      ],
+      "file_path": "repository/data.go"
+    },
+    {
+      "kind": "contains",
+      "from": "input:embedded-tags",
+      "to": "input:embedded-tags#name",
+      "refs": [
+        "repository/data.go:24",
+        "repository/tags.json:2"
+      ],
+      "file_path": "repository/data.go"
+    },
+    {
+      "kind": "contains",
+      "from": "input:list-products-query",
+      "to": "input:list-products-query#order",
+      "refs": [
+        "controller/controller.go:68",
+        "openapi.yml:26"
+      ],
+      "file_path": "controller/controller.go"
+    },
+    {
+      "kind": "contains",
+      "from": "input:list-products-query",
+      "to": "input:list-products-query#page",
+      "refs": [
+        "controller/controller.go:70",
+        "openapi.yml:31"
+      ],
+      "file_path": "controller/controller.go"
+    },
+    {
+      "kind": "contains",
+      "from": "input:list-products-query",
+      "to": "input:list-products-query#size",
+      "refs": [
+        "controller/controller.go:76",
+        "openapi.yml:36"
+      ],
+      "file_path": "controller/controller.go"
+    },
+    {
+      "kind": "contains",
+      "from": "input:list-products-query",
+      "to": "input:list-products-query#tags",
+      "refs": [
+        "controller/controller.go:61",
+        "openapi.yml:21"
+      ],
+      "file_path": "controller/controller.go"
+    },
+    {
+      "kind": "contains",
+      "from": "input:product-id",
+      "to": "input:product-id#id",
+      "refs": [
+        "controller/controller.go:103",
+        "openapi.yml:124"
+      ],
+      "file_path": "controller/controller.go"
+    },
+    {
+      "kind": "contains",
+      "from": "input:search-query",
+      "to": "input:search-query#keyword",
+      "refs": [
+        "controller/controller.go:185",
+        "openapi.yml:75"
+      ],
+      "file_path": "controller/controller.go"
+    },
+    {
+      "kind": "contains",
+      "from": "input:search-query",
+      "to": "input:search-query#page",
+      "refs": [
+        "controller/controller.go:192",
+        "openapi.yml:80"
+      ],
+      "file_path": "controller/controller.go"
+    },
+    {
+      "kind": "contains",
+      "from": "input:search-query",
+      "to": "input:search-query#size",
+      "refs": [
+        "controller/controller.go:198",
+        "openapi.yml:85"
+      ],
+      "file_path": "controller/controller.go"
+    },
+    {
+      "kind": "contains",
+      "from": "input:size-query",
+      "to": "input:size-query#tags",
+      "refs": [
+        "controller/controller.go:128",
+        "openapi.yml:162"
+      ],
+      "file_path": "controller/controller.go"
+    },
+    {
+      "kind": "contains",
+      "from": "storage:catalog-products",
+      "to": "storage:catalog-products#description",
+      "refs": [
+        "model/products.go:22",
+        "repository/repository.go:112"
+      ],
+      "file_path": "model/products.go"
+    },
+    {
+      "kind": "contains",
+      "from": "storage:catalog-products",
+      "to": "storage:catalog-products#id",
+      "refs": [
+        "model/products.go:20",
+        "repository/repository.go:109"
+      ],
+      "file_path": "model/products.go"
+    },
+    {
+      "kind": "contains",
+      "from": "storage:catalog-products",
+      "to": "storage:catalog-products#name",
+      "refs": [
+        "model/products.go:21",
+        "repository/repository.go:111"
+      ],
+      "file_path": "model/products.go"
+    },
+    {
+      "kind": "contains",
+      "from": "storage:catalog-products",
+      "to": "storage:catalog-products#price",
+      "refs": [
+        "model/products.go:23",
+        "repository/repository.go:113"
+      ],
+      "file_path": "model/products.go"
+    },
+    {
+      "kind": "contains",
+      "from": "storage:catalog-products",
+      "to": "storage:catalog-products#tags",
+      "refs": [
+        "model/products.go:24",
+        "repository/repository.go:114"
+      ],
+      "file_path": "model/products.go"
+    },
+    {
+      "kind": "contains",
+      "from": "storage:catalog-products#tags",
+      "to": "storage:catalog-products#tags.displayName",
+      "refs": [
+        "model/tags.go:21",
+        "repository/repository.go:87"
+      ],
+      "file_path": "model/tags.go"
+    },
+    {
+      "kind": "contains",
+      "from": "storage:catalog-products#tags",
+      "to": "storage:catalog-products#tags.name",
+      "refs": [
+        "model/tags.go:20",
+        "repository/repository.go:114"
+      ],
+      "file_path": "model/tags.go"
+    },
+    {
+      "kind": "contains",
+      "from": "storage:catalog-tags",
+      "to": "storage:catalog-tags#displayName",
+      "refs": [
+        "model/tags.go:21",
+        "repository/repository.go:87"
+      ],
+      "file_path": "model/tags.go"
+    },
+    {
+      "kind": "contains",
+      "from": "storage:catalog-tags",
+      "to": "storage:catalog-tags#name",
+      "refs": [
+        "model/tags.go:20",
+        "repository/repository.go:87"
+      ],
+      "file_path": "model/tags.go"
+    },
+    {
+      "kind": "contains",
+      "from": "storage:search-index",
+      "to": "storage:search-index#description",
+      "refs": [
+        "repository/opensearch.go:50",
+        "repository/opensearch.go:183"
+      ],
+      "file_path": "repository/opensearch.go"
+    },
+    {
+      "kind": "contains",
+      "from": "storage:search-index",
+      "to": "storage:search-index#id",
+      "refs": [
+        "repository/opensearch.go:48",
+        "repository/opensearch.go:175"
+      ],
+      "file_path": "repository/opensearch.go"
+    },
+    {
+      "kind": "contains",
+      "from": "storage:search-index",
+      "to": "storage:search-index#name",
+      "refs": [
+        "repository/opensearch.go:49",
+        "repository/opensearch.go:176"
+      ],
+      "file_path": "repository/opensearch.go"
+    },
+    {
+      "kind": "contains",
+      "from": "storage:search-index",
+      "to": "storage:search-index#price",
+      "refs": [
+        "repository/opensearch.go:51",
+        "repository/opensearch.go:187"
+      ],
+      "file_path": "repository/opensearch.go"
+    },
+    {
+      "kind": "contains",
+      "from": "storage:search-index",
+      "to": "storage:search-index#tags",
+      "refs": [
+        "repository/opensearch.go:52",
+        "repository/opensearch.go:188"
+      ],
+      "file_path": "repository/opensearch.go"
+    },
+    {
+      "kind": "flow",
+      "from": "entry:product-document",
+      "to": "storage:search-index",
+      "flow_id": "flow:reindex-products",
+      "refs": [
+        "repository/opensearch.go:270",
+        "repository/opensearch.go:239"
+      ],
+      "note": "After deleting the old index, documents are bulk indexed with refresh=true from the embedded product data."
+    },
+    {
+      "kind": "flow",
+      "from": "entry:product-document",
+      "to": "storage:search-index",
+      "flow_id": "flow:seed-catalog-store",
+      "refs": [
+        "repository/opensearch.go:217",
+        "repository/opensearch.go:239"
+      ],
+      "note": "ProductDocument fields are marshalled as bulk index action/source documents when search is enabled."
+    },
+    {
+      "kind": "flow",
+      "from": "entry:tag-seed",
+      "to": "storage:catalog-tags",
+      "flow_id": "flow:seed-catalog-store",
+      "refs": [
+        "repository/repository.go:88"
+      ],
+      "note": "Each tag entity is saved into the tags table."
+    },
+    {
+      "kind": "flow",
+      "from": "input:embedded-products",
+      "to": "entry:product-document",
+      "flow_id": "flow:reindex-products",
+      "refs": [
+        "repository/opensearch.go:209",
+        "repository/opensearch.go:224"
+      ],
+      "note": "LoadProductData output is copied field-for-field into ProductDocument values for the new index."
+    },
+    {
+      "kind": "flow",
+      "from": "input:embedded-products",
+      "to": "entry:product-document",
+      "flow_id": "flow:seed-catalog-store",
+      "refs": [
+        "repository/opensearch.go:224"
+      ],
+      "note": "Decoded ProductData is mapped field-for-field into ProductDocument (string tag names)."
+    },
+    {
+      "kind": "flow",
+      "from": "input:embedded-tags",
+      "to": "entry:tag-seed",
+      "flow_id": "flow:seed-catalog-store",
+      "refs": [
+        "repository/repository.go:86"
+      ],
+      "note": "Embedded ProductTagData values are copied into model.Tag with the same name/displayName shape."
+    },
+    {
+      "kind": "flow",
+      "from": "storage:catalog-products",
+      "to": "entry:product",
+      "flow_id": "flow:get-product",
+      "refs": [
+        "repository/repository.go:171",
+        "controller/controller.go:110"
+      ],
+      "note": "The single model.Product row is returned unchanged as the JSON response."
+    },
+    {
+      "kind": "flow",
+      "from": "storage:catalog-products",
+      "to": "entry:product",
+      "flow_id": "flow:list-products",
+      "refs": [
+        "repository/repository.go:151",
+        "controller/controller.go:87"
+      ],
+      "note": "GORM Find returns []model.Product with Preload('Tags'), which is serialized unchanged by ctx.JSON."
+    },
+    {
+      "kind": "flow",
+      "from": "storage:catalog-tags",
+      "to": "entry:tag-list",
+      "flow_id": "flow:list-tags",
+      "refs": [
+        "repository/repository.go:198",
+        "controller/controller.go:162"
+      ],
+      "note": "GORM returns []model.Tag ordered by display_name, serialized unchanged as JSON."
+    },
+    {
+      "kind": "rule",
+      "from": "flow:list-products",
+      "to": "rule:integer-query-validation",
+      "refs": [
+        "controller/controller.go:241"
+      ]
+    },
+    {
+      "kind": "rule",
+      "from": "flow:list-products",
+      "to": "rule:pagination",
+      "refs": [
+        "controller/controller.go:70",
+        "repository/repository.go:146"
+      ]
+    },
+    {
+      "kind": "rule",
+      "from": "flow:reindex-products",
+      "to": "rule:search-enabled",
+      "refs": [
+        "controller/controller.go:228",
+        "api/catalog.go:64"
+      ]
+    },
+    {
+      "kind": "rule",
+      "from": "flow:search-products",
+      "to": "rule:integer-query-validation",
+      "refs": [
+        "controller/controller.go:241"
+      ]
+    },
+    {
+      "kind": "rule",
+      "from": "flow:search-products",
+      "to": "rule:keyword-required",
+      "refs": [
+        "controller/controller.go:187"
+      ]
+    },
+    {
+      "kind": "rule",
+      "from": "flow:search-products",
+      "to": "rule:pagination",
+      "refs": [
+        "controller/controller.go:192",
+        "repository/opensearch.go:283"
+      ]
+    },
+    {
+      "kind": "rule",
+      "from": "flow:search-products",
+      "to": "rule:search-enabled",
+      "refs": [
+        "controller/controller.go:180"
+      ]
+    },
+    {
+      "kind": "rule",
+      "from": "flow:seed-catalog-store",
+      "to": "rule:index-skip-if-populated",
+      "refs": [
+        "repository/opensearch.go:132"
+      ]
+    },
+    {
+      "kind": "transform",
+      "from": "entry:product-document",
+      "to": "storage:catalog-products",
+      "flow_id": "flow:seed-catalog-store",
+      "refs": [
+        "repository/repository.go:104",
+        "repository/repository.go:109"
+      ],
+      "note": "Tag-name strings are resolved through tagMap into []model.Tag before db.Create writes the product row."
+    },
+    {
+      "kind": "transform",
+      "from": "entry:product-query",
+      "to": "storage:catalog-products",
+      "flow_id": "flow:list-products",
+      "refs": [
+        "repository/repository.go:129",
+        "repository/repository.go:146"
+      ],
+      "note": "tags become JOIN/WHERE tags.name IN (...), order becomes ORDER BY, page/size become OFFSET/LIMIT on the GORM query."
+    },
+    {
+      "kind": "transform",
+      "from": "entry:size-query",
+      "to": "storage:catalog-products",
+      "flow_id": "flow:catalog-size",
+      "refs": [
+        "repository/repository.go:180",
+        "repository/repository.go:187"
+      ],
+      "note": "Tag names filter products through the product_tags and tags joins before COUNT."
+    },
+    {
+      "kind": "transform",
+      "from": "input:list-products-query",
+      "to": "entry:product-query",
+      "flow_id": "flow:list-products",
+      "refs": [
+        "controller/controller.go:61",
+        "controller/controller.go:82"
+      ],
+      "note": "Comma-separated tags split into []string; page/size query text parsed to int with defaults 1/10; order kept as string."
+    },
+    {
+      "kind": "transform",
+      "from": "input:product-id",
+      "to": "storage:catalog-products",
+      "flow_id": "flow:get-product",
+      "refs": [
+        "controller/controller.go:103",
+        "repository/repository.go:162"
+      ],
+      "note": "Path id is used in WHERE id = ? with Preload('Tags') and First."
+    },
+    {
+      "kind": "transform",
+      "from": "input:search-query",
+      "to": "storage:search-index",
+      "flow_id": "flow:search-products",
+      "refs": [
+        "repository/opensearch.go:283",
+        "repository/opensearch.go:305"
+      ],
+      "note": "keyword becomes a multi_match query over name^2/description/tags with fuzziness AUTO; page/size become from=(page-1)*size and size."
+    },
+    {
+      "kind": "transform",
+      "from": "input:size-query",
+      "to": "entry:size-query",
+      "flow_id": "flow:catalog-size",
+      "refs": [
+        "controller/controller.go:128"
+      ],
+      "note": "Comma-separated tags query parameter is split into a []string tag filter."
+    },
+    {
+      "kind": "transform",
+      "from": "storage:catalog-products",
+      "to": "entry:catalog-size",
+      "flow_id": "flow:catalog-size",
+      "refs": [
+        "repository/repository.go:187",
+        "controller/controller.go:140"
+      ],
+      "note": "COUNT result is cast to int and wrapped as CatalogSizeResponse.Size."
+    },
+    {
+      "kind": "transform",
+      "from": "storage:search-index",
+      "to": "entry:product",
+      "flow_id": "flow:search-products",
+      "refs": [
+        "repository/opensearch.go:320",
+        "repository/opensearch.go:334"
+      ],
+      "note": "SearchResponse hits._source documents map to model.Product; tag strings become Tag{Name} with no displayName."
+    },
+    {
+      "kind": "trigger",
+      "from": "entrypoint:catalog-size",
+      "to": "flow:catalog-size",
+      "refs": [
+        "main.go:132",
+        "controller/controller.go:125"
+      ]
+    },
+    {
+      "kind": "trigger",
+      "from": "entrypoint:get-product",
+      "to": "flow:get-product",
+      "refs": [
+        "main.go:134",
+        "controller/controller.go:102"
+      ]
+    },
+    {
+      "kind": "trigger",
+      "from": "entrypoint:list-products",
+      "to": "flow:list-products",
+      "refs": [
+        "main.go:130",
+        "controller/controller.go:58"
+      ]
+    },
+    {
+      "kind": "trigger",
+      "from": "entrypoint:list-tags",
+      "to": "flow:list-tags",
+      "refs": [
+        "main.go:133",
+        "controller/controller.go:156"
+      ]
+    },
+    {
+      "kind": "trigger",
+      "from": "entrypoint:reindex-products",
+      "to": "flow:reindex-products",
+      "refs": [
+        "main.go:136",
+        "controller/controller.go:227"
+      ]
+    },
+    {
+      "kind": "trigger",
+      "from": "entrypoint:search-products",
+      "to": "flow:search-products",
+      "refs": [
+        "main.go:135",
+        "controller/controller.go:179"
+      ]
+    },
+    {
+      "kind": "trigger",
+      "from": "entrypoint:service-startup",
+      "to": "flow:seed-catalog-store",
+      "refs": [
+        "main.go:78",
+        "repository/repository.go:72"
+      ]
+    },
+    {
+      "kind": "use",
+      "from": "flow:catalog-size",
+      "to": "entry:catalog-size",
+      "refs": [
+        "controller/controller.go:140"
+      ]
+    },
+    {
+      "kind": "use",
+      "from": "flow:catalog-size",
+      "to": "entry:size-query",
+      "refs": [
+        "controller/controller.go:135"
+      ]
+    },
+    {
+      "kind": "use",
+      "from": "flow:catalog-size",
+      "to": "input:size-query",
+      "refs": [
+        "controller/controller.go:128"
+      ]
+    },
+    {
+      "kind": "use",
+      "from": "flow:catalog-size",
+      "to": "storage:catalog-products",
+      "refs": [
+        "repository/repository.go:177"
+      ]
+    },
+    {
+      "kind": "use",
+      "from": "flow:get-product",
+      "to": "entry:product",
+      "refs": [
+        "controller/controller.go:110"
+      ]
+    },
+    {
+      "kind": "use",
+      "from": "flow:get-product",
+      "to": "input:product-id",
+      "refs": [
+        "controller/controller.go:103"
+      ]
+    },
+    {
+      "kind": "use",
+      "from": "flow:get-product",
+      "to": "storage:catalog-products",
+      "refs": [
+        "repository/repository.go:162"
+      ]
+    },
+    {
+      "kind": "use",
+      "from": "flow:list-products",
+      "to": "entry:product",
+      "refs": [
+        "controller/controller.go:87"
+      ]
+    },
+    {
+      "kind": "use",
+      "from": "flow:list-products",
+      "to": "entry:product-query",
+      "refs": [
+        "api/catalog.go:33"
+      ]
+    },
+    {
+      "kind": "use",
+      "from": "flow:list-products",
+      "to": "input:list-products-query",
+      "refs": [
+        "controller/controller.go:61"
+      ]
+    },
+    {
+      "kind": "use",
+      "from": "flow:list-products",
+      "to": "storage:catalog-products",
+      "refs": [
+        "repository/repository.go:151"
+      ]
+    },
+    {
+      "kind": "use",
+      "from": "flow:list-tags",
+      "to": "entry:tag-list",
+      "refs": [
+        "controller/controller.go:162"
+      ]
+    },
+    {
+      "kind": "use",
+      "from": "flow:list-tags",
+      "to": "storage:catalog-tags",
+      "refs": [
+        "repository/repository.go:198"
+      ]
+    },
+    {
+      "kind": "use",
+      "from": "flow:reindex-products",
+      "to": "entry:product-document",
+      "refs": [
+        "repository/opensearch.go:224"
+      ]
+    },
+    {
+      "kind": "use",
+      "from": "flow:reindex-products",
+      "to": "input:embedded-products",
+      "refs": [
+        "repository/opensearch.go:210"
+      ]
+    },
+    {
+      "kind": "use",
+      "from": "flow:reindex-products",
+      "to": "storage:search-index",
+      "refs": [
+        "repository/opensearch.go:278"
+      ]
+    },
+    {
+      "kind": "use",
+      "from": "flow:search-products",
+      "to": "entry:product",
+      "refs": [
+        "controller/controller.go:215"
+      ]
+    },
+    {
+      "kind": "use",
+      "from": "flow:search-products",
+      "to": "input:search-query",
+      "refs": [
+        "controller/controller.go:185"
+      ]
+    },
+    {
+      "kind": "use",
+      "from": "flow:search-products",
+      "to": "storage:search-index",
+      "refs": [
+        "repository/opensearch.go:305"
+      ]
+    },
+    {
+      "kind": "use",
+      "from": "flow:seed-catalog-store",
+      "to": "entry:product-document",
+      "refs": [
+        "repository/repository.go:93"
+      ]
+    },
+    {
+      "kind": "use",
+      "from": "flow:seed-catalog-store",
+      "to": "entry:tag-seed",
+      "refs": [
+        "repository/repository.go:87"
+      ]
+    },
+    {
+      "kind": "use",
+      "from": "flow:seed-catalog-store",
+      "to": "input:embedded-products",
+      "refs": [
+        "repository/repository.go:72"
+      ]
+    },
+    {
+      "kind": "use",
+      "from": "flow:seed-catalog-store",
+      "to": "input:embedded-tags",
+      "refs": [
+        "repository/repository.go:78"
+      ]
+    },
+    {
+      "kind": "use",
+      "from": "flow:seed-catalog-store",
+      "to": "storage:catalog-products",
+      "refs": [
+        "repository/repository.go:109"
+      ]
+    },
+    {
+      "kind": "use",
+      "from": "flow:seed-catalog-store",
+      "to": "storage:catalog-tags",
+      "refs": [
+        "repository/repository.go:88"
+      ]
+    },
+    {
+      "kind": "use",
+      "from": "flow:seed-catalog-store",
+      "to": "storage:search-index",
+      "refs": [
+        "repository/opensearch.go:153"
+      ]
+    }
+  ]
+}

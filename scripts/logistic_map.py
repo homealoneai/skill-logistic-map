@@ -1,18 +1,35 @@
 #!/usr/bin/env python3
 """Kuzu-backed logistic map for application data flow.
 
-Schema v1
+Schema v7
 ---------
-Contract nodes: Input, Entry, Storage.
-Field nodes belong to exactly one contract node.
+Contracts are data entities: Input arrives, Entry is an intermediate entity,
+Storage is persisted data. Field nodes belong to exactly one contract node.
+EntryPoint nodes are code-level activations. Flow nodes group the entities and
+passages of one explicit path. Rule nodes describe limits or conditions that a
+flow or entrypoint follows. Contracts, flows, entrypoints and rules may carry a
+free-form `cluster` label for grouping; fields inherit their owner's cluster.
 
+  EntryPoint          -TRIGGER-> Flow                  the activation starts the flow
+  EntryPoint          -RELATED-> EntryPoint           directional activation relation
+  Flow|EntryPoint     -RULE-> Rule                    a rule the activation follows
+  Flow                -USES-> Input|Entry|Storage      the flow uses this entity
   Input|Entry|Storage -CONTAINS-> Field          contract fields
   Field               -CONTAINS-> Field          nested fields
-  Input|Entry|Storage -COMPOSE-> Input|Entry|Storage    structural pipeline
-  Input|Entry|Storage -TRANSFORM-> Input|Entry|Storage  data transformation
+  Input|Entry|Storage -COMPOSE-> Input|Entry|Storage    whole -> part (composition)
+  Input|Entry|Storage -TRANSFORM {flow_id}-> Input|Entry|Storage  data changes shape
+  Input|Entry|Storage -FLOW {flow_id}-> Input|Entry|Storage       data passes unchanged
 
-The CLI is the only supported writer. Reads are exposed through `query`
-(read-only guard) and the canned commands `list`, `report`, `stats`, `export`.
+`compose` is containment, never execution order. `flow_id` on FLOWS/TRANSFORM
+identifies the flow the passage belongs to; the same pair can appear in several
+flows. `USE` only says which entities participate; `TRIGGER` never carries data.
+
+Schema v1 stored pipeline edges as `compose`; schema v2 had derived flows in a
+second database; v3 removed Entry code attributes; v4/v5 separated activations
+from data and added RELATED; v6 added the cluster label; v7 added Rule.
+`migrate` converts v1
+compose edges to unassigned FLOWS passages, drops legacy Input activation
+attributes, and never invents an EntryPoint, TRIGGER, RELATED or cluster.
 """
 from __future__ import annotations
 
@@ -27,27 +44,57 @@ from datetime import datetime, timezone
 from functools import lru_cache
 from pathlib import Path
 
-SCHEMA_VERSION = 1
+SCHEMA_VERSION = 7
 DEFAULT_DB = os.environ.get("LOGISTIC_MAP_DB", ".logistic-map/graph.kuzu")
-DEFAULT_FLOW_DB = os.environ.get("LOGISTIC_MAP_FLOW_DB", "")
 DEFAULT_RENDER = "graph.html"
 
 CONTRACT_KINDS = ("input", "entry", "storage")
-ALL_KINDS = ("input", "entry", "storage", "field")
+ALL_KINDS = ("input", "entry", "storage", "flow", "entrypoint", "rule", "field")
+DATA_EDGE_KINDS = ("flow", "transform")
 
-LABELS = {"input": "Input", "entry": "Entry", "storage": "Storage", "field": "Field"}
-RELS = {"contains": "CONTAINS", "compose": "COMPOSE", "transform": "TRANSFORM"}
+LABELS = {"input": "Input", "entry": "Entry", "storage": "Storage",
+          "flow": "Flow", "entrypoint": "EntryPoint", "rule": "Rule",
+          "field": "Field"}
+PLURALS = {"input": "Inputs", "entry": "Entries", "storage": "Storages",
+           "flow": "Flows", "entrypoint": "EntryPoints", "rule": "Rules",
+           "field": "Fields"}
+RELS = {"contains": "CONTAINS", "compose": "COMPOSE",
+        "transform": "TRANSFORM", "flow": "FLOWS", "use": "USES",
+        "trigger": "TRIGGER", "related": "RELATED", "rule": "RULE_REL"}
 
 NODE_PROPS = {
-    "input": ["name", "description", "entry_point", "channel",
+    "input": ["name", "description", "cluster", "repo", "commit_sha",
+              "file_path", "refs"],
+    "entry": ["name", "description", "stage", "cluster",
               "repo", "commit_sha", "file_path", "refs"],
-    "entry": ["name", "description", "entry_point", "entry_type",
-              "repo", "commit_sha", "file_path", "refs"],
-    "storage": ["name", "description", "location", "store_type",
+    "storage": ["name", "description", "location", "store_type", "cluster",
                 "repo", "commit_sha", "file_path", "refs"],
+    "flow": ["name", "description", "cluster",
+             "repo", "commit_sha", "file_path", "refs"],
+    "entrypoint": ["name", "description", "cluster",
+                   "repo", "commit_sha", "file_path", "refs"],
+    "rule": ["name", "description", "cluster",
+             "repo", "commit_sha", "file_path", "refs"],
     "field": ["name", "path", "type", "description", "required", "source",
               "repo", "commit_sha", "file_path", "refs"],
 }
+
+# Fields belong to their owner's cluster; every other node carries its own.
+CLUSTER_KINDS = tuple(kind for kind in NODE_PROPS if kind != "field")
+
+TRANSFORM_REL_DDL = """CREATE REL TABLE IF NOT EXISTS TRANSFORM(
+        FROM Input TO Entry, FROM Input TO Storage, FROM Input TO Input,
+        FROM Entry TO Entry, FROM Entry TO Storage, FROM Entry TO Input,
+        FROM Storage TO Entry, FROM Storage TO Storage, FROM Storage TO Input,
+        flow_id STRING, refs STRING[], file_path STRING, note STRING)"""
+FLOW_REL_DDL = """CREATE REL TABLE IF NOT EXISTS FLOWS(
+        FROM Input TO Entry, FROM Input TO Storage, FROM Input TO Input,
+        FROM Entry TO Entry, FROM Entry TO Storage, FROM Entry TO Input,
+        FROM Storage TO Entry, FROM Storage TO Storage, FROM Storage TO Input,
+        flow_id STRING, refs STRING[], file_path STRING, note STRING)"""
+USE_REL_DDL = """CREATE REL TABLE IF NOT EXISTS USES(
+        FROM Flow TO Input, FROM Flow TO Entry, FROM Flow TO Storage,
+        refs STRING[], file_path STRING, note STRING)"""
 
 DDL = [
     """CREATE NODE TABLE IF NOT EXISTS Field(
@@ -56,15 +103,28 @@ DDL = [
         repo STRING, commit_sha STRING, file_path STRING, refs STRING[],
         PRIMARY KEY(id))""",
     """CREATE NODE TABLE IF NOT EXISTS Input(
-        id STRING, name STRING, description STRING, entry_point STRING, channel STRING,
+        id STRING, name STRING, description STRING, cluster STRING,
         repo STRING, commit_sha STRING, file_path STRING, refs STRING[],
         PRIMARY KEY(id))""",
     """CREATE NODE TABLE IF NOT EXISTS Storage(
         id STRING, name STRING, description STRING, location STRING, store_type STRING,
+        cluster STRING,
+        repo STRING, commit_sha STRING, file_path STRING, refs STRING[],
+        PRIMARY KEY(id))""",
+    """CREATE NODE TABLE IF NOT EXISTS Flow(
+        id STRING, name STRING, description STRING, cluster STRING,
+        repo STRING, commit_sha STRING, file_path STRING, refs STRING[],
+        PRIMARY KEY(id))""",
+    """CREATE NODE TABLE IF NOT EXISTS EntryPoint(
+        id STRING, name STRING, description STRING, cluster STRING,
         repo STRING, commit_sha STRING, file_path STRING, refs STRING[],
         PRIMARY KEY(id))""",
     """CREATE NODE TABLE IF NOT EXISTS Entry(
-        id STRING, name STRING, description STRING, entry_point STRING, entry_type STRING,
+        id STRING, name STRING, description STRING, stage STRING, cluster STRING,
+        repo STRING, commit_sha STRING, file_path STRING, refs STRING[],
+        PRIMARY KEY(id))""",
+    """CREATE NODE TABLE IF NOT EXISTS Rule(
+        id STRING, name STRING, description STRING, cluster STRING,
         repo STRING, commit_sha STRING, file_path STRING, refs STRING[],
         PRIMARY KEY(id))""",
     """CREATE REL TABLE IF NOT EXISTS CONTAINS(
@@ -76,26 +136,17 @@ DDL = [
         FROM Entry TO Entry, FROM Entry TO Storage, FROM Entry TO Input,
         FROM Storage TO Entry, FROM Storage TO Storage, FROM Storage TO Input,
         refs STRING[], file_path STRING, note STRING)""",
-    """CREATE REL TABLE IF NOT EXISTS TRANSFORM(
-        FROM Input TO Entry, FROM Input TO Storage, FROM Input TO Input,
-        FROM Entry TO Entry, FROM Entry TO Storage, FROM Entry TO Input,
-        FROM Storage TO Entry, FROM Storage TO Storage, FROM Storage TO Input,
+    TRANSFORM_REL_DDL,
+    FLOW_REL_DDL,
+    USE_REL_DDL,
+    """CREATE REL TABLE IF NOT EXISTS TRIGGER(
+        FROM EntryPoint TO Flow, refs STRING[], file_path STRING, note STRING)""",
+    """CREATE REL TABLE IF NOT EXISTS RELATED(
+        FROM EntryPoint TO EntryPoint,
+        description STRING, refs STRING[], file_path STRING, note STRING)""",
+    """CREATE REL TABLE IF NOT EXISTS RULE_REL(
+        FROM Flow TO Rule, FROM EntryPoint TO Rule,
         refs STRING[], file_path STRING, note STRING)""",
-]
-
-FLOW_DDL = [
-    """CREATE NODE TABLE IF NOT EXISTS Flow(
-        id STRING, name STRING, description STRING, start_contract STRING,
-        repo STRING, commit_sha STRING, file_path STRING, refs STRING[],
-        created_at STRING,
-        PRIMARY KEY(id))""",
-    """CREATE NODE TABLE IF NOT EXISTS Step(
-        id STRING, flow_id STRING, contract_id STRING, contract_kind STRING,
-        name STRING, role STRING, span STRING, seq INT64,
-        repo STRING, commit_sha STRING, file_path STRING, refs STRING[],
-        PRIMARY KEY(id))""",
-    """CREATE REL TABLE IF NOT EXISTS HAS_STEP(FROM Flow TO Step)""",
-    """CREATE REL TABLE IF NOT EXISTS FEEDS(FROM Step TO Step, kind STRING, note STRING)""",
 ]
 
 TYPE_ALIASES = {
@@ -245,7 +296,25 @@ class DB:
         return self.path.parent / "meta.json"
 
 
-def open_db(args, initialize: bool = False) -> DB:
+def read_meta(db: DB) -> dict:
+    path = db.meta_path()
+    if not path.exists():
+        return {}
+    try:
+        data = json.loads(path.read_text(encoding="utf-8"))
+    except (json.JSONDecodeError, OSError):
+        return {}
+    return data if isinstance(data, dict) else {}
+
+
+def db_schema_version(db: DB) -> int:
+    try:
+        return int(read_meta(db).get("schema_version", 0))
+    except (TypeError, ValueError):
+        return 0
+
+
+def open_db(args, initialize: bool = False, allow_old: bool = False) -> DB:
     path = Path(args.db).expanduser()
     if not initialize and not path.exists():
         raise LogisticMapError(
@@ -254,6 +323,15 @@ def open_db(args, initialize: bool = False) -> DB:
     if not initialize and "Field" not in db.tables():
         raise LogisticMapError(
             f"{path} exists but has no logistic-map schema; run `init` first")
+    if not initialize and not allow_old:
+        version = db_schema_version(db)
+        if version != SCHEMA_VERSION:
+            found = f"v{version}" if version else "an unknown version"
+            raise LogisticMapError(
+                f"{path} uses {found} of the schema; this CLI writes "
+                f"v{SCHEMA_VERSION}. Run `migrate` to convert it; legacy "
+                "Input activation attributes are dropped without inventing "
+                "EntryPoints or triggers.")
     return db
 
 
@@ -276,8 +354,17 @@ def merge_node(db: DB, kind: str, node_id: str, props: dict) -> None:
 
 def merge_edge(db: DB, kind: str, src: str, dst: str, props: dict) -> None:
     src_kind, dst_kind = kind_of(src), kind_of(dst)
+    identity = ""
+    if kind in DATA_EDGE_KINDS and props.get("flow_id") is not None:
+        # A passage is identified by (kind, from, to, flow): the same pair can
+        # participate in several flows.
+        identity = " {flow_id:$flow_id}"
+    elif kind == "related" and props.get("description"):
+        # Two entrypoints may be related in different ways. The description is
+        # the identity of the relation, so both directions and variants coexist.
+        identity = " {description:$description}"
     base = (f"MATCH (a:{LABELS[src_kind]} {{id:$from}}), "
-            f"(b:{LABELS[dst_kind]} {{id:$to}}) MERGE (a)-[r:{RELS[kind]}]->(b)")
+            f"(b:{LABELS[dst_kind]} {{id:$to}}) MERGE (a)-[r:{RELS[kind]}{identity}]->(b)")
     if props:
         sets = ", ".join(f"r.{key}=${key}" for key in props)
         base += " SET " + sets
@@ -288,7 +375,7 @@ def merge_edge(db: DB, kind: str, src: str, dst: str, props: dict) -> None:
 
 def upsert_contract(db: DB, kind: str, node_id=None, name=None, description=None,
                     attrs=None, refs=None, repo=None, commit_sha=None,
-                    file_path=None) -> dict:
+                    file_path=None, cluster=None) -> dict:
     if kind not in CONTRACT_KINDS:
         raise LogisticMapError(f"kind must be one of {CONTRACT_KINDS}")
     attrs = dict(attrs or {})
@@ -317,6 +404,8 @@ def upsert_contract(db: DB, kind: str, node_id=None, name=None, description=None
         props["name"] = node_id.split(":", 1)[1]
     if description is not None:
         props["description"] = description
+    if cluster is not None:
+        props["cluster"] = str(cluster).strip()
     if refs is not None:
         props["refs"] = refs
     if repo is not None:
@@ -420,16 +509,173 @@ def upsert_field(db: DB, owner: str, path: str, name=None, field_type=None,
     return {"id": leaf_id, "created": created_leaf, "owner": owner, "path": path}
 
 
+def upsert_flow(db: DB, node_id=None, name=None, description=None,
+                refs=None, repo=None, commit_sha=None, file_path=None,
+                cluster=None) -> dict:
+    if node_id:
+        validate_node_id(node_id, "flow")
+    else:
+        if not name:
+            raise LogisticMapError("--name or --id is required")
+        node_id = f"flow:{slugify(name)}"
+        validate_node_id(node_id, "flow")
+    existing = get_node(db, "flow", node_id) or {}
+    props = {}
+    for key in NODE_PROPS["flow"]:
+        default = [] if key == "refs" else ""
+        props[key] = existing.get(key, default)
+        if props[key] is None:
+            props[key] = default
+    props["name"] = name or props.get("name") or node_id.split(":", 1)[1]
+    if description is not None:
+        props["description"] = description
+    if cluster is not None:
+        props["cluster"] = str(cluster).strip()
+    if refs is not None:
+        props["refs"] = refs
+    if repo is not None:
+        props["repo"] = repo
+    elif not props.get("repo"):
+        props["repo"] = git_value("repo")
+    if commit_sha is not None:
+        props["commit_sha"] = commit_sha
+    elif not props.get("commit_sha"):
+        props["commit_sha"] = git_value("commit")
+    if file_path is not None:
+        props["file_path"] = file_path
+    merge_node(db, "flow", node_id, props)
+    return {"id": node_id, "created": not existing}
+
+
+def upsert_entrypoint(db: DB, node_id=None, name=None, description=None,
+                      refs=None, repo=None, commit_sha=None, file_path=None,
+                      cluster=None) -> dict:
+    if node_id:
+        validate_node_id(node_id, "entrypoint")
+    else:
+        if not name:
+            raise LogisticMapError("--name or --id is required")
+        node_id = f"entrypoint:{slugify(name)}"
+        validate_node_id(node_id, "entrypoint")
+    existing = get_node(db, "entrypoint", node_id) or {}
+    props = {}
+    for key in NODE_PROPS["entrypoint"]:
+        default = [] if key == "refs" else ""
+        props[key] = existing.get(key, default)
+        if props[key] is None:
+            props[key] = default
+    props["name"] = name or props.get("name") or node_id.split(":", 1)[1]
+    if description is not None:
+        props["description"] = description
+    if cluster is not None:
+        props["cluster"] = str(cluster).strip()
+    if refs is not None:
+        props["refs"] = refs
+    if repo is not None:
+        props["repo"] = repo
+    elif not props.get("repo"):
+        props["repo"] = git_value("repo")
+    if commit_sha is not None:
+        props["commit_sha"] = commit_sha
+    elif not props.get("commit_sha"):
+        props["commit_sha"] = git_value("commit")
+    if file_path is not None:
+        props["file_path"] = file_path
+    merge_node(db, "entrypoint", node_id, props)
+    return {"id": node_id, "created": not existing}
+
+
+def upsert_rule(db: DB, node_id=None, name=None, description=None,
+                refs=None, repo=None, commit_sha=None, file_path=None,
+                cluster=None) -> dict:
+    if node_id:
+        validate_node_id(node_id, "rule")
+    else:
+        if not name:
+            raise LogisticMapError("--name or --id is required")
+        node_id = f"rule:{slugify(name)}"
+        validate_node_id(node_id, "rule")
+    existing = get_node(db, "rule", node_id) or {}
+    props = {}
+    for key in NODE_PROPS["rule"]:
+        default = [] if key == "refs" else ""
+        props[key] = existing.get(key, default)
+        if props[key] is None:
+            props[key] = default
+    props["name"] = name or props.get("name") or node_id.split(":", 1)[1]
+    if description is not None:
+        props["description"] = description
+    if not str(props.get("description") or "").strip():
+        raise LogisticMapError("rules need --description explaining the rule")
+    if cluster is not None:
+        props["cluster"] = str(cluster).strip()
+    if refs is not None:
+        props["refs"] = refs
+    if repo is not None:
+        props["repo"] = repo
+    elif not props.get("repo"):
+        props["repo"] = git_value("repo")
+    if commit_sha is not None:
+        props["commit_sha"] = commit_sha
+    elif not props.get("commit_sha"):
+        props["commit_sha"] = git_value("commit")
+    if file_path is not None:
+        props["file_path"] = file_path
+    merge_node(db, "rule", node_id, props)
+    return {"id": node_id, "created": not existing}
+
+
 def upsert_edge(db: DB, kind: str, src: str, dst: str, refs=None,
-                file_path=None, note=None) -> dict:
+                file_path=None, note=None, flow_id=None,
+                description=None, allow_unassigned: bool = False) -> dict:
     if kind not in RELS:
         raise LogisticMapError(f"edge kind must be one of {tuple(RELS)}")
     src_kind, dst_kind = kind_of(src), kind_of(dst)
 
-    if kind in ("compose", "transform"):
+    if kind == "use":
+        if flow_id:
+            raise LogisticMapError("use edges belong to the flow endpoint; omit --flow")
+        if src_kind != "flow" or dst_kind not in CONTRACT_KINDS:
+            raise LogisticMapError("use edges go from a Flow to an Input, Entry or Storage")
+    elif kind == "trigger":
+        if flow_id:
+            raise LogisticMapError("trigger edges do not use --flow")
+        if src_kind != "entrypoint" or dst_kind != "flow":
+            raise LogisticMapError("trigger edges go from an EntryPoint to a Flow")
+    elif kind == "related":
+        if flow_id:
+            raise LogisticMapError("related edges do not use --flow")
+        if src_kind != "entrypoint" or dst_kind != "entrypoint":
+            raise LogisticMapError(
+                "related edges go from an EntryPoint to another EntryPoint")
+        if not description or not str(description).strip():
+            raise LogisticMapError(
+                "related edges need --description explaining the connection")
+        if not refs:
+            raise LogisticMapError(
+                "related edges need at least one --ref file:line as evidence")
+    elif kind == "rule":
+        if flow_id:
+            raise LogisticMapError("rule edges do not use --flow")
+        if src_kind not in ("flow", "entrypoint") or dst_kind != "rule":
+            raise LogisticMapError(
+                "rule edges go from a Flow or EntryPoint to a Rule")
+    elif kind != "contains":
         if src_kind not in CONTRACT_KINDS or dst_kind not in CONTRACT_KINDS:
             raise LogisticMapError(f"{kind} edges connect contract nodes only")
+        if kind in DATA_EDGE_KINDS:
+            if not flow_id and not allow_unassigned:
+                raise LogisticMapError(
+                    f"{kind} edges need --flow <flow:id>; every passage belongs "
+                    "to a flow")
+            if flow_id:
+                validate_node_id(flow_id, "flow")
+                if not get_node(db, "flow", flow_id):
+                    raise LogisticMapError(
+                        f"flow {flow_id!r} does not exist; run add-flow first")
     else:
+        if flow_id:
+            raise LogisticMapError("contains edges do not belong to a flow")
         allowed = ((src_kind in CONTRACT_KINDS and dst_kind == "field") or
                    (src_kind == "field" and dst_kind == "field"))
         if not allowed:
@@ -442,22 +688,66 @@ def upsert_edge(db: DB, kind: str, src: str, dst: str, refs=None,
             raise LogisticMapError(f"node {node_id!r} does not exist")
     if src == dst:
         raise LogisticMapError("self edges are not allowed")
-
-    _, rows = db.run(
-        f"MATCH (a:{LABELS[src_kind]} {{id:$from}})-[r:{RELS[kind]}]->"
-        f"(b:{LABELS[dst_kind]} {{id:$to}}) RETURN r",
-        {"from": src, "to": dst})
-    existing = clean(rows[0][0]) if rows else None
+    if kind != "related" and description not in (None, ""):
+        raise LogisticMapError("--description is only used by related edges")
 
     props = {}
+    if kind in DATA_EDGE_KINDS:
+        props["flow_id"] = flow_id or ""
+    if kind == "related":
+        props["description"] = str(description).strip()
     if refs is not None:
         props["refs"] = refs
     if file_path is not None:
         props["file_path"] = file_path
     if note is not None and kind != "contains":
         props["note"] = note
+
+    query = (f"MATCH (a:{LABELS[src_kind]} {{id:$from}})-[r:{RELS[kind]}]->"
+             f"(b:{LABELS[dst_kind]} {{id:$to}}) RETURN r")
+    params = {"from": src, "to": dst}
+    if kind == "related":
+        query = (f"MATCH (a:{LABELS[src_kind]} {{id:$from}})-"
+                 f"[r:{RELS[kind]} {{description:$description}}]->"
+                 f"(b:{LABELS[dst_kind]} {{id:$to}}) RETURN r")
+        params["description"] = props["description"]
+    _, rows = db.run(query, params)
+    already = [row[0] for row in rows]
+    if kind in DATA_EDGE_KINDS:
+        wanted = flow_id or ""
+        existing = next((clean(row) for row in already
+                         if (clean(row).get("flow_id") or "") == wanted), None)
+    else:
+        existing = clean(already[0]) if already else None
+
+    if kind in DATA_EDGE_KINDS and flow_id and not existing:
+        # Adopt an unassigned passage left by a migration instead of creating
+        # a duplicate next to it.
+        unassigned = next((clean(row) for row in already
+                           if not (clean(row).get("flow_id") or "")), None)
+        if unassigned is not None:
+            sets = ["r.flow_id=$flow_id"]
+            params = {"from": src, "to": dst, "flow_id": flow_id}
+            for key, value in props.items():
+                if key == "flow_id":
+                    continue
+                sets.append(f"r.{key}=${key}")
+                params[key] = value
+            db.run(
+                f"MATCH (a:{LABELS[src_kind]} {{id:$from}})-"
+                f"[r:{RELS[kind]} {{flow_id:''}}]->"
+                f"(b:{LABELS[dst_kind]} {{id:$to}}) SET " + ", ".join(sets),
+                params)
+            return {"from": src, "to": dst, "kind": kind, "created": False,
+                    "adopted": True, "flow_id": flow_id}
+
     merge_edge(db, kind, src, dst, props)
-    return {"from": src, "to": dst, "kind": kind, "created": not existing}
+    result = {"from": src, "to": dst, "kind": kind, "created": not existing}
+    if kind in DATA_EDGE_KINDS:
+        result["flow_id"] = flow_id or ""
+    if kind == "related":
+        result["description"] = props["description"]
+    return result
 
 
 def remove_node(db: DB, node_id: str) -> dict:
@@ -465,37 +755,122 @@ def remove_node(db: DB, node_id: str) -> dict:
     if not get_node(db, kind, node_id):
         raise LogisticMapError(f"node {node_id!r} does not exist")
     removed_fields = 0
+    removed_edges = 0
     if kind in CONTRACT_KINDS:
         _, rows = db.run("MATCH (f:Field) RETURN f.id")
         owned = [row[0] for row in rows if owner_of(row[0]) == node_id]
         for field_id in owned:
             db.run("MATCH (f:Field {id:$id}) DETACH DELETE f", {"id": field_id})
             removed_fields += 1
+    if kind == "entrypoint":
+        _, counts = db.run(
+            f"MATCH (n:{LABELS['entrypoint']} {{id:$id}})-[r:{RELS['trigger']}]->() "
+            "RETURN count(r)", {"id": node_id})
+        removed_edges += counts[0][0] if counts else 0
+        _, counts = db.run(
+            f"MATCH (n:{LABELS['entrypoint']} {{id:$id}})-[r:{RELS['related']}]->() "
+            "RETURN count(r)", {"id": node_id})
+        removed_edges += counts[0][0] if counts else 0
+        _, counts = db.run(
+            f"MATCH ()-[r:{RELS['related']}]->(n:{LABELS['entrypoint']} {{id:$id}}) "
+            "RETURN count(r)", {"id": node_id})
+        removed_edges += counts[0][0] if counts else 0
+        _, counts = db.run(
+            f"MATCH (n:{LABELS['entrypoint']} {{id:$id}})-[r:{RELS['rule']}]->() "
+            "RETURN count(r)", {"id": node_id})
+        removed_edges += counts[0][0] if counts else 0
+    if kind == "flow":
+        _, counts = db.run(
+            f"MATCH ()-[r:{RELS['flow']} {{flow_id:$id}}]->() RETURN count(r)",
+            {"id": node_id})
+        removed_edges += counts[0][0] if counts else 0
+        db.run(f"MATCH ()-[r:{RELS['flow']} {{flow_id:$id}}]->() DELETE r",
+               {"id": node_id})
+        _, counts = db.run(
+            f"MATCH ()-[r:{RELS['transform']} {{flow_id:$id}}]->() RETURN count(r)",
+            {"id": node_id})
+        removed_edges += counts[0][0] if counts else 0
+        db.run(f"MATCH ()-[r:{RELS['transform']} {{flow_id:$id}}]->() DELETE r",
+               {"id": node_id})
+        _, counts = db.run(
+            f"MATCH (n:{LABELS['flow']} {{id:$id}})-[r:{RELS['rule']}]->() "
+            "RETURN count(r)", {"id": node_id})
+        removed_edges += counts[0][0] if counts else 0
+    if kind == "rule":
+        _, counts = db.run(
+            f"MATCH ()-[r:{RELS['rule']}]->(n:{LABELS['rule']} {{id:$id}}) "
+            "RETURN count(r)", {"id": node_id})
+        removed_edges += counts[0][0] if counts else 0
     db.run(f"MATCH (n:{LABELS[kind]} {{id:$id}}) DETACH DELETE n", {"id": node_id})
-    return {"id": node_id, "removed_fields": removed_fields}
+    return {"id": node_id, "removed_fields": removed_fields,
+            "removed_edges": removed_edges}
 
 
-def remove_edge(db: DB, kind: str, src: str, dst: str) -> dict:
+def remove_edge(db: DB, kind: str, src: str, dst: str, flow_id=None,
+                description=None) -> dict:
     if kind not in RELS:
         raise LogisticMapError(f"edge kind must be one of {tuple(RELS)}")
     src_kind, dst_kind = kind_of(src), kind_of(dst)
+    if kind in DATA_EDGE_KINDS:
+        if flow_id:
+            match = f"[r:{RELS[kind]} {{flow_id:$flow_id}}]"
+            params = {"from": src, "to": dst, "flow_id": flow_id}
+        else:
+            # no --flow: target the unassigned passage left by a migration
+            match = f"[r:{RELS[kind]} {{flow_id:''}}]"
+            params = {"from": src, "to": dst}
+    elif kind == "use":
+        if flow_id:
+            raise LogisticMapError("use edges use the flow in --from; omit --flow")
+        match = f"[r:{RELS[kind]}]"
+        params = {"from": src, "to": dst}
+    elif kind == "related":
+        if flow_id:
+            raise LogisticMapError("related edges do not use --flow")
+        if not description or not str(description).strip():
+            raise LogisticMapError(
+                "remove-edge --kind related needs --description to identify the relation")
+        match = f"[r:{RELS[kind]} {{description:$description}}]"
+        params = {"from": src, "to": dst,
+                  "description": str(description).strip()}
+    else:
+        if flow_id:
+            raise LogisticMapError(f"{kind} edges do not belong to a flow")
+        match = f"[r:{RELS[kind]}]"
+        params = {"from": src, "to": dst}
     _, rows = db.run(
-        f"MATCH (a:{LABELS[src_kind]} {{id:$from}})-[r:{RELS[kind]}]->"
+        f"MATCH (a:{LABELS[src_kind]} {{id:$from}})-{match}->"
         f"(b:{LABELS[dst_kind]} {{id:$to}}) RETURN count(r)",
-        {"from": src, "to": dst})
+        params)
     count = rows[0][0] if rows else 0
     if not count:
         raise LogisticMapError(f"edge {src} -[{kind}]-> {dst} does not exist")
     db.run(
-        f"MATCH (a:{LABELS[src_kind]} {{id:$from}})-[r:{RELS[kind]}]->"
+        f"MATCH (a:{LABELS[src_kind]} {{id:$from}})-{match}->"
         f"(b:{LABELS[dst_kind]} {{id:$to}}) DELETE r",
-        {"from": src, "to": dst})
-    return {"from": src, "to": dst, "kind": kind, "removed": count}
+        params)
+    result = {"from": src, "to": dst, "kind": kind, "removed": count}
+    if kind in DATA_EDGE_KINDS:
+        result["flow_id"] = flow_id
+    if kind == "related":
+        result["description"] = description
+    return result
 
 
 # --------------------------------------------------------------------------
 # reads
 # --------------------------------------------------------------------------
+
+def cluster_of(node: dict, nodes: dict) -> str:
+    """Resolve the effective cluster; a field inherits it from its owner."""
+    cluster = str(node.get("cluster") or "").strip()
+    if cluster:
+        return cluster
+    if node.get("kind") == "field":
+        owner = nodes.get(owner_of(node["id"])) or {}
+        return str(owner.get("cluster") or "").strip()
+    return ""
+
 
 def load_graph(db: DB):
     nodes = {}
@@ -503,6 +878,10 @@ def load_graph(db: DB):
         _, rows = db.run(f"MATCH (n:{LABELS[kind]}) RETURN n")
         for (row,) in rows:
             props = clean(row)
+            # Legacy tables (schema v1) may carry columns the model no longer
+            # uses; ignore anything outside the current property set.
+            props = {key: value for key, value in props.items()
+                     if key == "id" or key in NODE_PROPS[kind]}
             props["kind"] = kind
             nodes[props["id"]] = props
 
@@ -560,6 +939,8 @@ def build_report(db: DB, check_files: bool = False) -> dict:
     findings = []
     contracts = {nid: node for nid, node in nodes.items() if node["kind"] in CONTRACT_KINDS}
     fields = {nid: node for nid, node in nodes.items() if node["kind"] == "field"}
+    flows = {nid: node for nid, node in nodes.items() if node["kind"] == "flow"}
+    rules = {nid: node for nid, node in nodes.items() if node["kind"] == "rule"}
 
     def add(code, severity, message, nodes_involved=None, edge=None, refs=None,
             data=None):
@@ -573,64 +954,185 @@ def build_report(db: DB, check_files: bool = False) -> dict:
             "data": data or {},
         })
 
-    # adjacency
+    # adjacency (USE is flow membership, not a data relation)
     degree = Counter()
     out_by_node = defaultdict(list)
     in_by_node = defaultdict(list)
-    compose_out = Counter()
+    uses = defaultdict(set)
+    triggers = defaultdict(set)
+    relates = defaultdict(set)
     for edge in edges:
+        if edge["kind"] == "use":
+            uses[edge["from"]].add(edge["to"])
+            continue
+        if edge["kind"] == "trigger":
+            triggers[edge["from"]].add(edge["to"])
+            continue
+        if edge["kind"] == "related":
+            relates[edge["from"]].add(edge["to"])
+            continue
         degree[edge["from"]] += 1
         degree[edge["to"]] += 1
         out_by_node[edge["from"]].append(edge)
         in_by_node[edge["to"]].append(edge)
-        if edge["kind"] == "compose":
-            compose_out[edge["from"]] += 1
+    passages = [edge for edge in edges if edge["kind"] in DATA_EDGE_KINDS]
 
     # fields per owner
     fields_by_owner = defaultdict(dict)
     for field_id, field in fields.items():
         fields_by_owner[owner_of(field_id)][field.get("path", "")] = field
 
-    # 1. compose cycles
-    adjacency = defaultdict(list)
-    for edge in edges:
-        if edge["kind"] == "compose" and edge["from"] in contracts and edge["to"] in contracts:
-            adjacency[edge["from"]].append(edge["to"])
-    seen_cycles = set()
-    cycle_list = []
-    color = {}
+    def cycles_of(kind: str, flow_id=None):
+        adjacency = defaultdict(list)
+        for edge in edges:
+            if edge["kind"] != kind:
+                continue
+            if flow_id is not None and (edge.get("flow_id") or "") != flow_id:
+                continue
+            if edge["from"] in nodes and edge["to"] in nodes:
+                adjacency[edge["from"]].append(edge["to"])
+        seen_cycles = set()
+        cycle_list = []
+        color = {}
 
-    def visit(node, stack):
-        color[node] = 1
-        stack.append(node)
-        for nxt in adjacency.get(node, []):
-            state = color.get(nxt, 0)
-            if state == 1:
-                index = stack.index(nxt)
-                cycle = tuple(stack[index:])
-                pivot = cycle.index(min(cycle))
-                canonical = cycle[pivot:] + cycle[:pivot]
-                if canonical not in seen_cycles:
-                    seen_cycles.add(canonical)
-                    cycle_list.append(canonical)
-            elif state == 0:
-                visit(nxt, stack)
-        stack.pop()
-        color[node] = 2
+        def visit(node, stack):
+            color[node] = 1
+            stack.append(node)
+            for nxt in adjacency.get(node, []):
+                state = color.get(nxt, 0)
+                if state == 1:
+                    index = stack.index(nxt)
+                    cycle = tuple(stack[index:])
+                    pivot = cycle.index(min(cycle))
+                    canonical = cycle[pivot:] + cycle[:pivot]
+                    if canonical not in seen_cycles:
+                        seen_cycles.add(canonical)
+                        cycle_list.append(canonical)
+                elif state == 0:
+                    visit(nxt, stack)
+            stack.pop()
+            color[node] = 2
 
-    for start_node in sorted(adjacency):
-        if color.get(start_node, 0) == 0:
-            visit(start_node, [])
-    for cycle in cycle_list[:20]:
+        for start_node in sorted(adjacency):
+            if color.get(start_node, 0) == 0:
+                visit(start_node, [])
+        return cycle_list
+
+    # 1. acyclic structure
+    for cycle in cycles_of("compose")[:20]:
         add("compose_cycle", "error",
             "compose cycle: " + " -> ".join(cycle + (cycle[0],)),
             nodes_involved=list(cycle), data={"cycle": list(cycle)})
+    for flow_id in sorted(flows):
+        for cycle in cycles_of("flow", flow_id)[:20]:
+            add("flow_cycle", "warn",
+                f"{flow_id}: flow cycle: " + " -> ".join(cycle + (cycle[0],)),
+                nodes_involved=list(cycle),
+                data={"cycle": list(cycle), "flow_id": flow_id})
+
+    # 2. flow structure
+    for edge in sorted(passages, key=lambda item: (item["kind"], item["from"],
+                                                   item["to"], item.get("flow_id", ""))):
+        flow_id = edge.get("flow_id") or ""
+        label = {"kind": edge["kind"], "from": edge["from"], "to": edge["to"]}
+        if flow_id:
+            label["flow_id"] = flow_id
+        if not flow_id:
+            add("edge_without_flow", "warn",
+                f"{edge['kind']} {edge['from']} -> {edge['to']} belongs to no flow",
+                nodes_involved=[edge["from"], edge["to"]], edge=label,
+                refs=edge.get("refs") or [])
+            continue
+        if flow_id not in flows:
+            add("unknown_flow", "error",
+                f"{edge['kind']} {edge['from']} -> {edge['to']} references "
+                f"unknown flow {flow_id}",
+                nodes_involved=[edge["from"], edge["to"]], edge=label)
+            continue
+        for endpoint in (edge["from"], edge["to"]):
+            if endpoint not in uses.get(flow_id, set()):
+                add("edge_entity_not_used", "warn",
+                    f"{flow_id} has a passage through {endpoint} but does not "
+                    "USE it",
+                    nodes_involved=[endpoint], edge=label)
+    for flow_id, flow in sorted(flows.items()):
+        if not uses.get(flow_id):
+            add("flow_without_entities", "warn",
+                f"{flow_id} does not USE any entity",
+                nodes_involved=[flow_id], refs=flow.get("refs") or [])
+        if not any((edge.get("flow_id") or "") == flow_id for edge in passages):
+            add("flow_without_path", "info",
+                f"{flow_id} has no flow/transform passage",
+                nodes_involved=[flow_id], refs=flow.get("refs") or [])
+        if not flow.get("file_path") and not flow.get("refs"):
+            add("incomplete_flow", "info",
+                f"{flow_id} has neither file_path nor refs",
+                nodes_involved=[flow_id])
+
+    entrypoints = {nid: node for nid, node in nodes.items()
+                   if node["kind"] == "entrypoint"}
+
+    def reaches_trigger(start: str) -> bool:
+        stack, seen = [start], set()
+        while stack:
+            current = stack.pop()
+            if current in seen:
+                continue
+            seen.add(current)
+            if triggers.get(current):
+                return True
+            stack.extend(relates.get(current, ()))
+        return False
+
+    for entrypoint_id, entrypoint in sorted(entrypoints.items()):
+        if not reaches_trigger(entrypoint_id):
+            add("entrypoint_without_flow", "warn",
+                f"{entrypoint_id} does not TRIGGER a flow, directly or "
+                "through related entrypoints",
+                nodes_involved=[entrypoint_id], refs=entrypoint.get("refs") or [])
+        if not entrypoint.get("file_path") and not entrypoint.get("refs"):
+            add("incomplete_entrypoint", "info",
+                f"{entrypoint_id} has neither file_path nor refs",
+                nodes_involved=[entrypoint_id])
+    for edge in (item for item in edges if item["kind"] == "trigger"):
+        if edge["to"] not in flows:
+            add("unknown_trigger_flow", "error",
+                f"{edge['from']} triggers unknown flow {edge['to']}",
+                nodes_involved=[edge["from"], edge["to"]], edge=edge)
+    for flow_id, flow in sorted(flows.items()):
+        if not any(flow_id in destinations for destinations in triggers.values()):
+            add("flow_without_trigger", "info",
+                f"{flow_id} is not triggered by any EntryPoint",
+                nodes_involved=[flow_id], refs=flow.get("refs") or [])
+
+    rule_targets = {edge["to"] for edge in edges if edge["kind"] == "rule"}
+    for rule_id, rule in sorted(rules.items()):
+        if not str(rule.get("description") or "").strip():
+            add("rule_without_description", "warn",
+                f"{rule_id} has no description explaining the rule",
+                nodes_involved=[rule_id], refs=rule.get("refs") or [])
+        if rule_id not in rule_targets:
+            add("orphan_rule", "warn",
+                f"{rule_id} is not attached to any Flow or EntryPoint",
+                nodes_involved=[rule_id], refs=rule.get("refs") or [])
+        if not rule.get("file_path") and not rule.get("refs"):
+            add("incomplete_rule", "info",
+                f"{rule_id} has neither file_path nor refs",
+                nodes_involved=[rule_id])
+
+    for edge in (item for item in edges if item["kind"] == "trigger"):
+        src_cluster = cluster_of(nodes.get(edge["from"], {}), nodes)
+        dst_cluster = cluster_of(nodes.get(edge["to"], {}), nodes)
+        if src_cluster and dst_cluster and src_cluster != dst_cluster:
+            add("cluster_mismatch", "warn",
+                f"{edge['from']} is in cluster {src_cluster!r} but its flow "
+                f"{edge['to']} is in {dst_cluster!r}",
+                nodes_involved=[edge["from"], edge["to"]],
+                edge={"kind": edge["kind"], "from": edge["from"], "to": edge["to"]})
 
     # 2. contract completeness
     for node_id, node in sorted(contracts.items()):
         missing = []
-        if node["kind"] in ("input", "entry") and not node.get("entry_point"):
-            missing.append("entry_point")
         if node["kind"] == "storage" and not node.get("location"):
             missing.append("location")
         if not node.get("file_path") and not node.get("refs"):
@@ -663,47 +1165,58 @@ def build_report(db: DB, check_files: bool = False) -> dict:
             f"{inferred} parent field(s) were inferred from dotted paths; "
             "review their types", data={"count": inferred})
 
-    # 4. pipeline shape
+    # 4. data shape
     for node_id, node in sorted(contracts.items()):
         if degree[node_id] == 0:
             add("isolated_contract", "warn",
                 f"{node_id} is not connected to any other node",
                 nodes_involved=[node_id], refs=node.get("refs") or [])
             continue
-        if node["kind"] == "input":
-            if compose_out[node_id] > 1:
-                add("input_multiple_compose", "warn",
-                    f"{node_id} has {compose_out[node_id]} outgoing compose edges; "
-                    "the model allows at most 1 (use transform for fan-out)",
-                    nodes_involved=[node_id])
-            if not out_by_node[node_id]:
-                add("unconsumed_input", "warn",
-                    f"{node_id} has no downstream compose/transform edge",
-                    nodes_involved=[node_id], refs=node.get("refs") or [])
-        if node["kind"] == "storage" and not in_by_node[node_id]:
-            add("unproduced_storage", "warn",
-                f"{node_id} has no upstream compose/transform edge",
+        upstream = [edge for edge in in_by_node[node_id]
+                    if edge["kind"] in DATA_EDGE_KINDS]
+        downstream = [edge for edge in out_by_node[node_id]
+                      if edge["kind"] in DATA_EDGE_KINDS]
+        if node["kind"] == "input" and not downstream:
+            add("unconsumed_input", "warn",
+                f"{node_id} has no downstream flow/transform edge",
                 nodes_involved=[node_id], refs=node.get("refs") or [])
-        if node["kind"] == "entry" and in_by_node[node_id] and not out_by_node[node_id]:
+        if node["kind"] == "storage" and not upstream:
+            add("unproduced_storage", "warn",
+                f"{node_id} has no upstream flow/transform edge",
+                nodes_involved=[node_id], refs=node.get("refs") or [])
+        if node["kind"] == "entry" and upstream and not downstream:
             add("entry_dead_end", "info",
                 f"{node_id} receives data but has no downstream edge",
                 nodes_involved=[node_id], refs=node.get("refs") or [])
 
-    # 5. contract diffs along compose/transform edges
-    compose_pairs = {(edge["from"], edge["to"]) for edge in edges
-                     if edge["kind"] == "compose"}
-    for edge in sorted(edges, key=lambda item: (item["kind"], item["from"], item["to"])):
-        if edge["kind"] not in ("compose", "transform"):
+    # 5. transformations must be documented
+    for edge in sorted(edges, key=lambda item: (item["from"], item["to"])):
+        if edge["kind"] != "transform":
             continue
-        if edge["kind"] == "transform" and (edge["from"], edge["to"]) in compose_pairs:
-            # the compose edge already expresses this pair; avoid duplicate findings
+        if edge.get("note") or edge.get("refs") or edge.get("file_path"):
             continue
+        add("transform_without_note", "warn",
+            f"{edge['from']} -> {edge['to']} claims a transformation but has "
+            "no note, file or ref explaining it",
+            nodes_involved=[edge["from"], edge["to"]],
+            edge={"kind": edge["kind"], "from": edge["from"], "to": edge["to"]})
+
+    # 6. contract diffs along flow edges (data passes without changing shape)
+    seen_pairs = set()
+    for edge in sorted(edges, key=lambda item: (item["from"], item["to"])):
+        if edge["kind"] != "flow":
+            continue
+        pair = (edge["from"], edge["to"])
+        if pair in seen_pairs:
+            # the same passage may occur in several flows; report it once
+            continue
+        seen_pairs.add(pair)
         src_fields = fields_by_owner.get(edge["from"], {})
         dst_fields = fields_by_owner.get(edge["to"], {})
         if not src_fields or not dst_fields:
             continue
         dst_kind = nodes.get(edge["to"], {}).get("kind")
-        severity = "warn" if edge["kind"] == "compose" and dst_kind != "storage" else "info"
+        severity = "warn" if dst_kind == "entry" else "info"
         src_node = nodes.get(edge["from"], {})
         dst_node = nodes.get(edge["to"], {})
 
@@ -735,10 +1248,11 @@ def build_report(db: DB, check_files: bool = False) -> dict:
                       "to_type": dst_fields[path].get("type", ""),
                       "edge_kind": edge["kind"]})
 
-    # 6. optional filesystem checks (one finding per missing path)
+    # 7. optional filesystem checks (one finding per missing path)
     if check_files:
         seen_paths = {}
-        for node_id, node in sorted(list(contracts.items()) + list(fields.items())):
+        for node_id, node in sorted(list(contracts.items()) + list(fields.items())
+                                    + list(flows.items())):
             candidates = []
             if node.get("file_path"):
                 candidates.append(node["file_path"])
@@ -764,8 +1278,13 @@ def build_report(db: DB, check_files: bool = False) -> dict:
         "schema_version": SCHEMA_VERSION,
         "summary": {
             "contracts": len(contracts),
+            "flows": len(flows),
+            "rules": len(rules),
             "fields": len(fields),
             "edges": len(edges),
+            "clusters": sorted({cluster for cluster in
+                                (cluster_of(node, nodes) for node in nodes.values())
+                                if cluster}),
             "findings": {key: by_severity.get(key, 0) for key in ("error", "warn", "info")},
             "by_code": dict(sorted(by_code.items())),
         },
@@ -776,7 +1295,9 @@ def build_report(db: DB, check_files: bool = False) -> dict:
 def format_report_text(report: dict) -> str:
     summary = report["summary"]
     lines = [
-        f"Logistic map: {summary['contracts']} contracts, {summary['fields']} fields, "
+        f"Logistic map: {summary['contracts']} contracts, "
+        f"{summary.get('flows', 0)} flows, {summary.get('rules', 0)} rules, "
+        f"{summary['fields']} fields, "
         f"{summary['edges']} edges",
         f"DB: {report['db']}",
         "",
@@ -808,6 +1329,8 @@ def format_report_markdown(report: dict) -> str:
         "# Data flow report",
         "",
         f"- Contracts: **{summary['contracts']}**",
+        f"- Flows: **{summary.get('flows', 0)}**",
+        f"- Rules: **{summary.get('rules', 0)}**",
         f"- Fields: **{summary['fields']}**",
         f"- Edges: **{summary['edges']}**",
         f"- Findings: **{summary['findings']['error']} errors**, "
@@ -837,13 +1360,12 @@ def format_report_markdown(report: dict) -> str:
 # render
 # --------------------------------------------------------------------------
 
-def render_html(db: DB, out_path: Path, title: str, flows=None) -> Path:
+def render_html(db: DB, out_path: Path, title: str) -> Path:
     template_path = Path(__file__).resolve().parent.parent / "assets" / "graph.html"
     if not template_path.exists():
         raise LogisticMapError(f"visualization template not found: {template_path}")
     payload = graph_payload(db)
     payload["title"] = title
-    payload["flows"] = flows or []
     data = json.dumps(payload, ensure_ascii=False).replace("<", "\\u003c")
     html = template_path.read_text(encoding="utf-8").replace("__DATA__", data)
     out_path = Path(out_path)
@@ -856,15 +1378,15 @@ def render_html(db: DB, out_path: Path, title: str, flows=None) -> Path:
 # commands
 # --------------------------------------------------------------------------
 
-def write_meta(db: DB) -> None:
+def write_meta(db: DB, version: int | None = None) -> None:
     kuzu_version = ""
     try:
-        from importlib.metadata import version
-        kuzu_version = version("kuzu")
+        from importlib.metadata import version as package_version
+        kuzu_version = package_version("kuzu")
     except Exception:
         pass
     meta = {
-        "schema_version": SCHEMA_VERSION,
+        "schema_version": SCHEMA_VERSION if version is None else version,
         "updated_at": now_iso(),
         "kuzu": kuzu_version,
         "tool": "logistic-map",
@@ -888,20 +1410,188 @@ def ensure_gitignore(db: DB) -> None:
 
 def cmd_init(args) -> int:
     db = open_db(args, initialize=True)
-    for statement in DDL:
-        db.run(statement)
-    write_meta(db)
+    tables = db.tables()
+    if db.meta_path().exists():
+        existing = db_schema_version(db) or 1
+    else:
+        existing = SCHEMA_VERSION if not tables else 1
+    if existing == SCHEMA_VERSION:
+        for statement in DDL:
+            db.run(statement)
+        tables = db.tables()
+    write_meta(db, version=existing)
     ensure_gitignore(db)
-    _, rows = db.run("CALL show_tables() RETURN *")
-    tables = sorted(row[1] for row in rows)
-    payload = {"ok": True, "db": str(db.path), "schema_version": SCHEMA_VERSION,
+    tables = sorted(tables)
+    version = existing
+    payload = {"ok": True, "db": str(db.path), "schema_version": version,
                "tables": tables}
     if args.json:
         print(json.dumps(payload, indent=2))
     else:
-        print(f"initialized {db.path} (schema v{SCHEMA_VERSION})")
+        print(f"initialized {db.path} (schema v{version})")
         print("tables: " + ", ".join(tables))
+        if version != SCHEMA_VERSION:
+            print(f"notice: this database still uses schema v{version}; "
+                  "run `migrate` to convert it to "
+                  f"v{SCHEMA_VERSION}")
         print(f"next: {db.path.parent}/exports/ for git-friendly snapshots")
+    return 0
+
+
+def _table_columns(db: DB, table: str) -> set:
+    if table not in db.tables():
+        return set()
+    try:
+        return {row[1] for row in db.run(f"CALL table_info('{table}') RETURN *")[1]}
+    except Exception:
+        return set()
+
+
+def _copy_data_edges(db: DB, table: str, kind: str) -> int:
+    _, rows = db.run(
+        f"MATCH (a)-[r:{table}]->(b) "
+        "RETURN a.id, b.id, r.refs, r.file_path, r.note")
+    for src, dst, refs, file_path, note in rows:
+        props = {"flow_id": ""}
+        if refs:
+            props["refs"] = refs
+        if file_path:
+            props["file_path"] = file_path
+        if note:
+            props["note"] = note
+        merge_edge(db, kind, src, dst, props)
+    return len(rows)
+
+
+def _ensure_data_rel(db: DB, table: str, legacy: list, ddl: str,
+                     kind: str) -> dict:
+    """Create the v3 rel table and preserve rows as unassigned passages."""
+    tables = db.tables()
+    changed = False
+    copied = 0
+    if table not in tables:
+        db.run(ddl)
+        changed = True
+    for old in legacy:
+        if old in db.tables():
+            copied += _copy_data_edges(db, old, kind)
+            db.run(f"DROP TABLE {old}")
+            changed = True
+    if "flow_id" not in _table_columns(db, table):
+        old = f"{table}_V2"
+        if old not in db.tables():
+            db.run(f"ALTER TABLE {table} RENAME TO {old}")
+        db.run(ddl)
+        copied += _copy_data_edges(db, old, kind)
+        db.run(f"DROP TABLE {old}")
+        changed = True
+    return {"changed": changed, "copied": copied}
+
+
+def migrate_db(db: DB) -> dict:
+    """Convert a v1-v6 database to v7 in place (idempotent)."""
+    before = db_schema_version(db)
+    actions = []
+    moved = 0
+    if before == SCHEMA_VERSION:
+        for statement in DDL:
+            db.run(statement)
+        write_meta(db)
+        return {"before": before, "after": SCHEMA_VERSION, "actions": actions,
+                "compose_to_flow": 0, "rebuilt": {}}
+
+    # The v2 FLOW rel table collides with the new Flow node table in Kuzu's
+    # case-insensitive binding. Move it aside before creating USES.
+    tables = db.tables()
+    if "FLOW" in tables:
+        if "FLOW_V2" in tables:
+            raise LogisticMapError(
+                "stale FLOW_V2 table found; inspect the database before migrating")
+        db.run("ALTER TABLE FLOW RENAME TO FLOW_V2")
+        actions.append("moved legacy FLOW table aside")
+
+    for statement in DDL:
+        db.run(statement)
+
+    for table in ("Input", "Entry", "Storage", "Flow", "EntryPoint"):
+        if table not in db.tables():
+            continue
+        if "cluster" not in _table_columns(db, table):
+            db.run(f"ALTER TABLE {table} ADD cluster STRING DEFAULT ''")
+            actions.append(f"added {table}.cluster")
+
+    columns = _table_columns(db, "Entry")
+    for legacy in ("entry_point", "entry_type"):
+        if legacy not in columns:
+            continue
+        db.run(f"ALTER TABLE Entry DROP {legacy}")
+        actions.append(f"dropped Entry.{legacy}")
+
+    input_columns = _table_columns(db, "Input")
+    for legacy in ("entry_point", "channel"):
+        if legacy in input_columns:
+            db.run(f"ALTER TABLE Input DROP {legacy}")
+            actions.append(f"dropped Input.{legacy}")
+
+    rebuilt = {}
+    if before <= 2:
+        for table, ddl, kind, legacy in (
+                ("FLOWS", FLOW_REL_DDL, "flow", ["FLOW_V2"]),
+                ("TRANSFORM", TRANSFORM_REL_DDL, "transform", [])):
+            result = _ensure_data_rel(db, table, legacy, ddl, kind)
+            if result["changed"]:
+                rebuilt[table] = result["copied"]
+                actions.append(
+                    f"prepared {table} with flow_id "
+                    f"({result['copied']} unassigned passage(s) preserved)")
+
+    if before <= 1:
+        _, rows = db.run(
+            "MATCH (a)-[r:COMPOSE]->(b) "
+            "RETURN a.id, b.id, r.refs, r.file_path, r.note")
+        for src, dst, refs, file_path, note in rows:
+            props = {"flow_id": ""}
+            if refs:
+                props["refs"] = refs
+            if file_path:
+                props["file_path"] = file_path
+            if note:
+                props["note"] = note
+            merge_edge(db, "flow", src, dst, props)
+            moved += 1
+        if moved:
+            # In v1 COMPOSE meant "pipeline"; keep the path as unassigned
+            # passages so report can ask which flow they belong to.
+            db.run("MATCH (a)-[r:COMPOSE]->(b) DELETE r")
+            actions.append(f"converted {moved} compose edge(s) to flow passages")
+
+    write_meta(db)
+    return {"before": before, "after": SCHEMA_VERSION, "actions": actions,
+            "compose_to_flow": moved, "rebuilt": rebuilt}
+
+
+def cmd_migrate(args) -> int:
+    db = open_db(args, initialize=True, allow_old=True)
+    result = migrate_db(db)
+    legacy_flow_db = db.path.parent / "flows.kuzu"
+    result["legacy_flow_db"] = str(legacy_flow_db) if legacy_flow_db.exists() else ""
+    result["ok"] = True
+    if args.json:
+        print(json.dumps(result, indent=2))
+    else:
+        if result["before"] == SCHEMA_VERSION and not result["actions"]:
+            print(f"already at schema v{SCHEMA_VERSION}")
+        else:
+            print(f"migrated {db.path}: schema v{result['before'] or '?'} -> "
+                  f"v{result['after']}")
+            for action in result["actions"]:
+                print(f"  {action}")
+            if result["compose_to_flow"] or result["rebuilt"]:
+                print("note: flows are now authored in the main graph; run "
+                      "`report` for passages without a flow")
+        if result["legacy_flow_db"]:
+            print(f"note: {legacy_flow_db} is no longer used; flows live in "
+                  "the main graph")
     return 0
 
 
@@ -950,7 +1640,9 @@ def cmd_add_node(args) -> int:
     if args.kind not in CONTRACT_KINDS:
         raise LogisticMapError("kind must be input, entry or storage")
     attrs = {}
-    for key in ("entry_point", "channel", "location", "store_type", "entry_type"):
+    for key in ("location", "store_type", "stage"):
+        if key not in NODE_PROPS[args.kind]:
+            continue
         value = getattr(args, key)
         if value is not None:
             attrs[key] = value
@@ -959,7 +1651,8 @@ def cmd_add_node(args) -> int:
         db, args.kind, node_id=args.id, name=args.name,
         description=args.description, attrs=attrs,
         refs=parse_refs(args.ref) if args.ref is not None else None,
-        repo=args.repo, commit_sha=args.commit, file_path=args.file)
+        repo=args.repo, commit_sha=args.commit, file_path=args.file,
+        cluster=args.cluster)
     result["ok"] = True
     if args.json:
         print(json.dumps(result, indent=2))
@@ -984,18 +1677,65 @@ def cmd_add_field(args) -> int:
     return 0
 
 
+def cmd_add_flow(args) -> int:
+    db = open_db(args)
+    result = upsert_flow(
+        db, node_id=args.id, name=args.name, description=args.description,
+        refs=parse_refs(args.ref) if args.ref is not None else None,
+        repo=args.repo, commit_sha=args.commit, file_path=args.file,
+        cluster=args.cluster)
+    result["ok"] = True
+    if args.json:
+        print(json.dumps(result, indent=2))
+    else:
+        print(f"{'created' if result['created'] else 'updated'} {result['id']}")
+    return 0
+
+
+def cmd_add_entrypoint(args) -> int:
+    db = open_db(args)
+    result = upsert_entrypoint(
+        db, node_id=args.id, name=args.name, description=args.description,
+        refs=parse_refs(args.ref) if args.ref is not None else None,
+        repo=args.repo, commit_sha=args.commit, file_path=args.file,
+        cluster=args.cluster)
+    result["ok"] = True
+    if args.json:
+        print(json.dumps(result, indent=2))
+    else:
+        print(f"{'created' if result['created'] else 'updated'} {result['id']}")
+    return 0
+
+
+def cmd_add_rule(args) -> int:
+    db = open_db(args)
+    result = upsert_rule(
+        db, node_id=args.id, name=args.name, description=args.description,
+        refs=parse_refs(args.ref) if args.ref is not None else None,
+        repo=args.repo, commit_sha=args.commit, file_path=args.file,
+        cluster=args.cluster)
+    result["ok"] = True
+    if args.json:
+        print(json.dumps(result, indent=2))
+    else:
+        print(f"{'created' if result['created'] else 'updated'} {result['id']}")
+    return 0
+
+
 def cmd_add_edge(args) -> int:
     db = open_db(args)
     result = upsert_edge(
         db, args.kind, args.src, args.dst,
         refs=parse_refs(args.ref) if args.ref is not None else None,
-        file_path=args.file, note=args.note)
+        file_path=args.file, note=args.note, flow_id=args.flow,
+        description=args.description)
     result["ok"] = True
     if args.json:
         print(json.dumps(result, indent=2))
     else:
         label = "created" if result["created"] else "updated"
-        print(f"{label} {args.src} -[{args.kind}]-> {args.dst}")
+        suffix = f" in {args.flow}" if args.flow else ""
+        print(f"{label} {args.src} -[{args.kind}]-> {args.dst}{suffix}")
     return 0
 
 
@@ -1006,19 +1746,26 @@ def cmd_remove_node(args) -> int:
     if args.json:
         print(json.dumps(result, indent=2))
     else:
-        extra = f" (+{result['removed_fields']} fields)" if result["removed_fields"] else ""
+        extras = []
+        if result["removed_fields"]:
+            extras.append(f"+{result['removed_fields']} fields")
+        if result.get("removed_edges"):
+            extras.append(f"+{result['removed_edges']} edges")
+        extra = f" ({', '.join(extras)})" if extras else ""
         print(f"removed {result['id']}{extra}")
     return 0
 
 
 def cmd_remove_edge(args) -> int:
     db = open_db(args)
-    result = remove_edge(db, args.kind, args.src, args.dst)
+    result = remove_edge(db, args.kind, args.src, args.dst, flow_id=args.flow,
+                         description=args.description)
     result["ok"] = True
     if args.json:
         print(json.dumps(result, indent=2))
     else:
-        print(f"removed {args.src} -[{args.kind}]-> {args.dst}")
+        suffix = f" in {args.flow}" if args.flow else ""
+        print(f"removed {args.src} -[{args.kind}]-> {args.dst}{suffix}")
     return 0
 
 
@@ -1034,26 +1781,58 @@ def cmd_apply(args) -> int:
         raise LogisticMapError("apply expects a JSON object with nodes/fields/edges")
 
     db = open_db(args)
-    counts = {"nodes": 0, "fields": 0, "edges": 0}
+    counts = {"nodes": 0, "flows": 0, "entrypoints": 0, "rules": 0,
+              "fields": 0, "edges": 0}
     db.run("BEGIN TRANSACTION")
     try:
         node_items = payload.get("nodes", [])
-        # contracts first: field owners must exist before fields are inserted
+        # contracts and flows first: field owners and passages need them
         for item in node_items:
-            if item.get("kind") == "field":
-                continue
             kind = item.get("kind")
+            if kind == "field":
+                continue
+            if kind == "flow":
+                upsert_flow(
+                    db, node_id=item.get("id"), name=item.get("name"),
+                    description=item.get("description"), refs=item.get("refs"),
+                    repo=item.get("repo"),
+                    commit_sha=item.get("commit_sha") or item.get("commit"),
+                    file_path=item.get("file_path") or item.get("file"),
+                    cluster=item.get("cluster"))
+                counts["flows"] += 1
+                continue
+            if kind == "entrypoint":
+                upsert_entrypoint(
+                    db, node_id=item.get("id"), name=item.get("name"),
+                    description=item.get("description"), refs=item.get("refs"),
+                    repo=item.get("repo"),
+                    commit_sha=item.get("commit_sha") or item.get("commit"),
+                    file_path=item.get("file_path") or item.get("file"),
+                    cluster=item.get("cluster"))
+                counts["entrypoints"] += 1
+                continue
+            if kind == "rule":
+                upsert_rule(
+                    db, node_id=item.get("id"), name=item.get("name"),
+                    description=item.get("description"), refs=item.get("refs"),
+                    repo=item.get("repo"),
+                    commit_sha=item.get("commit_sha") or item.get("commit"),
+                    file_path=item.get("file_path") or item.get("file"),
+                    cluster=item.get("cluster"))
+                counts["rules"] += 1
+                continue
             if kind not in CONTRACT_KINDS:
                 raise LogisticMapError(f"invalid node kind in apply: {kind!r}")
             attrs = {key: item.get(key) for key in
-                     ("entry_point", "channel", "location", "store_type", "entry_type")
-                     if item.get(key) is not None}
+                     ("location", "store_type", "stage")
+                     if key in NODE_PROPS[kind] and item.get(key) is not None}
             upsert_contract(
                 db, kind, node_id=item.get("id"), name=item.get("name"),
                 description=item.get("description"), attrs=attrs,
                 refs=item.get("refs"), repo=item.get("repo"),
                 commit_sha=item.get("commit_sha") or item.get("commit"),
-                file_path=item.get("file_path") or item.get("file"))
+                file_path=item.get("file_path") or item.get("file"),
+                cluster=item.get("cluster"))
             counts["nodes"] += 1
         for item in node_items:
             if item.get("kind") != "field":
@@ -1090,7 +1869,9 @@ def cmd_apply(args) -> int:
             upsert_edge(
                 db, item["kind"], item["from"], item["to"],
                 refs=item.get("refs"), file_path=item.get("file_path"),
-                note=item.get("note"))
+                note=item.get("note"), flow_id=item.get("flow_id"),
+                description=item.get("description"),
+                allow_unassigned=True)
             counts["edges"] += 1
         db.run("COMMIT")
     except Exception:
@@ -1103,7 +1884,9 @@ def cmd_apply(args) -> int:
     if args.json:
         print(json.dumps(counts, indent=2))
     else:
-        print(f"applied {counts['nodes']} nodes, {counts['fields']} fields, "
+        print(f"applied {counts['nodes']} nodes, {counts['flows']} flows, "
+              f"{counts['entrypoints']} entrypoints, {counts['rules']} rules, "
+              f"{counts['fields']} fields, "
               f"{counts['edges']} edges")
     return 0
 
@@ -1119,9 +1902,12 @@ def cmd_list(args) -> int:
             continue
         if args.owner and owner_of(node_id) != args.owner:
             continue
+        if args.cluster and cluster_of(node, nodes) != args.cluster:
+            continue
         if args.search:
             haystack = " ".join(str(node.get(key, "")) for key in
-                                ("id", "name", "path", "entry_point", "location"))
+                                ("id", "name", "path", "location", "stage",
+                                 "cluster", "description"))
             if args.search.lower() not in haystack.lower():
                 continue
         selected.append(node)
@@ -1138,9 +1924,15 @@ def cmd_list(args) -> int:
             detail = f'{node.get("path")} : {node.get("type") or "?"}'
         elif node["kind"] == "storage":
             detail = node.get("location") or "-"
+        elif node["kind"] == "entry":
+            detail = node.get("stage") or "-"
+        elif node["kind"] in ("flow", "entrypoint", "rule"):
+            detail = node.get("description") or "-"
         else:
-            detail = node.get("entry_point") or "-"
+            detail = "-"
         suffix = f"  [{node.get('file_path')}]" if node.get("file_path") else ""
+        cluster = cluster_of(node, nodes)
+        suffix += f"  cluster:{cluster}" if cluster else ""
         print(f"{node['id']:<42} {detail}{suffix}")
     print(f"\n{len(selected)} node(s)")
     return 0
@@ -1235,10 +2027,598 @@ def cmd_export(args) -> int:
     return 0
 
 
+# --------------------------------------------------------------------------
+# markdown docs
+# --------------------------------------------------------------------------
+
+def _md_cell(value) -> str:
+    text = " ".join(str(value).split())
+    return text.replace("|", "\\|")
+
+
+def _md_code(value) -> str:
+    text = str(value)
+    if "`" in text:
+        return f"`` {text} ``"
+    return f"`{text}`"
+
+
+def _count(count: int, singular: str, plural: str | None = None) -> str:
+    return f"{count} {singular if count == 1 else (plural or singular + 's')}"
+
+
+def _doc_slug(prefix: str, name: str, used: set) -> str:
+    safe = re.sub(r"[^A-Za-z0-9._-]+", "-", str(name)).strip("-") or "unnamed"
+    base = f"{prefix}/{safe}" if prefix else safe
+    slug, index = base, 2
+    while slug in used:
+        slug = f"{base}-{index}"
+        index += 1
+    used.add(slug)
+    return slug
+
+
+def _entity_link(contract_id: str, slug_of: dict, from_dir: str = "entities") -> str:
+    slug = slug_of.get(contract_id)
+    if not slug:
+        return _md_code(contract_id)
+    prefix = "../" if from_dir == "entities" else "../entities/"
+    return f"[{_md_code(contract_id)}]({prefix}{slug}.md)"
+
+
+def _kind_summary(node: dict) -> str:
+    kind = node["kind"]
+    if kind == "entry":
+        bits = [node.get("stage")]
+    elif kind == "storage":
+        bits = [node.get("store_type"), node.get("location")]
+    else:
+        bits = []
+    return " · ".join(_md_code(bit) for bit in bits if bit)
+
+
+def _relation_table(rows, slug_of, from_dir: str) -> list:
+    if not rows:
+        return ["_None._", ""]
+    lines = ["| Edge | Entity | Flow | Note |", "|---|---|---|---|"]
+    for edge in rows:
+        other = edge["_other"]
+        note = _md_cell(edge.get("note") or "")
+        flow_id = edge.get("flow_id") or ""
+        flow = _md_code(flow_id) if flow_id else "—"
+        lines.append(
+            f"| {_md_code(edge['kind'])} | {_entity_link(other, slug_of, from_dir)} "
+            f"| {flow} | {note} |")
+    lines.append("")
+    return lines
+
+
+def _entity_markdown(node: dict, fields: list, edges: list, flows: list,
+                     slug_of: dict, flow_slug_of: dict, from_dir: str = "entities") -> str:
+    node_id = node["id"]
+    title = node.get("name") or node_id.split(":", 1)[-1]
+    lines = [f"# {_md_code(node_id)}", "",
+             f"**{LABELS[node['kind']]}** — {title}", ""]
+    if node.get("description"):
+        lines += [_md_cell(node["description"]), ""]
+
+    attributes = []
+    for key, label in (("stage", "stage"), ("location", "location"),
+                       ("store_type", "store type"), ("cluster", "cluster")):
+        if node.get(key):
+            attributes.append((label, _md_code(node[key])))
+    for key, label in (("repo", "repo"), ("commit_sha", "commit"),
+                       ("file_path", "file")):
+        if node.get(key):
+            attributes.append((label, _md_code(node[key])))
+    if attributes:
+        lines += ["| Attribute | Value |", "|---|---|"]
+        lines += [f"| {label} | {value} |" for label, value in attributes]
+        lines.append("")
+
+    lines += [f"## Fields ({len(fields)})", ""]
+    if fields:
+        lines += ["| Field | Type | Required | Source | References |",
+                  "|---|---|---|---|---|"]
+        for field in sorted(fields, key=lambda item: item.get("path", "")):
+            refs = ", ".join(_md_code(ref) for ref in (field.get("refs") or []))
+            lines.append(
+                f"| {_md_code(field.get('path', ''))} "
+                f"| {_md_code(field.get('type') or '—')} "
+                f"| {'yes' if field.get('required') else ''} "
+                f"| {_md_cell(field.get('source') or '')} | {refs} |")
+        lines.append("")
+    else:
+        lines += ["No fields registered. That means the contract was not mapped "
+                  "yet, not that the payload is empty.", ""]
+
+    incoming = [dict(edge, _other=edge["from"]) for edge in edges
+                if edge["to"] == node_id and edge["kind"] in DATA_EDGE_KINDS]
+    outgoing = [dict(edge, _other=edge["to"]) for edge in edges
+                if edge["from"] == node_id and edge["kind"] in DATA_EDGE_KINDS]
+    lines += ["## Data entering", ""]
+    lines += _relation_table(incoming, slug_of, from_dir)
+    lines += ["## Data leaving", ""]
+    lines += _relation_table(outgoing, slug_of, from_dir)
+
+    whole_of = [dict(edge, _other=edge["from"]) for edge in edges
+                if edge["to"] == node_id and edge["kind"] == "compose"]
+    composed_of = [dict(edge, _other=edge["to"]) for edge in edges
+                   if edge["from"] == node_id and edge["kind"] == "compose"]
+    lines += ["## Composition", ""]
+    if whole_of:
+        lines += ["Part of: " + ", ".join(
+            _entity_link(edge["_other"], slug_of, from_dir) for edge in whole_of), ""]
+    if composed_of:
+        lines += ["Composed of: " + ", ".join(
+            _entity_link(edge["_other"], slug_of, from_dir) for edge in composed_of), ""]
+    if not whole_of and not composed_of:
+        lines += ["_No composition registered._", ""]
+
+    if node.get("refs"):
+        lines += ["## Evidence", "",
+                  "References: " + ", ".join(_md_code(ref) for ref in node["refs"]), ""]
+
+    if flows:
+        lines += ["## Flows", ""]
+        for flow in flows:
+            flow_slug = flow_slug_of.get(flow["id"])
+            label = flow.get("name") or flow["id"]
+            target = f"../../flows/{flow_slug}.md" if flow_slug else None
+            if target:
+                lines.append(f"- [{_md_cell(label)}]({target})")
+            else:
+                lines.append(f"- {_md_cell(label)}")
+        lines.append("")
+
+    return "\n".join(lines).rstrip() + "\n"
+
+
+def _flow_markdown(flow_payload: dict, slug_of: dict, triggered_by=None,
+                   entrypoint_slug_of=None, rules=None, rule_slug_of=None) -> str:
+    flow = flow_payload["flow"]
+    steps = sorted(flow_payload["steps"],
+                   key=lambda step: (step.get("span") != "flow",
+                                     step.get("contract_id") or step.get("id") or ""))
+    feeds = sorted(flow_payload["feeds"],
+                   key=lambda feed: (feed["from"], feed["to"],
+                                     feed.get("kind") or ""))
+    by_id = {step["id"]: step for step in steps}
+    incoming, outgoing = defaultdict(list), defaultdict(list)
+    for feed in feeds:
+        incoming[feed["to"]].append(feed)
+        outgoing[feed["from"]].append(feed)
+    for items in incoming.values():
+        items.sort(key=lambda feed: feed["from"])
+    for items in outgoing.values():
+        items.sort(key=lambda feed: feed["to"])
+    joins = sorted(((step, incoming[step["id"]]) for step in steps
+                    if len(incoming.get(step["id"], [])) > 1),
+                   key=lambda item: item[0].get("contract_id") or item[0]["id"])
+
+    lines = [f"# {_md_cell(flow.get('name') or flow['id'])}", "",
+             _md_code(flow["id"]), ""]
+    if flow.get("description"):
+        lines += [_md_cell(flow["description"]), ""]
+    if flow.get("cluster"):
+        lines += [f"**Cluster** {_md_code(flow['cluster'])}", ""]
+    lines += [f"**{_count(len(steps), 'entity', 'entities')} · "
+              f"{_count(len(feeds), 'passage')} · "
+              f"{_count(len(joins), 'join')}**", ""]
+
+    if triggered_by:
+        links = []
+        for entrypoint in triggered_by:
+            slug = (entrypoint_slug_of or {}).get(entrypoint["id"])
+            label = _md_cell(entrypoint.get("name") or entrypoint["id"])
+            links.append(f"[{label}](../entrypoints/{slug}.md)" if slug
+                         else _md_code(entrypoint["id"]))
+        lines += ["## Triggered by", "", *[f"- {link}" for link in links], ""]
+
+    if rules:
+        lines += ["## Rules", ""]
+        for rule in rules:
+            slug = (rule_slug_of or {}).get(rule["id"])
+            label = _md_cell(rule.get("name") or rule["id"])
+            target = f"[{label}](../rules/{slug}.md)" if slug else _md_code(rule["id"])
+            lines.append(f"- {target} — {_md_cell(rule.get('description') or '')}")
+        lines.append("")
+
+    lines += ["## Path", ""]
+    roots = [step for step in steps if not incoming.get(step["id"])]
+    if not roots and steps:
+        roots = [steps[0]]
+    printed, stack = set(), set()
+
+    def walk(step_id: str, depth: int) -> None:
+        if step_id in stack:
+            lines.append(f"{'  ' * depth}- … (cycle)")
+            return
+        if step_id in printed:
+            lines.append(f"{'  ' * depth}- … (already shown)")
+            return
+        printed.add(step_id)
+        stack.add(step_id)
+        step = by_id[step_id]
+        label = _entity_link(step["contract_id"], slug_of, "flows")
+        role = step.get("role") or ""
+        joins_here = len(incoming.get(step_id, []))
+        suffix = f" · join {joins_here}" if joins_here > 1 else ""
+        lines.append(f"{'  ' * depth}- {label} — {role}{suffix}")
+        for feed in outgoing.get(step_id, []):
+            target = by_id.get(feed["to"])
+            if target:
+                walk(feed["to"], depth + 1)
+        stack.discard(step_id)
+
+    if roots:
+        for root in sorted(roots, key=lambda item: item["contract_id"]):
+            walk(root["id"], 0)
+    else:
+        lines.append("_No entities in this flow yet; use `flow use`._")
+    lines.append("")
+
+    if feeds:
+        lines += ["## Passages", "", "| From | Kind | To | Note |",
+                  "|---|---|---|---|"]
+        for feed in feeds:
+            source = by_id.get(feed["from"], {})
+            target = by_id.get(feed["to"], {})
+            lines.append(
+                f"| {_entity_link(source.get('contract_id', feed['from']), slug_of, 'flows')} "
+                f"| {_md_code(feed.get('kind') or '')} "
+                f"| {_entity_link(target.get('contract_id', feed['to']), slug_of, 'flows')} "
+                f"| {_md_cell(feed.get('note') or '')} |")
+        lines.append("")
+
+    if joins:
+        lines += ["## Joins", "", "| Step | Inputs |", "|---|---|"]
+        for step, items in joins:
+            sources = ", ".join(
+                by_id.get(feed["from"], {}).get("contract_id", feed["from"])
+                for feed in items)
+            lines.append(
+                f"| {_entity_link(step['contract_id'], slug_of, 'flows')} "
+                f"| {_md_cell(sources)} |")
+        lines.append("")
+
+    return "\n".join(lines).rstrip() + "\n"
+
+
+def _docs_readme(title: str, contracts: list, fields: list, edges: list,
+                 slug_of: dict, flows: list, flow_slug_of: dict,
+                 entrypoints: list, entrypoint_slug_of: dict,
+                 rules: list, rule_slug_of: dict) -> str:
+    counts = Counter(node["kind"] for node in contracts)
+    lines = [f"# {title}", "",
+             "> Generated by `logistic_map.py export-md`. Do not edit these "
+             "files by hand; re-run the command instead.", "",
+              f"**{_count(len(contracts), 'entity', 'entities')} · "
+              f"{_count(len(entrypoints), 'entrypoint')} · "
+              f"{_count(len(flows), 'flow')} · "
+              f"{_count(len(rules), 'rule')} · "
+             f"{_count(len(fields), 'field')}** · schema v{SCHEMA_VERSION}", ""]
+
+    lines += ["## Reading these docs", "",
+              "- Profiles: `Flow --USE--> entity` lists which flows use an "
+              "entity. A `flow`/`transform` passage carries a `flow_id` and "
+              "belongs to exactly one flow.",
+              "- `flow` means the data passes to the next entity without changing "
+              "shape; `transform` means the shape changes and the note records "
+              "the mapping; `compose` is whole → part, never execution order.",
+              "- A missing field means it was not mapped, not that the payload "
+              "lacks it. Check the referenced file before concluding anything.",
+              "- A `rule` node records a limit or condition that a flow or "
+              "entrypoint follows; it is not a data entity and has no passage.",
+              "- File references are evidence, not a call graph.", ""]
+
+    lines += ["## Relations", "",
+              "| Edge | Meaning |", "|---|---|",
+              "| `contains` | entity → field |",
+              "| `use` | Flow → entity: the flow uses this entity |",
+              "| `trigger` | EntryPoint → Flow: the activation starts the flow |",
+              "| `related` | EntryPoint → EntryPoint: directional activation relationship |",
+              "| `rule` | Flow/EntryPoint → Rule: a limit or condition the activation follows |",
+              "| `compose` | whole → part (composition) |",
+              "| `flow` | data passes unchanged (inside one flow) |",
+              "| `transform` | data changes shape; the note records the mapping |", ""]
+
+    cluster_counts = defaultdict(lambda: {"entities": 0, "entrypoints": 0,
+                                          "rules": 0, "flows": 0})
+    for node in contracts:
+        cluster = str(node.get("cluster") or "").strip()
+        if cluster:
+            cluster_counts[cluster]["entities"] += 1
+    for node in entrypoints:
+        cluster = str(node.get("cluster") or "").strip()
+        if cluster:
+            cluster_counts[cluster]["entrypoints"] += 1
+    for node in rules:
+        cluster = str(node.get("cluster") or "").strip()
+        if cluster:
+            cluster_counts[cluster]["rules"] += 1
+    for flow_payload in flows:
+        cluster = str(flow_payload["flow"].get("cluster") or "").strip()
+        if cluster:
+            cluster_counts[cluster]["flows"] += 1
+    if cluster_counts:
+        lines += ["## Clusters", "",
+                  "| Cluster | Entities | EntryPoints | Rules | Flows |",
+                  "|---|---:|---:|---:|---:|"]
+        for cluster, counts in sorted(cluster_counts.items()):
+            lines.append(
+                f"| {_md_code(cluster)} | {counts['entities']} "
+                f"| {counts['entrypoints']} | {counts['rules']} "
+                f"| {counts['flows']} |")
+        lines.append("")
+
+    for kind in CONTRACT_KINDS:
+        group = sorted((node for node in contracts if node["kind"] == kind),
+                       key=lambda node: node["id"])
+        lines += [f"## {PLURALS[kind]} ({len(group)})", ""]
+        if not group:
+            lines += ["_None._", ""]
+            continue
+        for node in group:
+            summary = _kind_summary(node)
+            description = _md_cell(node.get("description") or "")
+            extra = f" — {description}" if description else ""
+            detail = f" · {summary}" if summary else ""
+            lines.append(
+                f"- [{_md_code(node['id'])}](entities/{slug_of[node['id']]}.md)"
+                f"{detail}{extra}")
+        lines.append("")
+
+    lines += [f"## EntryPoints ({len(entrypoints)})", ""]
+    if not entrypoints:
+        lines += ["_None._", ""]
+    else:
+        for node in entrypoints:
+            lines.append(f"- [{_md_cell(node.get('name') or node['id'])}]"
+                         f"(entrypoints/{entrypoint_slug_of[node['id']]}.md)")
+        lines.append("")
+
+    lines += [f"## Rules ({len(rules)})", ""]
+    if not rules:
+        lines += ["_None._", ""]
+    else:
+        for node in rules:
+            description = _md_cell(node.get("description") or "")
+            lines.append(f"- [{_md_cell(node.get('name') or node['id'])}]"
+                         f"(rules/{rule_slug_of[node['id']]}.md)"
+                         + (f" — {description}" if description else ""))
+        lines.append("")
+
+    lines += [f"## Flows ({len(flows)})", ""]
+    if not flows:
+        lines += ["_No flows registered. Run `add-flow` and `flow use` and "
+                  "`export-md` again._", ""]
+    else:
+        for flow_payload in flows:
+            flow = flow_payload["flow"]
+            label = flow.get("name") or flow["id"]
+            lines.append(
+                f"- [{_md_cell(label)}](flows/{flow_slug_of[flow['id']]}.md) — "
+                f"`{flow['id']}` · {_count(len(flow_payload['steps']), 'step')} · "
+                f"{_count(len(flow_payload['feeds']), 'feed')}")
+        lines.append("")
+
+    lines += ["## Regenerate", "", "```sh",
+              'python scripts/logistic_map.py export-md --out docs/logistic-map',
+              "```", ""]
+    return "\n".join(lines).rstrip() + "\n"
+
+
+def write_markdown_docs(db: DB, out_dir: Path, title: str, flows: list) -> dict:
+    nodes, edges = load_graph(db)
+    edges.sort(key=lambda edge: (edge["kind"], edge["from"], edge["to"]))
+    contracts = sorted((node for node in nodes.values()
+                        if node["kind"] in CONTRACT_KINDS),
+                       key=lambda node: node["id"])
+    fields = [node for node in nodes.values() if node["kind"] == "field"]
+    entrypoints = sorted((node for node in nodes.values()
+                          if node["kind"] == "entrypoint"), key=lambda n: n["id"])
+    rules = sorted((node for node in nodes.values()
+                    if node["kind"] == "rule"), key=lambda n: n["id"])
+    fields_by_owner = defaultdict(list)
+    for field in fields:
+        fields_by_owner[owner_of(field["id"])].append(field)
+
+    slug_of, used_entities = {}, set()
+    for node in contracts:
+        slug_of[node["id"]] = _doc_slug(
+            node["kind"], node["id"].split(":", 1)[-1], used_entities)
+    flow_slug_of, used_flows = {}, set()
+    for flow_payload in flows:
+        flow_id = flow_payload["flow"]["id"]
+        flow_slug_of[flow_id] = _doc_slug(
+            "", flow_id.split(":", 1)[-1], used_flows)
+    entrypoint_slug_of, used_entrypoints = {}, set()
+    for node in entrypoints:
+        entrypoint_slug_of[node["id"]] = _doc_slug(
+            "", node["id"].split(":", 1)[-1], used_entrypoints)
+    rule_slug_of, used_rules = {}, set()
+    for node in rules:
+        rule_slug_of[node["id"]] = _doc_slug(
+            "", node["id"].split(":", 1)[-1], used_rules)
+
+    flows_by_contract = defaultdict(list)
+    flow_by_id = {flow_payload["flow"]["id"]: flow_payload["flow"]
+                  for flow_payload in flows}
+    entrypoints_by_id = {node["id"]: node for node in entrypoints}
+    rules_by_id = {node["id"]: node for node in rules}
+    rules_by_flow = defaultdict(list)
+    rules_by_entrypoint = defaultdict(list)
+    for edge in edges:
+        if edge["kind"] != "rule":
+            continue
+        rule = rules_by_id.get(edge["to"])
+        if not rule:
+            continue
+        if edge["from"] in flow_by_id:
+            rules_by_flow[edge["from"]].append(rule)
+        elif edge["from"] in entrypoints_by_id:
+            rules_by_entrypoint[edge["from"]].append(rule)
+    triggered_by = defaultdict(list)
+    for edge in edges:
+        if edge["kind"] == "trigger" and edge["from"] in entrypoints_by_id:
+            triggered_by[edge["to"]].append(entrypoints_by_id[edge["from"]])
+    uses = flow_uses(nodes, edges)
+    for contract_id in nodes:
+        if nodes[contract_id]["kind"] not in CONTRACT_KINDS:
+            continue
+        related = {flow_id for flow_id, entities in uses.items()
+                   if contract_id in entities}
+        for edge in edges:
+            if (edge["kind"] in DATA_EDGE_KINDS
+                    and edge.get("flow_id")
+                    and contract_id in (edge["from"], edge["to"])):
+                related.add(edge["flow_id"])
+        flows_by_contract[contract_id] = [
+            flow_by_id[flow_id] for flow_id in sorted(related)
+            if flow_id in flow_by_id]
+
+    out_dir = Path(out_dir)
+    (out_dir / "entities").mkdir(parents=True, exist_ok=True)
+    (out_dir / "flows").mkdir(parents=True, exist_ok=True)
+    (out_dir / "entrypoints").mkdir(parents=True, exist_ok=True)
+    (out_dir / "rules").mkdir(parents=True, exist_ok=True)
+    for pattern in ("entities/**/*.md", "flows/**/*.md",
+                    "entrypoints/**/*.md", "rules/**/*.md"):
+        for stale in out_dir.glob(pattern):
+            stale.unlink()
+
+    written = 0
+    for node in contracts:
+        path = out_dir / "entities" / (slug_of[node["id"]] + ".md")
+        path.parent.mkdir(parents=True, exist_ok=True)
+        related = [edge for edge in edges
+                   if edge["kind"] in DATA_EDGE_KINDS + ("compose",)
+                   and node["id"] in (edge["from"], edge["to"])]
+        path.write_text(
+            _entity_markdown(node, fields_by_owner.get(node["id"], []), related,
+                             flows_by_contract.get(node["id"], []), slug_of,
+                             flow_slug_of),
+            encoding="utf-8")
+        written += 1
+
+    for flow_payload in flows:
+        flow_id = flow_payload["flow"]["id"]
+        path = out_dir / "flows" / (flow_slug_of[flow_id] + ".md")
+        path.write_text(
+            _flow_markdown(flow_payload, slug_of, triggered_by.get(flow_id, []),
+                           entrypoint_slug_of, rules_by_flow.get(flow_id, []),
+                           rule_slug_of), encoding="utf-8")
+        written += 1
+
+    for node in entrypoints:
+        triggered = sorted({edge["to"] for edge in edges
+                            if edge["kind"] == "trigger" and edge["from"] == node["id"]})
+        lines = [f"# {node.get('name') or node['id']}", "",
+                 f"`{node['id']}`", "",
+                 node.get("description") or "", ""]
+        if node.get("cluster"):
+            lines += [f"**Cluster** `{node['cluster']}`", ""]
+        lines += ["## Triggered flows", ""]
+        lines.extend(f"- `{flow_id}`" for flow_id in triggered)
+        if not triggered:
+            lines.append("_None._")
+        related_out = [edge for edge in edges
+                       if edge["kind"] == "related" and edge["from"] == node["id"]]
+        related_in = [edge for edge in edges
+                      if edge["kind"] == "related" and edge["to"] == node["id"]]
+        if related_out or related_in:
+            lines += ["", "## Related entrypoints"]
+            for edge in related_out:
+                target = entrypoints_by_id.get(edge["to"], {})
+                slug = entrypoint_slug_of.get(edge["to"])
+                label = _md_cell(target.get("name") or edge["to"])
+                link = f"[{label}](../entrypoints/{slug}.md)" if slug else _md_code(edge["to"])
+                lines.append(f"- → {link} — {_md_cell(edge.get('description') or '')}")
+            for edge in related_in:
+                source = entrypoints_by_id.get(edge["from"], {})
+                slug = entrypoint_slug_of.get(edge["from"])
+                label = _md_cell(source.get("name") or edge["from"])
+                link = f"[{label}](../entrypoints/{slug}.md)" if slug else _md_code(edge["from"])
+                lines.append(f"- ← {link} — {_md_cell(edge.get('description') or '')}")
+        attached_rules = rules_by_entrypoint.get(node["id"], [])
+        if attached_rules:
+            lines += ["", "## Rules"]
+            for rule in attached_rules:
+                slug = rule_slug_of.get(rule["id"])
+                label = _md_cell(rule.get("name") or rule["id"])
+                target = f"[{label}](../rules/{slug}.md)" if slug else _md_code(rule["id"])
+                lines.append(f"- {target} — {_md_cell(rule.get('description') or '')}")
+        if node.get("refs"):
+            lines += ["", "## References", ""]
+            lines.extend(f"- `{ref}`" for ref in node["refs"])
+        path = out_dir / "entrypoints" / (entrypoint_slug_of[node["id"]] + ".md")
+        path.write_text("\n".join(lines).rstrip() + "\n", encoding="utf-8")
+        written += 1
+
+    for rule in rules:
+        attached_to = []
+        for edge in edges:
+            if edge["kind"] != "rule" or edge["to"] != rule["id"]:
+                continue
+            if edge["from"] in flow_by_id:
+                slug = flow_slug_of.get(edge["from"])
+                flow = flow_by_id[edge["from"]]
+                label = _md_cell(flow.get("name") or edge["from"])
+                attached_to.append(f"[{label}](../flows/{slug}.md)" if slug
+                                   else _md_code(edge["from"]))
+            elif edge["from"] in entrypoints_by_id:
+                slug = entrypoint_slug_of.get(edge["from"])
+                entrypoint = entrypoints_by_id[edge["from"]]
+                label = _md_cell(entrypoint.get("name") or edge["from"])
+                attached_to.append(
+                    f"[{label}](../entrypoints/{slug}.md)" if slug
+                    else _md_code(edge["from"]))
+        lines = [f"# {rule.get('name') or rule['id']}", "",
+                 _md_code(rule["id"]), ""]
+        if rule.get("description"):
+            lines += [_md_cell(rule["description"]), ""]
+        if rule.get("cluster"):
+            lines += [f"**Cluster** {_md_code(rule['cluster'])}", ""]
+        lines += ["## Attached to", ""]
+        lines += attached_to or ["_No flow or entrypoint yet._"]
+        lines.append("")
+        if rule.get("refs"):
+            lines += ["## References", ""]
+            lines.extend(f"- `{ref}`" for ref in rule["refs"])
+            lines.append("")
+        path = out_dir / "rules" / (rule_slug_of[rule["id"]] + ".md")
+        path.write_text("\n".join(lines).rstrip() + "\n", encoding="utf-8")
+        written += 1
+
+    (out_dir / "README.md").write_text(
+        _docs_readme(title, contracts, fields, edges, slug_of, flows, flow_slug_of,
+                     entrypoints, entrypoint_slug_of, rules, rule_slug_of),
+        encoding="utf-8")
+    written += 1
+    return {"out": str(out_dir), "entities": len(contracts),
+            "flows": len(flows), "entrypoints": len(entrypoints),
+            "rules": len(rules), "files": written}
+
+
+def cmd_export_md(args) -> int:
+    db = open_db(args)
+    flows = render_flows(db)
+    result = write_markdown_docs(db, Path(args.out), args.title, flows)
+    result["ok"] = True
+    if args.json:
+        print(json.dumps(result, indent=2))
+    else:
+        print(f"wrote {result['files']} markdown files to {result['out']} "
+              f"({result['entities']} entities, {result['flows']} flows, "
+              f"{result['rules']} rules)")
+    return 0
+
+
 def cmd_render(args) -> int:
     db = open_db(args)
     out = Path(args.out) if args.out else db.path.parent / DEFAULT_RENDER
-    path = render_html(db, out, args.title, render_flows(db, args))
+    path = render_html(db, out, args.title)
     if args.json:
         print(json.dumps({"ok": True, "out": str(path)}, indent=2))
     else:
@@ -1253,15 +2633,19 @@ def cmd_stats(args) -> int:
     fields = [node for node in nodes.values() if node["kind"] == "field"]
     kinds = Counter(node["kind"] for node in nodes.values())
     edge_kinds = Counter(edge["kind"] for edge in edges)
-    channels = Counter(node.get("channel") or "?" for node in contracts
-                       if node["kind"] == "input")
+    entrypoints = sum(node["kind"] == "entrypoint" for node in nodes.values())
+    rules = sum(node["kind"] == "rule" for node in nodes.values())
     stores = Counter(node.get("store_type") or "?" for node in contracts
                      if node["kind"] == "storage")
     per_contract = Counter(owner_of(field_id) for field_id in nodes if "#" in field_id)
+    clusters = Counter(cluster for cluster in
+                       (cluster_of(node, nodes) for node in nodes.values()) if cluster)
     payload = {
         "nodes": len(nodes), "edges": len(edges),
         "kinds": dict(kinds), "edge_kinds": dict(edge_kinds),
-        "channels": dict(channels), "store_types": dict(stores),
+        "entrypoints": entrypoints, "store_types": dict(stores),
+        "rules": rules,
+        "clusters": dict(clusters.most_common()),
         "fields_per_contract": dict(per_contract.most_common(10)),
     }
     if args.json:
@@ -1269,8 +2653,12 @@ def cmd_stats(args) -> int:
         return 0
     print(f"nodes:  {len(nodes)} ({', '.join(f'{k}={v}' for k, v in sorted(kinds.items()))})")
     print(f"edges:  {len(edges)} ({', '.join(f'{k}={v}' for k, v in sorted(edge_kinds.items()))})")
-    if channels:
-        print("input channels: " + ", ".join(f"{k}={v}" for k, v in channels.most_common()))
+    if entrypoints:
+        print(f"entrypoints:    {entrypoints}")
+    if rules:
+        print(f"rules:          {rules}")
+    if clusters:
+        print("clusters:       " + ", ".join(f"{k}={v}" for k, v in clusters.most_common()))
     if stores:
         print("storage types:  " + ", ".join(f"{k}={v}" for k, v in stores.most_common()))
     if per_contract:
@@ -1281,418 +2669,285 @@ def cmd_stats(args) -> int:
 
 
 # --------------------------------------------------------------------------
-# CLI
+# flows: nodes + USE + passages in the main graph
 # --------------------------------------------------------------------------
 
-
-# --------------------------------------------------------------------------
-# derived flow graph
-# --------------------------------------------------------------------------
-
-def flow_db_path(args) -> Path:
-    explicit = getattr(args, "flow_db", None)
-    if explicit:
-        return Path(explicit).expanduser()
-    if DEFAULT_FLOW_DB:
-        return Path(DEFAULT_FLOW_DB).expanduser()
-    return Path(args.db).expanduser().parent / "flows.kuzu"
+def flow_uses(nodes, edges) -> dict:
+    uses = defaultdict(set)
+    for edge in edges:
+        if edge["kind"] == "use" and edge["from"] in nodes and edge["to"] in nodes:
+            uses[edge["from"]].add(edge["to"])
+    return uses
 
 
-def open_flow_db(args, create: bool = False) -> DB:
-    path = flow_db_path(args)
-    if not create and not path.exists():
-        raise LogisticMapError(
-            f"no flow database at {path}; run `flow build --from <contract>` first")
-    db = DB(path)
-    if "Flow" not in db.tables():
-        if not create:
-            raise LogisticMapError(
-                f"{path} exists but has no flow schema; rerun `flow build`")
-        for statement in FLOW_DDL:
-            db.run(statement)
-    return db
-
-
-def get_flow(db: DB, flow_id: str):
-    _, rows = db.run("MATCH (f:Flow {id:$id}) RETURN f", {"id": flow_id})
-    return clean(rows[0][0]) if rows else None
-
-
-def delete_flow(db: DB, flow_id: str) -> None:
-    prefix = flow_id + "/"
-    _, rows = db.run("MATCH (s:Step) RETURN s.id")
-    for (step_id,) in rows:
-        if step_id == flow_id or step_id.startswith(prefix):
-            db.run("MATCH (s:Step {id:$id}) DETACH DELETE s", {"id": step_id})
-    db.run("MATCH (f:Flow {id:$id}) DETACH DELETE f", {"id": flow_id})
-
-
-def _flow_role(nodes, incoming, outgoing, node_id, start):
-    if node_id == start:
-        return "source"
-    kind = nodes[node_id]["kind"]
-    if kind == "entry":
-        return "transform"
-    if kind == "input":
-        return "source"
-    has_in = any(nodes[edge["from"]]["kind"] == "entry"
-                 for edge in incoming.get(node_id, []))
-    has_out = any(nodes[edge["to"]]["kind"] == "entry"
-                  for edge in outgoing.get(node_id, []))
+def _flow_role(incoming, outgoing, node_id: str) -> str:
+    has_in = bool(incoming.get(node_id))
+    has_out = bool(outgoing.get(node_id))
     if has_in and has_out:
         return "readwrite"
     if has_in:
         return "write"
     if has_out:
-        return "read"
+        return "source"
     return "artifact"
 
 
-def build_flow(contract_db: DB, flow_db: DB, start: str, flow_id: str,
-               name: str, description: str = "") -> dict:
-    nodes, edges = load_graph(contract_db)
-    if start not in nodes:
-        raise LogisticMapError(f"start contract {start!r} does not exist")
-    if nodes[start]["kind"] == "field":
-        raise LogisticMapError("a flow starts at a contract node, not at a field")
-
-    flow_edges = [edge for edge in edges
-                  if edge["kind"] in ("compose", "transform")
-                  and edge["from"] in nodes and edge["to"] in nodes]
-    outgoing, incoming = defaultdict(list), defaultdict(list)
-    for edge in flow_edges:
-        outgoing[edge["from"]].append(edge)
-        incoming[edge["to"]].append(edge)
-
-    reachable, seen, queue = [], {start}, [start]
-    while queue:
-        current = queue.pop(0)
-        reachable.append(current)
-        for edge in outgoing.get(current, []):
-            if edge["to"] not in seen:
-                seen.add(edge["to"])
-                queue.append(edge["to"])
-
-    # context: direct inputs of reachable operations that are outside the forward reach
-    context = {}
-    for node_id in reachable:
-        if nodes[node_id]["kind"] != "entry":
-            continue
-        for edge in incoming.get(node_id, []):
-            source = edge["from"]
-            if source not in seen and source not in context:
-                context[source] = len(reachable) + len(context)
-
-    delete_flow(flow_db, flow_id)
-    repo = nodes[start].get("repo") or git_value("repo")
-    commit_sha = nodes[start].get("commit_sha") or git_value("commit")
-    flow_db.run(
-        "CREATE (f:Flow {id:$id, name:$name, description:$description, "
-        "start_contract:$start, repo:$repo, commit_sha:$commit_sha, "
-        "file_path:$file_path, refs:$refs, created_at:$created_at})",
-        {"id": flow_id, "name": name, "description": description,
-         "start": start, "repo": repo, "commit_sha": commit_sha,
-         "file_path": nodes[start].get("file_path", ""),
-         "refs": nodes[start].get("refs") or [],
-         "created_at": now_iso()})
-
-    def put_step(node_id: str, span: str, seq: int):
-        step_id = f"{flow_id}/{node_id}"
-        node = nodes[node_id]
-        flow_db.run(
-            "MERGE (s:Step {id:$id}) SET s.flow_id=$flow_id, "
-            "s.contract_id=$contract_id, s.contract_kind=$kind, s.name=$name, "
-            "s.role=$role, s.span=$span, s.seq=$seq, s.repo=$repo, "
-            "s.commit_sha=$commit_sha, s.file_path=$file_path, s.refs=$refs",
-            {"id": step_id, "flow_id": flow_id, "contract_id": node_id,
-             "kind": node["kind"], "name": node.get("name") or node_id,
-             "role": _flow_role(nodes, incoming, outgoing, node_id, start),
-             "span": span, "seq": seq, "repo": node.get("repo", ""),
-             "commit_sha": node.get("commit_sha", ""),
-             "file_path": node.get("file_path", ""),
-             "refs": node.get("refs") or []})
-        flow_db.run("MATCH (f:Flow {id:$f}),(s:Step {id:$s}) MERGE (f)-[:HAS_STEP]->(s)",
-                    {"f": flow_id, "s": step_id})
-        return step_id
-
-    for index, node_id in enumerate(reachable):
-        put_step(node_id, "flow", index)
-    for node_id, seq in context.items():
-        put_step(node_id, "context", seq)
-
-    groups = {}
-
-    def group(edge: dict) -> None:
-        groups.setdefault((edge["from"], edge["to"]), []).append(edge)
-
-    for edge in flow_edges:
-        if edge["from"] in seen and edge["to"] in seen:
-            group(edge)
-    for node_id in reachable:
-        if nodes[node_id]["kind"] != "entry":
-            continue
-        for edge in incoming.get(node_id, []):
-            if edge["from"] not in seen:
-                group(edge)
-
-    for (source, target), edges in sorted(groups.items()):
-        kinds = "+".join(sorted({edge["kind"] for edge in edges}))
-        notes = "; ".join(dict.fromkeys(
-            edge["note"] for edge in edges if edge.get("note")))
-        flow_db.run(
-            "MATCH (a:Step {id:$a}),(b:Step {id:$b}) MERGE (a)-[r:FEEDS]->(b) "
-            "SET r.kind=$kind, r.note=$note",
-            {"a": f"{flow_id}/{source}", "b": f"{flow_id}/{target}",
-             "kind": kinds, "note": notes})
-
-    return {"id": flow_id, "steps": len(reachable),
-            "context": len(context), "feeds": len(groups),
-            "start": start}
-
-
-def _flow_rows(db: DB):
-    _, flow_rows = db.run("MATCH (f:Flow) RETURN f")
-    _, step_rows = db.run("MATCH (s:Step) RETURN s")
-    _, feed_rows = db.run("MATCH (a:Step)-[r:FEEDS]->(b:Step) "
-                          "RETURN a.id, b.id, r.kind, r.note")
-    flows = [clean(row[0]) for row in flow_rows]
-    steps = [clean(row[0]) for row in step_rows]
-    feeds = [{"from": a, "to": b, "kind": kind or "", "note": note or ""}
-             for a, b, kind, note in feed_rows]
-    return flows, steps, feeds
-
-
-
-def render_flows(contract_db: DB, args) -> list:
-    path = flow_db_path(args)
-    if not path.exists():
-        return []
-    try:
-        flow_db = DB(path)
-        if "Flow" not in flow_db.tables():
-            return []
-        flows, steps, feeds = _flow_rows(flow_db)
-    except Exception:
-        return []
-    nodes, _ = load_graph(contract_db)
-    steps_by_flow = defaultdict(list)
-    for step in steps:
-        steps_by_flow[step.get("flow_id")].append(step)
-    feeds_by_flow = defaultdict(list)
-    step_flow = {step["id"]: step.get("flow_id") for step in steps}
-    for feed in feeds:
-        feeds_by_flow[step_flow.get(feed["from"])].append(feed)
-    contract_keys = ("kind", "description", "entry_point", "location",
-                     "channel", "store_type", "entry_type", "repo",
+def _flow_steps(nodes, flow_id: str, entities: list,
+                incoming: dict, outgoing: dict) -> list:
+    contract_keys = ("kind", "description", "location",
+                     "store_type", "stage", "repo",
                      "commit_sha", "file_path", "refs")
-    payload = []
-    for flow in sorted(flows, key=lambda item: item["id"]):
-        flow_steps = []
-        for step in steps_by_flow.get(flow["id"], []):
-            item = dict(step)
-            contract = nodes.get(step.get("contract_id"), {})
-            item["contract"] = {key: contract[key] for key in contract_keys
-                                if contract.get(key) not in (None, "", [])}
-            flow_steps.append(item)
-        payload.append({
-            "flow": flow,
-            "steps": flow_steps,
-            "feeds": feeds_by_flow.get(flow["id"], []),
+    steps = []
+    for seq, contract_id in enumerate(entities):
+        node = nodes[contract_id]
+        steps.append({
+            "id": f"{flow_id}/{contract_id}",
+            "flow_id": flow_id,
+            "contract_id": contract_id,
+            "contract_kind": node["kind"],
+            "name": node.get("name") or contract_id,
+            "role": _flow_role(incoming, outgoing, contract_id),
+            "span": "flow",
+            "seq": seq,
+            "repo": node.get("repo", ""),
+            "commit_sha": node.get("commit_sha", ""),
+            "file_path": node.get("file_path", ""),
+            "refs": node.get("refs") or [],
+            "contract": {key: node[key] for key in contract_keys
+                         if node.get(key) not in (None, "", [])},
         })
-    return payload
+    return steps
 
 
-def cmd_flow_build(args) -> int:
-    if not args.start:
-        raise LogisticMapError("--from is required")
-    contract_db = open_db(args)
-    flow_db = open_flow_db(args, create=True)
-    nodes, _ = load_graph(contract_db)
-    if args.start not in nodes:
-        raise LogisticMapError(f"start contract {args.start!r} does not exist")
-    if nodes[args.start]["kind"] == "field":
-        raise LogisticMapError("a flow starts at a contract node, not at a field")
+def build_flow_payload(nodes, edges, flow_id: str):
+    flow = nodes.get(flow_id)
+    if not flow or flow["kind"] != "flow":
+        return None
+    contract_ids = {node_id for node_id, node in nodes.items()
+                    if node["kind"] in CONTRACT_KINDS}
+    used = {entity for entity in flow_uses(nodes, edges).get(flow_id, set())
+            if entity in contract_ids}
+    passages = [edge for edge in edges
+                if edge["kind"] in DATA_EDGE_KINDS
+                and (edge.get("flow_id") or "") == flow_id
+                and edge["from"] in contract_ids and edge["to"] in contract_ids]
+    passages = sorted(passages, key=lambda edge: (edge["from"], edge["to"], edge["kind"]))
+    endpoints = {edge["from"] for edge in passages} | {edge["to"] for edge in passages}
+    entities = sorted(used | endpoints)
 
-    flow_id = args.id
-    if not flow_id:
-        flow_id = "flow:" + slugify(args.name or args.start)
-    if not re.match(r"^flow:[^\s#]+$", flow_id):
-        raise LogisticMapError(f"invalid flow id {flow_id!r}; use flow:<slug>")
+    incoming, outgoing = defaultdict(list), defaultdict(list)
+    for edge in passages:
+        incoming[edge["to"]].append(edge)
+        outgoing[edge["from"]].append(edge)
 
-    existing = get_flow(flow_db, flow_id)
-    if existing and existing.get("start_contract") != args.start and not args.force:
-        raise LogisticMapError(
-            f"{flow_id} already exists from {existing.get('start_contract')}; "
-            "use --id or --force")
-
-    name = (args.name or (existing or {}).get("name")
-            or f"{nodes[args.start].get('name') or args.start} flow")
-    description = (args.description if args.description is not None
-                   else (existing or {}).get("description", ""))
-    result = build_flow(contract_db, flow_db, args.start, flow_id, name, description)
-    result["ok"] = True
-    if args.json:
-        print(json.dumps(result, indent=2))
-    else:
-        print(f"built {flow_id}: {result['steps']} steps "
-              f"({result['context']} context), {result['feeds']} feeds")
-    return 0
+    steps = _flow_steps(nodes, flow_id, entities, incoming, outgoing)
+    feeds = [{
+        "from": f"{flow_id}/{edge['from']}",
+        "to": f"{flow_id}/{edge['to']}",
+        "kind": edge["kind"],
+        "note": edge.get("note") or "",
+        "flow_id": flow_id,
+    } for edge in passages]
+    return {"flow": flow, "steps": steps, "feeds": feeds}
 
 
-def cmd_flow_list(args) -> int:
-    flow_db = open_flow_db(args)
-    flows, steps, feeds = _flow_rows(flow_db)
-    by_flow = Counter(step.get("flow_id") for step in steps
-                      if step.get("span") != "context")
-    context = Counter(step.get("flow_id") for step in steps
-                      if step.get("span") == "context")
-    feed_count = Counter()
-    step_flow = {step["id"]: step.get("flow_id") for step in steps}
-    for feed in feeds:
-        feed_count[step_flow.get(feed["from"])] += 1
-    rows = []
-    for flow in sorted(flows, key=lambda item: item["id"]):
-        rows.append({
-            "id": flow["id"], "name": flow.get("name", ""),
-            "start": flow.get("start_contract", ""),
-            "steps": by_flow.get(flow["id"], 0),
-            "context": context.get(flow["id"], 0),
-            "feeds": feed_count.get(flow["id"], 0),
-        })
-    if args.json:
-        print(json.dumps(rows, indent=2, ensure_ascii=False))
-        return 0
-    if not rows:
-        print("no flows; run flow build --from <contract>")
-        return 0
-    for row in rows:
-        print(f"{row['id']:<34} {row['name'][:28]:<28} "
-              f"start={row['start']:<28} steps={row['steps']} "
-              f"ctx={row['context']} feeds={row['feeds']}")
-    print(f"\n{len(rows)} flow(s)")
-    return 0
+def build_flow_payloads(nodes, edges) -> list:
+    flow_ids = sorted(node_id for node_id, node in nodes.items()
+                      if node["kind"] == "flow")
+    return [payload for payload in
+            (build_flow_payload(nodes, edges, flow_id) for flow_id in flow_ids)
+            if payload]
 
 
-def cmd_flow_show(args) -> int:
-    flow_db = open_flow_db(args)
-    flow = get_flow(flow_db, args.id)
-    if not flow:
-        raise LogisticMapError(f"flow {args.id!r} does not exist")
-    flows, steps, feeds = _flow_rows(flow_db)
-    steps = [step for step in steps if step.get("flow_id") == args.id]
-    step_ids = {step["id"] for step in steps}
-    feeds = [feed for feed in feeds
-             if feed["from"] in step_ids and feed["to"] in step_ids]
-    by_id = {step["id"]: step for step in steps}
-    outgoing, incoming = defaultdict(list), defaultdict(list)
-    for feed in feeds:
-        outgoing[feed["from"]].append(feed)
+def render_flows(db: DB) -> list:
+    nodes, edges = load_graph(db)
+    return build_flow_payloads(nodes, edges)
+
+
+def _flow_joins(payload: dict) -> list:
+    by_id = {step["id"]: step for step in payload["steps"]}
+    incoming = defaultdict(list)
+    for feed in payload["feeds"]:
         incoming[feed["to"]].append(feed)
     joins = []
-    for step in steps:
-        sources = [feed["from"] for feed in incoming.get(step["id"], [])]
-        if len(sources) > 1:
-            joins.append({"step": step["contract_id"], "sources": sources})
+    for step_id, items in incoming.items():
+        if len(items) <= 1:
+            continue
+        step = by_id.get(step_id)
+        if not step:
+            continue
+        joins.append({
+            "step": step["contract_id"],
+            "sources": sorted(by_id[feed["from"]]["contract_id"]
+                              for feed in items if feed["from"] in by_id),
+        })
+    return sorted(joins, key=lambda item: item["step"])
 
-    if args.json:
-        print(json.dumps({"flow": flow, "steps": steps, "feeds": feeds,
-                          "joins": joins}, indent=2, ensure_ascii=False))
-        return 0
 
-    print(f"Flow {flow['id']} — {flow.get('name', '')}")
-    print(f"start: {flow.get('start_contract')}")
-    flow_steps = sum(1 for step in steps if step.get("span") != "context")
-    context_steps = len(steps) - flow_steps
-    print(f"steps: {flow_steps} (+{context_steps} context)  "
-          f"feeds: {len(feeds)}  joins: {len(joins)}")
-    print()
-    print("TREE")
-    root = next((step for step in steps
-                 if step.get("contract_id") == flow.get("start_contract")
-                 and step.get("span") == "flow"), None)
-    printed, stack = set(), set()
+def _flow_text_tree(payload: dict) -> list:
+    steps = payload["steps"]
+    by_id = {step["id"]: step for step in steps}
+    incoming, outgoing = defaultdict(list), defaultdict(list)
+    for feed in payload["feeds"]:
+        incoming[feed["to"]].append(feed)
+        outgoing[feed["from"]].append(feed)
+    roots = [step for step in steps if not incoming.get(step["id"])]
+    if not roots:
+        roots = [steps[0]] if steps else []
+    lines, printed, stack = [], set(), set()
 
-    def walk(step_id: str, depth: int):
+    def walk(step_id: str, depth: int) -> None:
         if step_id in stack:
-            print("  " * depth + "... (cycle)")
+            lines.append("  " * depth + "... (cycle)")
             return
         if step_id in printed:
-            print("  " * depth + "... (already shown)")
+            lines.append("  " * depth + "... (already shown)")
             return
         printed.add(step_id)
         stack.add(step_id)
         step = by_id[step_id]
         label = f"{step['contract_id']} [{step.get('role', '')}]"
-        inputs = incoming.get(step_id, [])
-        if len(inputs) > 1:
-            label += f"  (join: {len(inputs)})"
-        print("  " * depth + label)
-        for feed in outgoing.get(step_id, []):
-            if by_id.get(feed["to"], {}).get("span") == "flow":
+        joins = len(incoming.get(step_id, []))
+        if joins > 1:
+            label += f"  (join: {joins})"
+        lines.append("  " * depth + label)
+        for feed in sorted(outgoing.get(step_id, []), key=lambda item: item["to"]):
+            if feed["to"] in by_id:
                 walk(feed["to"], depth + 1)
         stack.discard(step_id)
 
-    if root:
+    for root in sorted(roots, key=lambda step: step["contract_id"]):
         walk(root["id"], 0)
+    return lines
+
+
+def cmd_flow_use(args) -> int:
+    db = open_db(args)
+    if not get_node(db, "flow", args.id):
+        raise LogisticMapError(f"flow {args.id!r} does not exist; run add-flow first")
+    result = upsert_edge(
+        db, "use", args.id, args.entity,
+        refs=parse_refs(args.ref) if args.ref is not None else None,
+        file_path=args.file, note=args.note)
+    result["ok"] = True
+    if args.json:
+        print(json.dumps(result, indent=2))
     else:
-        print("  (start step not found)")
+        print(f"{'added' if result['created'] else 'updated'} "
+              f"{args.id} USES {args.entity}")
+    return 0
 
-    contexts = [step for step in steps if step.get("span") == "context"]
-    if contexts:
-        print()
-        print("CONTEXT")
-        for step in contexts:
-            outs = ", ".join(feed["to"].split("/", 1)[-1]
-                             for feed in outgoing.get(step["id"], []))
-            print(f"  {step['contract_id']} [{step.get('role', '')}] -> {outs}")
 
+def cmd_flow_unuse(args) -> int:
+    db = open_db(args)
+    result = remove_edge(db, "use", args.id, args.entity)
+    result["ok"] = True
+    if args.json:
+        print(json.dumps(result, indent=2))
+    else:
+        print(f"removed {args.id} USES {args.entity}")
+    return 0
+
+
+def cmd_flow_list(args) -> int:
+    db = open_db(args)
+    nodes, edges = load_graph(db)
+    uses = flow_uses(nodes, edges)
+    passage_count = Counter(edge.get("flow_id") or "" for edge in edges
+                            if edge["kind"] in DATA_EDGE_KINDS)
+    rows = []
+    for flow_id in sorted(node_id for node_id, node in nodes.items()
+                          if node["kind"] == "flow"):
+        flow = nodes[flow_id]
+        rows.append({
+            "id": flow_id,
+            "name": flow.get("name", ""),
+            "description": flow.get("description", ""),
+            "entities": len(uses.get(flow_id, set())),
+            "passages": passage_count.get(flow_id, 0),
+        })
+    if args.json:
+        print(json.dumps(rows, indent=2, ensure_ascii=False))
+        return 0
+    if not rows:
+        print("no flows; run add-flow --id flow:<slug> --name <name>")
+        return 0
+    for row in rows:
+        print(f"{row['id']:<34} {row['name'][:28]:<28} "
+              f"entities={row['entities']} passages={row['passages']}")
+    print(f"\n{len(rows)} flow(s)")
+    return 0
+
+
+def cmd_flow_show(args) -> int:
+    db = open_db(args)
+    nodes, edges = load_graph(db)
+    payload = build_flow_payload(nodes, edges, args.id)
+    if not payload:
+        raise LogisticMapError(f"flow {args.id!r} does not exist")
+    joins = _flow_joins(payload)
+    flow = payload["flow"]
+    triggers = sorted(edge["from"] for edge in edges
+                      if edge["kind"] == "trigger" and edge["to"] == flow["id"])
+    if args.json:
+        print(json.dumps({
+            "flow": flow,
+            "triggered_by": triggers,
+            "entities": [step["contract_id"] for step in payload["steps"]],
+            "steps": payload["steps"],
+            "feeds": payload["feeds"],
+            "joins": joins,
+        }, indent=2, ensure_ascii=False))
+        return 0
+
+    print(f"Flow {flow['id']} — {flow.get('name', '')}")
+    if flow.get("description"):
+        print(flow["description"])
+    print(f"entities: {len(payload['steps'])}  "
+          f"passages: {len(payload['feeds'])}  joins: {len(joins)}")
+    if triggers:
+        print("triggered by: " + ", ".join(triggers))
+    print()
+    print("ENTITIES")
+    if not payload["steps"]:
+        print("  (none; use `flow use --id ... --entity ...`)")
+    for step in payload["steps"]:
+        print(f"  {step['contract_id']} [{step.get('role', '')}]")
+    print()
+    print("PASSAGES")
+    if not payload["feeds"]:
+        print("  (none; add-edge --kind flow|transform --flow ...)")
+    for feed in payload["feeds"]:
+        note = f"  # {feed['note']}" if feed.get("note") else ""
+        print(f"  {feed['from'].split('/', 1)[-1]} "
+              f"-[{feed['kind']}]-> {feed['to'].split('/', 1)[-1]}{note}")
+    print()
+    print("PATH")
+    tree = _flow_text_tree(payload)
+    if tree:
+        for line in tree:
+            print("  " + line)
+    else:
+        print("  (none; add entities with `flow use` and passages with "
+              "`add-edge --flow`)")
     if joins:
         print()
         print("JOINS")
         for join in joins:
-            sources = ", ".join(source.split("/", 1)[-1] for source in join["sources"])
-            print(f"  {join['step']} <- {sources}")
+            print(f"  {join['step']} <- {', '.join(join['sources'])}")
     return 0
 
 
-def cmd_flow_sync(args) -> int:
-    flow_db = open_flow_db(args)
-    contract_db = open_db(args)
-    flows, _, _ = _flow_rows(flow_db)
-    if not flows:
-        print("no flows to sync")
-        return 0
-    results, errors = [], []
-    for flow in flows:
-        try:
-            result = build_flow(
-                contract_db, flow_db, flow["start_contract"], flow["id"],
-                flow.get("name", ""), flow.get("description", ""))
-            results.append(result)
-        except LogisticMapError as exc:
-            errors.append({"id": flow["id"], "error": str(exc)})
-    payload = {"ok": not errors, "synced": results, "errors": errors}
-    if args.json:
-        print(json.dumps(payload, indent=2))
-    else:
-        for result in results:
-            print(f"synced {result['id']}: {result['steps']} steps, "
-                  f"{result['context']} context, {result['feeds']} feeds")
-        for error in errors:
-            print(f"error {error['id']}: {error['error']}", file=sys.stderr)
-    return 0 if not errors else 1
-
-
 def cmd_flow_remove(args) -> int:
-    flow_db = open_flow_db(args)
-    if not get_flow(flow_db, args.id):
+    db = open_db(args)
+    if not get_node(db, "flow", args.id):
         raise LogisticMapError(f"flow {args.id!r} does not exist")
-    delete_flow(flow_db, args.id)
-    payload = {"ok": True, "id": args.id}
+    result = remove_node(db, args.id)
+    result["ok"] = True
     if args.json:
-        print(json.dumps(payload, indent=2))
+        print(json.dumps(result, indent=2))
     else:
-        print(f"removed {args.id}")
+        print(f"removed {args.id} ({result.get('removed_edges', 0)} passages)")
     return 0
 
 
@@ -1717,6 +2972,11 @@ def build_parser() -> argparse.ArgumentParser:
     init = sub.add_parser("init", parents=[common], help="create the graph schema")
     init.set_defaults(func=cmd_init)
 
+    migrate = sub.add_parser(
+        "migrate", parents=[common],
+        help="convert a schema v1-v6 database to v7 (rules)")
+    migrate.set_defaults(func=cmd_migrate)
+
     doctor = sub.add_parser("doctor", parents=[common], help="check environment and database")
     doctor.set_defaults(func=cmd_doctor)
 
@@ -1726,13 +2986,12 @@ def build_parser() -> argparse.ArgumentParser:
     add_node.add_argument("--id", help="explicit id, e.g. input:orders.created")
     add_node.add_argument("--name")
     add_node.add_argument("--description")
-    add_node.add_argument("--entry-point", dest="entry_point")
-    add_node.add_argument("--channel", help="input channel: queue, http, file, grpc, cron")
     add_node.add_argument("--location", help="storage location, e.g. postgres://orders")
     add_node.add_argument("--store-type", dest="store_type",
                           help="storage type: sql, redis, object, file, cache")
-    add_node.add_argument("--entry-type", dest="entry_type",
-                          help="entry type: function, handler, worker, job")
+    add_node.add_argument("--stage", help="entry stage, e.g. normalized, enriched, response")
+    add_node.add_argument("--cluster",
+                          help="grouping label, e.g. orders-service or checkout-ui")
     add_node.add_argument("--repo")
     add_node.add_argument("--commit", dest="commit")
     add_node.add_argument("--file", dest="file")
@@ -1753,14 +3012,63 @@ def build_parser() -> argparse.ArgumentParser:
     add_field.add_argument("--ref", action="append", help="reference file:line (repeatable)")
     add_field.set_defaults(func=cmd_add_field)
 
+    add_flow = sub.add_parser("add-flow", parents=[common],
+                              help="create or update a flow (a named set of entities)")
+    add_flow.add_argument("--id", help="explicit id, e.g. flow:create-order")
+    add_flow.add_argument("--name")
+    add_flow.add_argument("--description")
+    add_flow.add_argument("--cluster",
+                          help="grouping label, e.g. orders-service or checkout-ui")
+    add_flow.add_argument("--repo")
+    add_flow.add_argument("--commit", dest="commit")
+    add_flow.add_argument("--file", dest="file")
+    add_flow.add_argument("--ref", action="append",
+                          help="reference file:line (repeatable)")
+    add_flow.set_defaults(func=cmd_add_flow)
+
+    add_entrypoint = sub.add_parser(
+        "add-entrypoint", parents=[common],
+        help="create or update an entrypoint that triggers flows")
+    add_entrypoint.add_argument("--id", help="explicit id, e.g. entrypoint:orders-created")
+    add_entrypoint.add_argument("--name")
+    add_entrypoint.add_argument("--description", required=True,
+                                help="how this entrypoint is activated")
+    add_entrypoint.add_argument("--cluster",
+                                help="grouping label, e.g. orders-service or checkout-ui")
+    add_entrypoint.add_argument("--repo")
+    add_entrypoint.add_argument("--commit", dest="commit")
+    add_entrypoint.add_argument("--file", dest="file")
+    add_entrypoint.add_argument("--ref", action="append",
+                                help="reference file:line (repeatable)")
+    add_entrypoint.set_defaults(func=cmd_add_entrypoint)
+
+    add_rule = sub.add_parser(
+        "add-rule", parents=[common],
+        help="create or update a rule attached to a flow or entrypoint")
+    add_rule.add_argument("--id", help="explicit id, e.g. rule:search-limit")
+    add_rule.add_argument("--name")
+    add_rule.add_argument("--description", required=True,
+                          help="what the rule requires or limits")
+    add_rule.add_argument("--cluster",
+                          help="grouping label, e.g. orders-service or checkout-ui")
+    add_rule.add_argument("--repo")
+    add_rule.add_argument("--commit", dest="commit")
+    add_rule.add_argument("--file", dest="file")
+    add_rule.add_argument("--ref", action="append",
+                          help="reference file:line (repeatable)")
+    add_rule.set_defaults(func=cmd_add_rule)
+
     add_edge = sub.add_parser("add-edge", parents=[common],
                               help="create or update a relationship")
     add_edge.add_argument("--kind", required=True, choices=tuple(RELS))
     add_edge.add_argument("--from", dest="src", required=True)
     add_edge.add_argument("--to", dest="dst", required=True)
+    add_edge.add_argument("--flow", help="flow id for flow/transform passages")
+    add_edge.add_argument("--description",
+                          help="what connects the entrypoints (related edges)")
     add_edge.add_argument("--ref", action="append", help="reference file:line (repeatable)")
     add_edge.add_argument("--file", dest="file")
-    add_edge.add_argument("--note", help="free-form note (compose/transform)")
+    add_edge.add_argument("--note", help="free-form note")
     add_edge.set_defaults(func=cmd_add_edge)
 
     remove_node = sub.add_parser("remove-node", parents=[common],
@@ -1772,6 +3080,9 @@ def build_parser() -> argparse.ArgumentParser:
     remove_edge.add_argument("--kind", required=True, choices=tuple(RELS))
     remove_edge.add_argument("--from", dest="src", required=True)
     remove_edge.add_argument("--to", dest="dst", required=True)
+    remove_edge.add_argument("--flow", help="flow id for flow/transform passages")
+    remove_edge.add_argument("--description",
+                             help="identifies a related edge between entrypoints")
     remove_edge.set_defaults(func=cmd_remove_edge)
 
     apply = sub.add_parser("apply", parents=[common],
@@ -1782,6 +3093,7 @@ def build_parser() -> argparse.ArgumentParser:
     list_cmd = sub.add_parser("list", parents=[common], help="list nodes")
     list_cmd.add_argument("--kind", choices=ALL_KINDS)
     list_cmd.add_argument("--owner", help="filter fields by contract id")
+    list_cmd.add_argument("--cluster", help="filter by cluster label")
     list_cmd.add_argument("--search", help="case-insensitive substring filter")
     list_cmd.set_defaults(func=cmd_list)
 
@@ -1804,51 +3116,54 @@ def build_parser() -> argparse.ArgumentParser:
     export.add_argument("--out", default=".logistic-map/exports/graph.json")
     export.set_defaults(func=cmd_export)
 
+    export_md = sub.add_parser(
+        "export-md", parents=[common],
+        help="write Markdown docs for entities and flows (agent-friendly)")
+    export_md.add_argument("--out", default="docs/logistic-map",
+                           help="managed output directory")
+    export_md.add_argument("--title", default="Logistic map")
+    export_md.set_defaults(func=cmd_export_md)
+
     render = sub.add_parser("render", parents=[common], help="write a standalone HTML graph")
     render.add_argument("--out")
     render.add_argument("--title", default="Logistic map")
-    render.add_argument("--flow-db", default=None,
-                        help="flow database to embed in the Flows tab")
     render.set_defaults(func=cmd_render)
 
     stats = sub.add_parser("stats", parents=[common], help="print graph counters")
     stats.set_defaults(func=cmd_stats)
 
-    flow_common = argparse.ArgumentParser(add_help=False)
-    flow_common.add_argument(
-        "--flow-db", default=None,
-        help="flow database path (default: <db-dir>/flows.kuzu)")
-
-    flow = sub.add_parser("flow", help="derive and inspect flow graphs")
+    flow = sub.add_parser("flow", help="inspect and edit authored flows")
     flow_sub = flow.add_subparsers(dest="flow_command", required=True)
 
-    flow_build = flow_sub.add_parser(
-        "build", parents=[common, flow_common],
-        help="derive a flow from a contract and materialize its steps")
-    flow_build.add_argument("--from", dest="start", required=True,
-                            help="start contract id, e.g. input:orders.created")
-    flow_build.add_argument("--name", help="flow display name")
-    flow_build.add_argument("--id", help="explicit flow id, e.g. flow:orders")
-    flow_build.add_argument("--description")
-    flow_build.add_argument("--force", action="store_true",
-                            help="rebuild even if the id belongs to another start")
-    flow_build.set_defaults(func=cmd_flow_build)
+    flow_use = flow_sub.add_parser(
+        "use", parents=[common],
+        help="mark an entity as used by a flow (Flow -USES-> entity)")
+    flow_use.add_argument("--id", required=True, help="flow id")
+    flow_use.add_argument("--entity", required=True, help="contract id")
+    flow_use.add_argument("--note")
+    flow_use.add_argument("--file", dest="file")
+    flow_use.add_argument("--ref", action="append",
+                          help="reference file:line (repeatable)")
+    flow_use.set_defaults(func=cmd_flow_use)
 
-    flow_list = flow_sub.add_parser("list", parents=[common, flow_common],
+    flow_unuse = flow_sub.add_parser(
+        "unuse", parents=[common],
+        help="remove an entity from a flow")
+    flow_unuse.add_argument("--id", required=True, help="flow id")
+    flow_unuse.add_argument("--entity", required=True, help="contract id")
+    flow_unuse.set_defaults(func=cmd_flow_unuse)
+
+    flow_list = flow_sub.add_parser("list", parents=[common],
                                     help="list flows")
     flow_list.set_defaults(func=cmd_flow_list)
 
-    flow_show = flow_sub.add_parser("show", parents=[common, flow_common],
-                                    help="show one flow as a tree")
+    flow_show = flow_sub.add_parser("show", parents=[common],
+                                    help="show one flow: entities, passages, path")
     flow_show.add_argument("id")
     flow_show.set_defaults(func=cmd_flow_show)
 
-    flow_sync = flow_sub.add_parser("sync", parents=[common, flow_common],
-                                    help="rebuild every flow from the contract graph")
-    flow_sync.set_defaults(func=cmd_flow_sync)
-
-    flow_remove = flow_sub.add_parser("remove", parents=[common, flow_common],
-                                      help="delete a flow and its steps")
+    flow_remove = flow_sub.add_parser("remove", parents=[common],
+                                      help="delete a flow and its passages")
     flow_remove.add_argument("--id", required=True)
     flow_remove.set_defaults(func=cmd_flow_remove)
 

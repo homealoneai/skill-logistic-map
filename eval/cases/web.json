@@ -1,0 +1,36 @@
+{
+  "id": "web",
+  "title": "Web character viewer data",
+  "path": "code-sample/web",
+  "scope": "The runtime data the 3D portfolio loads: the encrypted character file fetched and decrypted by the Character utils, and the work-item video assets fetched on hover and turned into Blob URLs. Ignore styling, GSAP/three.js rendering, build configuration and static copy text.",
+  "hints": [
+    "src/components/Character/utils/decrypt.ts fetches a URL, loads the bytes and decrypts them with AES-CBC.",
+    "src/components/Character/utils/character.ts fetches /models/character.enc and hands the decrypted bytes to GLTFLoader through a Blob URL.",
+    "src/components/WorkImage.tsx fetches src/assets/<video> on hover and creates a Blob URL for the video element.",
+    "There is no database, API server or persistence layer in this slice."
+  ],
+  "context_files": [
+    "src/components/Character/utils/decrypt.ts",
+    "src/components/Character/utils/character.ts",
+    "src/components/WorkImage.tsx"
+  ],
+  "expect": {
+    "entry_points": [
+      "character.enc",
+      "src/assets"
+    ],
+    "min_inputs": 2,
+    "min_entries": 2,
+    "min_storages": 0,
+    "min_fields": 3,
+    "min_edges": 2,
+    "files": [
+      "src/components/Character/utils/decrypt.ts",
+      "src/components/Character/utils/character.ts",
+      "src/components/WorkImage.tsx"
+    ],
+    "min_flows": 1,
+    "min_entrypoints": 1
+  },
+  "rubric": "The two file fetches are inputs; decrypt and Blob URL creation are transformations. Blob URLs and decrypted ArrayBuffers live in memory and are not durable storage, so a map with no storage is correct. Penalize maps that invent an API, a database or a queue, and maps that model React components or CSS as contracts."
+}

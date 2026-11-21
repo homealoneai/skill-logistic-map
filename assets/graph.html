@@ -17,8 +17,13 @@
     --field: #94a3b8;
     --compose: #38bdf8;
     --transform: #fbbf24;
+    --flow: #22d3ee;
+    --flow-node: #f472b6;
+    --entrypoint: #fb923c;
+    --rule: #a3e635;
+    --related: #a78bfa;
+    --use: #f9a8d4;
     --contains: #64748b;
-    --feeds: #22d3ee;
   }
   * { box-sizing: border-box; }
   html, body { height: 100%; margin: 0; }
@@ -55,22 +60,6 @@
     display: flex; gap: 6px; flex-wrap: wrap; align-items: center;
     padding: 8px 14px; border-bottom: 1px solid var(--line); background: #0a1120;
   }
-  .tabs { display: flex; gap: 2px; padding: 2px; border: 1px solid var(--line);
-    border-radius: 8px; background: #0a1222; }
-  .tab { background: transparent; border: 0; padding: 4px 10px; border-radius: 6px;
-    color: var(--muted); cursor: pointer; font: inherit; font-size: 12px; }
-  .tab:hover { color: var(--text); }
-  .tab.active { background: #1e293b; color: var(--text); }
-  select.flow-select { background: #0a1222; color: var(--text); border: 1px solid var(--line);
-    border-radius: 7px; padding: 5px 8px; font: inherit; outline: none; max-width: 230px; }
-  select.flow-select:disabled { display: none !important; }
-  body .flows-only { display: none; }
-  body.mode-flows .flows-only { display: inline-flex; }
-  body.mode-flows select.flows-only { display: inline-block; }
-  body.mode-flows .contracts-only { display: none; }
-  body #legend .flows-only { display: none; }
-  body.mode-flows #legend .flows-only { display: flex; }
-  body.mode-flows #legend .contracts-only { display: none; }
   .chip {
     display: inline-flex; align-items: center; gap: 6px; cursor: pointer;
     border: 1px solid var(--line); border-radius: 999px; padding: 3px 9px;
@@ -80,6 +69,11 @@
   .chip .swatch { width: 8px; height: 8px; border-radius: 50%; }
   .chip.on { color: var(--text); border-color: #334155; }
   #stage { flex: 1; display: flex; min-height: 0; }
+  #clusterFilter {
+    background: #0b1424; color: var(--text); border: 1px solid var(--line);
+    border-radius: 7px; padding: 6px 8px; font: inherit; max-width: 220px;
+  }
+  #clusterFilter:focus { outline: none; border-color: #334155; }
   #canvasWrap { flex: 1; position: relative; min-width: 0; }
   canvas { display: block; width: 100%; height: 100%; cursor: grab; }
   canvas.dragging { cursor: grabbing; }
@@ -150,28 +144,32 @@
 <header>
   <div class="brand"><span class="dot"></span><h1 id="title">Logistic map</h1></div>
   <div class="stats" id="stats"></div>
-  <div class="tabs">
-    <button class="tab active" id="tabContracts">Contracts</button>
-    <button class="tab" id="tabFlows">Flows</button>
-  </div>
   <div class="spacer"></div>
-  <input id="search" type="search" placeholder="Search id, name or path" autocomplete="off">
+  <select id="clusterFilter" title="Filter the graph by cluster">
+    <option value="">All clusters</option>
+  </select>
+  <input id="search" type="search" placeholder="Search id, name, path or cluster" autocomplete="off">
   <button id="fit" title="Fit graph in view">Fit</button>
   <button id="relayout" title="Restart the force layout">Relayout</button>
   <button id="png" title="Download the canvas as PNG">PNG</button>
 </header>
 <div id="controls">
+  <label class="chip on"><input type="checkbox" data-kind="flow" checked><span class="swatch" style="background:var(--flow-node)"></span>Flows</label>
+  <label class="chip on"><input type="checkbox" data-kind="entrypoint" checked><span class="swatch" style="background:var(--entrypoint)"></span>EntryPoints</label>
+  <label class="chip on"><input type="checkbox" data-kind="rule" checked><span class="swatch" style="background:var(--rule)"></span>Rules</label>
   <label class="chip on"><input type="checkbox" data-kind="input" checked><span class="swatch" style="background:var(--input)"></span>Inputs</label>
   <label class="chip on"><input type="checkbox" data-kind="entry" checked><span class="swatch" style="background:var(--entry)"></span>Entries</label>
   <label class="chip on"><input type="checkbox" data-kind="storage" checked><span class="swatch" style="background:var(--storage)"></span>Storages</label>
-  <label class="chip contracts-only"><input type="checkbox" data-kind="field"><span class="swatch" style="background:var(--field)"></span>Fields</label>
-  <label class="chip on contracts-only"><input type="checkbox" data-rel="compose" checked><span class="swatch" style="background:var(--compose)"></span>compose</label>
-  <label class="chip on contracts-only"><input type="checkbox" data-rel="transform" checked><span class="swatch" style="background:var(--transform)"></span>transform</label>
-  <label class="chip on contracts-only"><input type="checkbox" data-rel="contains" checked><span class="swatch" style="background:var(--contains)"></span>contains</label>
-  <label class="chip on flows-only"><input type="checkbox" data-rel="feeds" checked><span class="swatch" style="background:var(--feeds)"></span>feeds</label>
-  <label class="chip on flows-only"><input type="checkbox" id="contextToggle" checked><span class="swatch" style="background:#94a3b8"></span>Context</label>
+  <label class="chip"><input type="checkbox" data-kind="field"><span class="swatch" style="background:var(--field)"></span>Fields</label>
+  <label class="chip on"><input type="checkbox" data-rel="use" checked><span class="swatch" style="background:var(--use)"></span>use</label>
+  <label class="chip on"><input type="checkbox" data-rel="trigger" checked><span class="swatch" style="background:var(--entrypoint)"></span>trigger</label>
+  <label class="chip on"><input type="checkbox" data-rel="related" checked><span class="swatch" style="background:var(--related)"></span>related</label>
+  <label class="chip on"><input type="checkbox" data-rel="rule" checked><span class="swatch" style="background:var(--rule)"></span>rule</label>
+  <label class="chip on"><input type="checkbox" data-rel="compose" checked><span class="swatch" style="background:var(--compose)"></span>compose</label>
+  <label class="chip on"><input type="checkbox" data-rel="transform" checked><span class="swatch" style="background:var(--transform)"></span>transform</label>
+  <label class="chip on"><input type="checkbox" data-rel="flow" checked><span class="swatch" style="background:var(--flow)"></span>flow</label>
+  <label class="chip on"><input type="checkbox" data-rel="contains" checked><span class="swatch" style="background:var(--contains)"></span>contains</label>
   <label class="chip" title="Highlight everything reachable from the selected contract"><input type="checkbox" id="impactToggle"><span class="swatch" style="background:#f472b6"></span>Impact</label>
-  <select id="flowSelect" class="flow-select flows-only" aria-label="Select flow"></select>
   <span class="spacer"></span>
   <span class="stats" id="visibleStats"></span>
 </div>
@@ -179,16 +177,22 @@
   <div id="canvasWrap">
     <canvas id="graph"></canvas>
     <div id="legend">
+      <div class="row"><span class="swatch" style="width:8px;height:8px;border-radius:50%;background:var(--flow-node)"></span>Flow</div>
+      <div class="row"><span class="swatch" style="width:8px;height:8px;border-radius:50%;background:var(--entrypoint)"></span>EntryPoint</div>
+      <div class="row"><span class="swatch" style="width:8px;height:8px;border-radius:50%;background:var(--rule)"></span>Rule</div>
       <div class="row"><span class="swatch" style="width:8px;height:8px;border-radius:50%;background:var(--input)"></span>Input</div>
       <div class="row"><span class="swatch" style="width:8px;height:8px;border-radius:50%;background:var(--entry)"></span>Entry</div>
       <div class="row"><span class="swatch" style="width:8px;height:8px;border-radius:50%;background:var(--storage)"></span>Storage</div>
-      <div class="row contracts-only"><span class="swatch" style="width:8px;height:8px;border-radius:50%;background:var(--field)"></span>Field</div>
-      <div class="row contracts-only" style="margin-top:4px"><span class="line" style="border-color:var(--compose)"></span>compose</div>
-      <div class="row contracts-only"><span class="line" style="border-color:var(--transform)"></span>transform</div>
-      <div class="row contracts-only"><span class="line dashed" style="border-color:var(--contains)"></span>contains</div>
-      <div class="row flows-only" style="margin-top:4px"><span class="line" style="border-color:var(--feeds)"></span>feeds</div>
-      <div class="row flows-only"><span class="line dashed" style="border-color:var(--feeds)"></span>context feed</div>
-      <div class="row flows-only"><span class="swatch" style="width:8px;height:8px;border-radius:50%;background:#f472b6"></span>join</div>
+      <div class="row"><span class="swatch" style="width:8px;height:8px;border-radius:50%;background:var(--field)"></span>Field</div>
+      <div class="row" style="margin-top:4px"><span class="line" style="border-color:var(--use)"></span>use (flow uses entity)</div>
+      <div class="row"><span class="line" style="border-color:var(--entrypoint)"></span>trigger (entrypoint starts flow)</div>
+      <div class="row"><span class="line dashed" style="border-color:var(--related)"></span>related (entrypoint → entrypoint)</div>
+      <div class="row"><span class="line dashed" style="border-color:var(--rule)"></span>rule (flow/entrypoint → rule)</div>
+      <div class="row"><span class="line" style="border-color:var(--compose)"></span>compose (whole → part)</div>
+      <div class="row"><span class="line" style="border-color:var(--transform)"></span>transform (shape change)</div>
+      <div class="row"><span class="line dashed" style="border-color:var(--flow)"></span>flow (passes unchanged)</div>
+      <div class="row"><span class="line dashed" style="border-color:var(--contains)"></span>contains</div>
+      <div class="row" style="margin-top:4px"><span class="line" style="border-color:var(--storage)"></span>lanes: entrypoint above flow, rule beside them (full height), then kind / store_type</div>
     </div>
     <div id="hint">drag to pan · wheel to zoom · click a node</div>
   </div>
@@ -198,16 +202,23 @@
 const DATA = __DATA__;
 
 const KIND = {
+  flow:    { label: 'Flow',    color: '#f472b6', r: 12 },
+  entrypoint: { label: 'EntryPoint', color: '#fb923c', r: 12 },
+  rule:    { label: 'Rule',    color: '#a3e635', r: 9 },
   input:   { label: 'Input',   color: '#60a5fa', r: 10 },
   entry:   { label: 'Entry',   color: '#c084fc', r: 10 },
   storage: { label: 'Storage', color: '#34d399', r: 10 },
   field:   { label: 'Field',   color: '#94a3b8', r: 4.5 },
 };
 const EDGE = {
+  trigger:   { color: '#fb923c', width: 1.7, dash: [], spring: 130, label: 'trigger' },
+  related:   { color: '#a78bfa', width: 1.4, dash: [1, 4], spring: 150, label: 'related', faint: true },
+  rule:      { color: '#a3e635', width: 1.2, dash: [3, 3], spring: 110, label: 'rule', faint: true },
   contains:  { color: '#64748b', width: 1.1, dash: [4, 4], spring: 38,  label: 'contains' },
+  use:       { color: '#f9a8d4', width: 1.2, dash: [2, 4], spring: 130, label: 'use', faint: true },
   compose:   { color: '#38bdf8', width: 1.7, dash: [],      spring: 115, label: 'compose' },
   transform: { color: '#fbbf24', width: 1.7, dash: [],      spring: 95,  label: 'transform' },
-  feeds:     { color: '#22d3ee', width: 1.7, dash: [],      spring: 105, label: 'feeds' },
+  flow:      { color: '#22d3ee', width: 1.5, dash: [6, 4],  spring: 105, label: 'flow' },
 };
 const esc = (v) => String(v ?? '').replace(/[&<>"']/g, (c) => (
   { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
@@ -219,28 +230,38 @@ let PAIRS = new Map();
 let FLOW_OUT = new Map();
 let FIELDS_BY_OWNER = new Map();
 let NEIGH = new Map();
+let LAYERS = [];
+let FLOWS_BY_CONTRACT = new Map();
 
-function buildWorld(mode, flowIndex) {
-  const flows = DATA.flows || [];
-  if (mode === 'flows' && flowIndex >= flows.length) {
-    flowIndex = 0;
-    state.flowIndex = 0;
-  }
-  const flow = mode === 'flows' ? flows[flowIndex] : null;
-  const rawNodes = mode === 'flows' ? (flow ? flow.steps : []) : (DATA.nodes || []);
-  const rawEdges = mode === 'flows' ? (flow ? flow.feeds : []) : (DATA.edges || []);
+const LANE_GAP = 20;
+const SLOT_X = 360;
+const SLOT_Y = 80;
+
+function buildWorld() {
+  const rawNodes = DATA.nodes || [];
+  const rawEdges = DATA.edges || [];
 
   NODES = rawNodes.map((n) => ({
-    ...(n.contract || {}),
     ...n,
-    kind: n.contract_kind || n.kind,
     owner: n.kind === 'field' ? String(n.id).split('#')[0] : null,
-    x: 0, y: 0, vx: 0, vy: 0, visible: true, match: null, join: 0,
+    x: 0, y: 0, vx: 0, vy: 0, visible: true, match: null,
   }));
   N = new Map(NODES.map((n) => [n.id, n]));
+  buildLayers();
   EDGES = rawEdges
     .filter((e) => N.has(e.from) && N.has(e.to))
-    .map((e) => ({ ...e, kind: mode === 'flows' ? 'feeds' : e.kind, curve: 0 }));
+    .map((e) => ({ ...e, curve: 0 }));
+
+  FLOWS_BY_CONTRACT = new Map();
+  for (const e of EDGES) {
+    if (e.kind !== 'use') continue;
+    const flow = N.get(e.from);
+    if (!flow || flow.kind !== 'flow') continue;
+    if (!FLOWS_BY_CONTRACT.has(e.to)) FLOWS_BY_CONTRACT.set(e.to, []);
+    FLOWS_BY_CONTRACT.get(e.to).push({
+      id: flow.id, name: flow.name || flow.id,
+    });
+  }
 
   PAIRS = new Map();
   for (const e of EDGES) {
@@ -256,7 +277,9 @@ function buildWorld(mode, flowIndex) {
 
   FLOW_OUT = new Map();
   for (const e of EDGES) {
-    if (e.kind === 'contains') continue;
+    // Impact follows data movement only, never orchestration or composition.
+    if (e.kind === 'contains' || e.kind === 'compose' || e.kind === 'use' ||
+        e.kind === 'trigger' || e.kind === 'related' || e.kind === 'rule') continue;
     if (!FLOW_OUT.has(e.from)) FLOW_OUT.set(e.from, []);
     FLOW_OUT.get(e.from).push({ to: e.to, edge: e });
   }
@@ -276,20 +299,16 @@ function buildWorld(mode, flowIndex) {
     NEIGH.get(e.to).push({ edge: e, other: e.from, dir: 'in' });
   }
 
-  const indegree = new Map();
-  for (const e of EDGES) indegree.set(e.to, (indegree.get(e.to) || 0) + 1);
-  for (const n of NODES) n.join = indegree.get(n.id) || 0;
-
-  state.flow = flow ? flow.flow : null;
-  const flowSelect = document.getElementById('flowSelect');
-  if (flowSelect && mode === 'flows') flowSelect.value = String(flowIndex);
   state.selected = null;
   state.selectedEdge = null;
   state.hover = null;
   state.hoverEdge = null;
   state.impact = null;
+  state.focus = null;
   state.query = '';
+  state.cluster = '';
   searchEl.value = '';
+  buildClusterOptions();
   seed();
   updateVisibility();
   fit();
@@ -301,6 +320,7 @@ const statsEl = document.getElementById('stats');
 const visibleStatsEl = document.getElementById('visibleStats');
 const panel = document.getElementById('panel');
 const searchEl = document.getElementById('search');
+const clusterEl = document.getElementById('clusterFilter');
 const canvas = document.getElementById('graph');
 const wrap = document.getElementById('canvasWrap');
 const ctx = canvas.getContext('2d');
@@ -316,15 +336,13 @@ const state = {
   drag: null,
   pan: null,
   moved: false,
-  tab: 'contracts',
-  flowIndex: 0,
-  flow: null,
-  showContext: true,
-  kindOn: { input: true, entry: true, storage: true, field: false },
-  relOn: { compose: true, transform: true, contains: true, feeds: true },
+  kindOn: { entrypoint: true, flow: true, rule: true, input: true, entry: true, storage: true, field: false },
+  relOn: { use: true, trigger: true, related: true, rule: true, compose: true, transform: true, flow: true, contains: true },
   impactOn: false,
   impact: null,
+  focus: null,
   query: '',
+  cluster: '',
 };
 
 let W = 0, H = 0, DPR = 1;
@@ -344,20 +362,213 @@ function resize() {
 
 function contractNodes() { return NODES.filter((n) => n.kind !== 'field'); }
 
+function nodeCluster(n) {
+  if (!n) return '';
+  if (n.kind === 'field') {
+    const owner = N.get(n.owner || String(n.id).split('#')[0]);
+    return owner ? String(owner.cluster || '') : '';
+  }
+  return String(n.cluster || '');
+}
+
+function buildClusterOptions() {
+  const values = [...new Set(NODES.map(nodeCluster).filter(Boolean))]
+    .sort((a, b) => a.localeCompare(b));
+  const current = state.cluster && values.includes(state.cluster)
+    ? state.cluster : '';
+  clusterEl.innerHTML = '<option value="">All clusters</option>' +
+    values.map((value) =>
+      `<option value="${esc(value)}">${esc(value)}</option>`).join('');
+  clusterEl.value = current;
+  state.cluster = current;
+}
+
+function layerOf(n) {
+  if (n.kind === 'entrypoint') return { key: 'entrypoint', label: 'EntryPoints', kind: 'entrypoint' };
+  if (n.kind === 'flow') return { key: 'flow', label: 'Flow', kind: 'flow' };
+  if (n.kind === 'rule') return { key: 'rule', label: 'Rules', kind: 'rule' };
+  if (n.kind === 'input') return { key: 'input', label: 'Input', kind: 'input' };
+  if (n.kind === 'entry') return { key: 'entry', label: 'Entry', kind: 'entry' };
+  if (n.kind === 'storage') {
+    const type = String(n.store_type || '').trim();
+    return {
+      key: `storage:${type || 'unspecified'}`,
+      label: `Storage / ${type || 'unspecified'}`,
+      kind: 'storage',
+    };
+  }
+  return null;
+}
+
+function buildLayers() {
+  LAYERS = [];
+  const byKey = new Map();
+  for (const n of contractNodes()) {
+    const info = layerOf(n);
+    if (!info) continue;
+    if (!byKey.has(info.key)) byKey.set(info.key, { ...info, count: 0 });
+    byKey.get(info.key).count += 1;
+  }
+
+  const ranks = { entrypoint: 0, flow: 0, rule: 0, input: 1, entry: 2, storage: 3 };
+  const rank = (layer) => ranks[layer.kind] ?? 9;
+  const layers = [...byKey.values()].sort((a, b) => {
+    if (rank(a) !== rank(b)) return rank(a) - rank(b);
+    if (a.kind !== b.kind) {
+      const order = { entrypoint: 0, flow: 1, rule: 2 };
+      return (order[a.kind] ?? 9) - (order[b.kind] ?? 9);
+    }
+    if (a.key === 'storage:unspecified') return 1;
+    if (b.key === 'storage:unspecified') return -1;
+    return a.label.localeCompare(b.label);
+  });
+
+  layers.forEach((layer, index) => { layer.index = index; });
+
+  for (const layer of layers) {
+    const list = contractNodes()
+      .filter((n) => (layerOf(n) || {}).key === layer.key)
+      .sort((a, b) => String(a.id).localeCompare(String(b.id)));
+    const cols = Math.max(1, Math.min(6, Math.ceil(Math.sqrt(list.length * 1.6))));
+    const rows = Math.ceil(list.length / cols);
+    layer.cols = cols;
+    layer.rows = rows;
+    layer.height = Math.max(168, rows * 88 + 68);
+    layer.width = (cols - 1) * SLOT_X + 180;
+    list.forEach((n, i) => {
+      n.layerCol = i % cols;
+      n.layerRow = Math.floor(i / cols);
+      n.layerCols = cols;
+      n.layerRows = rows;
+    });
+  }
+
+  // EntryPoints sit above Flows; Rules stand beside both, spanning their
+  // combined height. Every other kind keeps its own full-width band.
+  const topLayers = layers.filter((layer) => rank(layer) === 0);
+  const entryLayers = topLayers.filter((layer) => layer.kind === 'entrypoint');
+  const flowLayers = topLayers.filter((layer) => layer.kind === 'flow');
+  const ruleLayers = topLayers.filter((layer) => layer.kind === 'rule');
+  const stackLayers = (list, left, width, top) => {
+    let y = top;
+    for (const layer of list) {
+      layer.left = left + (width - layer.width) / 2;
+      layer.centerX = left + width / 2;
+      layer.top = y;
+      layer.y = y + layer.height / 2;
+      y += layer.height + LANE_GAP;
+    }
+    return list.length ? y - LANE_GAP - top : 0;
+  };
+
+  const stacked = [...entryLayers, ...flowLayers];
+  const hasLeft = stacked.length > 0;
+  const hasRules = ruleLayers.length > 0;
+  const leftWidth = hasLeft ? Math.max(...stacked.map((layer) => layer.width)) : 0;
+  const ruleWidth = hasRules ? Math.max(...ruleLayers.map((layer) => layer.width)) : 0;
+  const topWidth = leftWidth + (hasLeft && hasRules ? LANE_GAP : 0) + ruleWidth;
+  const topLeft = -topWidth / 2;
+
+  let cursor = 0;
+  let leftColumnX = 0;
+  const placeRules = (ruleHeight, ruleLeft) => {
+    for (const layer of ruleLayers) {
+      layer.left = ruleLeft;
+      layer.centerX = ruleLeft + layer.width / 2;
+      layer.top = 0;
+      layer.height = ruleHeight;
+      layer.y = ruleHeight / 2;
+      layer.rowGap = layer.rows > 1
+        ? Math.min(SLOT_Y * 1.8, (ruleHeight - 90) / (layer.rows - 1))
+        : 0;
+      ruleLeft += layer.width + LANE_GAP;
+    }
+  };
+
+  if (hasLeft) {
+    const stackHeight = stackLayers(stacked, topLeft, leftWidth, 0);
+    leftColumnX = topLeft + leftWidth / 2;
+    cursor = stackHeight + LANE_GAP;
+    if (hasRules) {
+      const ruleHeight = Math.max(stackHeight, 168);
+      placeRules(ruleHeight, topLeft + leftWidth + LANE_GAP);
+      cursor = Math.max(stackHeight, ruleHeight) + LANE_GAP;
+    }
+  } else if (hasRules) {
+    const ruleHeight = 168;
+    placeRules(ruleHeight, -ruleWidth / 2);
+    cursor = ruleHeight + LANE_GAP;
+  }
+
+  for (const layer of layers.filter((layer) => rank(layer) !== 0)) {
+    layer.left = leftColumnX - layer.width / 2;
+    layer.centerX = leftColumnX;
+    layer.top = cursor;
+    layer.y = cursor + layer.height / 2;
+    cursor += layer.height + LANE_GAP;
+  }
+
+  const total = cursor - LANE_GAP;
+  const shift = -total / 2;
+  for (const layer of layers) {
+    layer.top += shift;
+    layer.y += shift;
+  }
+  LAYERS = layers;
+
+  const byLayerKey = new Map(layers.map((layer) => [layer.key, layer]));
+  for (const n of NODES) {
+    const owner = n.kind === 'field'
+      ? N.get(n.owner || String(n.id).split('#')[0])
+      : n;
+    const key = owner ? (layerOf(owner) || {}).key : null;
+    const layer = key ? byLayerKey.get(key) : null;
+    n.layerKey = key || null;
+    n.layer = layer ? layer.index : -1;
+    n.layerY = layer ? layer.y : 0;
+    if (layer && n.kind !== 'field') {
+      const cols = n.layerCols || 1;
+      const rows = n.layerRows || 1;
+      n.slotX = (layer.centerX || 0) +
+        (n.layerCol - (cols - 1) / 2) * SLOT_X;
+      n.slotY = layer.y +
+        (n.layerRow - (rows - 1) / 2) * (layer.rowGap ?? SLOT_Y);
+    } else {
+      n.slotX = null;
+      n.slotY = null;
+    }
+  }
+}
+
+function rgba(hex, alpha) {
+  const value = parseInt(hex.slice(1), 16);
+  return `rgba(${(value >> 16) & 255}, ${(value >> 8) & 255}, ${value & 255}, ${alpha})`;
+}
+
 function seed() {
   const contracts = contractNodes();
-  const radius = 120 + contracts.length * 22;
-  contracts.forEach((n, i) => {
-    const a = (i / Math.max(1, contracts.length)) * Math.PI * 2;
-    n.x = Math.cos(a) * radius;
-    n.y = Math.sin(a) * radius * 0.72;
-    n.vx = 0; n.vy = 0;
-  });
+  if (LAYERS.length) {
+    for (const n of contracts) {
+      if (n.layer < 0 || n.slotX == null) continue;
+      n.x = n.slotX + (Math.random() - 0.5) * 30;
+      n.y = n.slotY + (Math.random() - 0.5) * 24;
+      n.vx = 0;
+      n.vy = 0;
+    }
+  } else {
+    const radius = 120 + contracts.length * 22;
+    contracts.forEach((n, i) => {
+      const a = (i / Math.max(1, contracts.length)) * Math.PI * 2;
+      n.x = Math.cos(a) * radius;
+      n.y = Math.sin(a) * radius * 0.72;
+      n.vx = 0; n.vy = 0;
+    });
+  }
   NODES.filter((n) => n.kind === 'field').forEach((f) => {
     const o = N.get(f.owner) || contracts[0];
     const base = o ? { x: o.x, y: o.y } : { x: 0, y: 0 };
     f.x = base.x + (Math.random() - 0.5) * 90;
-    f.y = base.y + (Math.random() - 0.5) * 90;
+    f.y = base.y + (Math.random() - 0.5) * 60;
     f.vx = 0; f.vy = 0;
   });
   state.alpha = 1;
@@ -367,24 +578,21 @@ function seed() {
 function allVisible() { return NODES.filter((n) => n.visible); }
 
 function updateVisibility() {
+  const cluster = state.cluster;
   for (const n of NODES) {
-    n.visible = !!state.kindOn[n.kind];
-    if (state.tab === 'flows' && n.span === 'context' && !state.showContext) {
-      n.visible = false;
-    }
+    n.visible = !!state.kindOn[n.kind] && (!cluster || nodeCluster(n) === cluster);
   }
   for (const e of EDGES) {
     e.visible = !!state.relOn[e.kind] && N.get(e.from).visible && N.get(e.to).visible;
   }
-  if (state.tab === 'flows') {
-    const steps = NODES.filter((n) => n.visible).length;
-    const feeds = EDGES.filter((e) => e.visible).length;
-    visibleStatsEl.textContent = `visible: ${steps} steps, ${feeds} feeds`;
-  } else {
-    const contracts = NODES.filter((n) => n.visible && n.kind !== 'field').length;
-    const fields = NODES.filter((n) => n.visible && n.kind === 'field').length;
-    visibleStatsEl.textContent = `visible: ${contracts} contracts, ${fields} fields`;
-  }
+  const flows = NODES.filter((n) => n.visible && n.kind === 'flow').length;
+  const contracts = NODES.filter(
+    (n) => n.visible && ['input', 'entry', 'storage'].includes(n.kind)).length;
+  const fields = NODES.filter((n) => n.visible && n.kind === 'field').length;
+  const rules = NODES.filter((n) => n.visible && n.kind === 'rule').length;
+  visibleStatsEl.textContent =
+    `visible: ${flows} flows, ${rules} rules, ${contracts} entities, ${fields} fields` +
+    (cluster ? ` · cluster: ${cluster}` : '');
   state.dirty = true;
 }
 
@@ -407,7 +615,7 @@ function step() {
       let d2 = dx * dx + dy * dy;
       if (d2 < 1) { dx = Math.random() - 0.5; dy = Math.random() - 0.5; d2 = 1; }
       const d = Math.sqrt(d2);
-      const strength = (1200 / d2) * alpha * (a.kind === 'field' ? 0.6 : 1);
+      const strength = (1800 / d2) * alpha * (a.kind === 'field' ? 0.5 : 1);
       const fx = (dx / d) * strength, fy = (dy / d) * strength;
       a.vx -= fx; a.vy -= fy;
       b.vx += fx; b.vy += fy;
@@ -428,11 +636,24 @@ function step() {
 
   const c = center();
   for (const n of vis) {
-    n.vx += (c.x - n.x) * 0.0009 * alpha;
-    n.vy += (c.y - n.y) * 0.0009 * alpha;
+    if (n.kind === 'field') {
+      const owner = N.get(n.owner);
+      if (owner) {
+        n.vx += (owner.x - n.x) * 0.01 * alpha;
+        n.vy += (owner.y - n.y) * 0.02 * alpha;
+      }
+    } else if (n.layer >= 0 && n.slotX != null) {
+      n.vx += (n.slotX - n.x) * 0.03 * alpha;
+      n.vy += (n.slotY - n.y) * 0.03 * alpha;
+    }
+    n.vx += (c.x - n.x) * 0.00025 * alpha;
     if (state.drag === n) { n.vx = 0; n.vy = 0; continue; }
     n.vx *= 0.86; n.vy *= 0.86;
     n.x += n.vx; n.y += n.vy;
+    if (n.kind !== 'field' && n.layer >= 0 && n.slotX != null) {
+      n.x = Math.max(n.slotX - SLOT_X * 0.18, Math.min(n.slotX + SLOT_X * 0.18, n.x));
+      n.y = Math.max(n.slotY - SLOT_Y * 0.35, Math.min(n.slotY + SLOT_Y * 0.35, n.y));
+    }
   }
   state.alpha *= 0.988;
   if (state.alpha < 0.015) state.alpha = 0;
@@ -448,11 +669,13 @@ function fit(extraPad) {
     maxX = Math.max(maxX, n.x); maxY = Math.max(maxY, n.y);
   }
   const pad = extraPad ?? 70;
+  const legendPad = 180;
+  const usableH = Math.max(80, H - pad - legendPad);
   const bw = Math.max(1, maxX - minX), bh = Math.max(1, maxY - minY);
   state.view.k = Math.max(0.12, Math.min(1.8,
-    Math.min((W - pad * 2) / bw, (H - pad * 2) / bh)));
+    Math.min((W - pad * 2) / bw, usableH / bh)));
   state.view.x = W / 2 - ((minX + maxX) / 2) * state.view.k;
-  state.view.y = H / 2 - ((minY + maxY) / 2) * state.view.k;
+  state.view.y = pad + usableH / 2 - ((minY + maxY) / 2) * state.view.k;
   state.dirty = true;
 }
 
@@ -538,18 +761,21 @@ function drawEdge(e, active) {
   const g = edgeGeometry(e);
   if (!g) return;
   const meta = EDGE[e.kind];
-  const dim = nodeDim(e.from) || nodeDim(e.to);
+  const dim = edgeDim(e);
   const base = meta.width * Math.min(1.8, Math.max(0.7, state.view.k));
   const route = !!(state.impactOn && state.impact && state.impact.edges.has(e));
+  const focused = !!(state.focus && state.focus.edges.has(e));
   ctx.save();
-  ctx.globalAlpha = dim ? (active ? 0.55 : 0.12) : (active ? 1 : 0.92);
+  ctx.globalAlpha = dim ? (active ? 0.55 : 0.12)
+    : (active ? 1 : (meta.faint ? (focused ? 0.9 : 0.5) : 0.92));
   ctx.strokeStyle = meta.color;
-  ctx.lineWidth = base * (active ? 1.9 : route ? 1.55 : 1);
-  const contextEdge = state.tab === 'flows' && e.kind === 'feeds'
-    && N.get(e.from) && N.get(e.from).span === 'context';
-  ctx.setLineDash(contextEdge ? [4, 4]
-    : meta.dash.map((v) => v * Math.min(1.6, state.view.k)));
-  if (active || route) { ctx.shadowColor = meta.color; ctx.shadowBlur = active ? 10 : 7; }
+  ctx.lineWidth = base * (active ? 1.9 : route ? 1.55 : 1)
+    * (meta.faint ? (focused ? 1 : 0.8) : 1);
+  ctx.setLineDash(meta.dash.map((v) => v * Math.min(1.6, state.view.k)));
+  if (active || route || focused) {
+    ctx.shadowColor = meta.color;
+    ctx.shadowBlur = active ? 10 : 7;
+  }
   if (g.self) {
     ctx.beginPath();
     ctx.arc(g.cx, g.cy, g.r, Math.PI * 0.6, Math.PI * 2.4);
@@ -612,6 +838,54 @@ function drawEdgeLabel(g, meta) {
   ctx.restore();
 }
 
+function drawLanes() {
+  if (!LAYERS.length) return;
+  const k = state.view.k;
+  ctx.save();
+  for (const layer of LAYERS) {
+    const visible = NODES.filter((n) => n.layer === layer.index && n.visible);
+    if (!visible.length) continue;
+    const top = (layer.top + 10) * k + state.view.y;
+    const bottom = (layer.top + layer.height - 10) * k + state.view.y;
+    if (bottom < 0 || top > H) continue;
+
+    const x1 = layer.left * k + state.view.x;
+    const x2 = (layer.left + layer.width) * k + state.view.x;
+    if (x2 < 0 || x1 > W) continue;
+    const y1 = Math.max(-24, top);
+    const y2 = Math.min(H + 24, bottom);
+    const height = Math.max(1, y2 - y1);
+    const width = Math.max(1, x2 - x1);
+    const color = KIND[layer.kind].color;
+
+    ctx.beginPath();
+    if (ctx.roundRect) ctx.roundRect(x1, y1, width, height, 14);
+    else ctx.rect(x1, y1, width, height);
+    ctx.fillStyle = rgba(color, 0.055);
+    ctx.fill();
+    ctx.strokeStyle = rgba(color, 0.18);
+    ctx.lineWidth = 1;
+    ctx.stroke();
+
+    ctx.fillStyle = rgba(color, 0.7);
+    ctx.fillRect(x1 + 10, y1 + 10, 3, Math.max(0, height - 20));
+
+    if (height > 32 && width > 88) {
+      ctx.font = '600 11px ui-sans-serif, system-ui, sans-serif';
+      ctx.textAlign = 'left';
+      ctx.textBaseline = 'top';
+      ctx.fillStyle = rgba(color, 0.92);
+      ctx.save();
+      ctx.beginPath();
+      ctx.rect(x1, y1, width - 8, height);
+      ctx.clip();
+      ctx.fillText(`${layer.label.toUpperCase()} · ${visible.length}`, x1 + 20, y1 + 12);
+      ctx.restore();
+    }
+  }
+  ctx.restore();
+}
+
 function draw() {
   ctx.setTransform(DPR, 0, 0, DPR, 0, 0);
   const bg = ctx.createRadialGradient(W * 0.5, H * 0.35, 40, W * 0.5, H * 0.5, Math.max(W, H));
@@ -625,11 +899,11 @@ function draw() {
     ctx.fillStyle = '#64748b';
     ctx.font = '14px ui-sans-serif, system-ui, sans-serif';
     ctx.textAlign = 'center';
-    ctx.fillText(state.tab === 'flows' ? 'No flow steps to display' : 'No nodes to display',
-      W / 2, H / 2);
+    ctx.fillText('No nodes to display', W / 2, H / 2);
     return;
   }
 
+  drawLanes();
   drawEdges();
 
   for (const n of vis) {
@@ -646,33 +920,28 @@ function draw() {
       ctx.lineWidth = 1.5;
       ctx.stroke();
     }
-    ctx.beginPath();
-    ctx.arc(p.x, p.y, r, 0, Math.PI * 2);
-    ctx.fillStyle = meta.color;
-    ctx.fill();
-    ctx.strokeStyle = 'rgba(8, 13, 25, 0.9)';
-    ctx.lineWidth = 2;
-    ctx.stroke();
-    if (n.span === 'context') {
+    if (n.kind === 'flow') {
+      // flow nodes are diamonds: they group entities, they are not data
+      const size = r * 1.15;
       ctx.beginPath();
-      ctx.arc(p.x, p.y, r + 4, 0, Math.PI * 2);
-      ctx.setLineDash([3, 3]);
-      ctx.strokeStyle = '#94a3b8';
-      ctx.lineWidth = 1.2;
-      ctx.stroke();
-      ctx.setLineDash([]);
-    }
-    if (state.tab === 'flows' && n.join > 1) {
-      const bx = p.x + r * 0.75, by = p.y - r * 0.75;
-      ctx.beginPath();
-      ctx.arc(bx, by, 7, 0, Math.PI * 2);
-      ctx.fillStyle = '#f472b6';
+      ctx.moveTo(p.x, p.y - size);
+      ctx.lineTo(p.x + size, p.y);
+      ctx.lineTo(p.x, p.y + size);
+      ctx.lineTo(p.x - size, p.y);
+      ctx.closePath();
+      ctx.fillStyle = meta.color;
       ctx.fill();
-      ctx.fillStyle = '#0b1020';
-      ctx.font = '600 9px ui-sans-serif, system-ui, sans-serif';
-      ctx.textAlign = 'center';
-      ctx.textBaseline = 'middle';
-      ctx.fillText(String(n.join), bx, by + 0.5);
+      ctx.strokeStyle = 'rgba(8, 13, 25, 0.9)';
+      ctx.lineWidth = 2;
+      ctx.stroke();
+    } else {
+      ctx.beginPath();
+      ctx.arc(p.x, p.y, r, 0, Math.PI * 2);
+      ctx.fillStyle = meta.color;
+      ctx.fill();
+      ctx.strokeStyle = 'rgba(8, 13, 25, 0.9)';
+      ctx.lineWidth = 2;
+      ctx.stroke();
     }
     if (state.hover === n.id) {
       ctx.beginPath();
@@ -691,8 +960,7 @@ function draw() {
       ctx.font = `${n.kind === 'field' ? 10 : 11.5}px ui-sans-serif, system-ui, sans-serif`;
       ctx.textAlign = 'center';
       ctx.textBaseline = 'top';
-      ctx.fillStyle = dim ? 'rgba(148,163,184,.4)'
-        : (n.span === 'context' ? '#94a3b8' : '#e2e8f0');
+      ctx.fillStyle = dim ? 'rgba(148,163,184,.4)' : '#e2e8f0';
       const ty = p.y + r + 4;
       const metrics = ctx.measureText(label);
       if (metrics.width > 4) {
@@ -708,15 +976,79 @@ function draw() {
   }
 }
 
+function flowFocus(flowId) {
+  const nodes = new Set([flowId]);
+  const edges = new Set();
+  for (const e of EDGES) {
+    if (e.kind === 'use' && e.from === flowId && N.has(e.to)) {
+      nodes.add(e.to);
+      edges.add(e);
+    } else if (e.kind === 'rule' && e.from === flowId && N.has(e.to)) {
+      nodes.add(e.to);
+      edges.add(e);
+    } else if ((e.kind === 'flow' || e.kind === 'transform') &&
+               e.flow_id === flowId) {
+      nodes.add(e.from);
+      nodes.add(e.to);
+      edges.add(e);
+    }
+  }
+  return { nodes, edges };
+}
+
+function entrypointFocus(entrypointId) {
+  const nodes = new Set([entrypointId]);
+  const edges = new Set();
+  const related = new Set();
+  const pending = [entrypointId];
+  while (pending.length) {
+    const current = pending.pop();
+    for (const edge of EDGES) {
+      if (edge.kind !== 'related' || edge.from !== current) continue;
+      edges.add(edge);
+      if (!related.has(edge.to)) {
+        related.add(edge.to);
+        nodes.add(edge.to);
+        pending.push(edge.to);
+      }
+    }
+  }
+  for (const id of [entrypointId, ...related]) {
+    for (const edge of EDGES) {
+      if (edge.kind === 'rule' && edge.from === id && N.has(edge.to)) {
+        nodes.add(edge.to);
+        edges.add(edge);
+        continue;
+      }
+      if (edge.kind !== 'trigger' || edge.from !== id) continue;
+      nodes.add(edge.to);
+      edges.add(edge);
+      const focus = flowFocus(edge.to);
+      for (const item of focus.nodes) nodes.add(item);
+      for (const item of focus.edges) edges.add(item);
+    }
+  }
+  return { nodes, edges };
+}
+
 function nodeDim(id) {
   const n = N.get(id);
   if (!n) return true;
   if (state.query && !n.match) return true;
+  if (state.focus) {
+    if (n.kind === 'field') return !state.focus.nodes.has(n.owner);
+    return !state.focus.nodes.has(id);
+  }
   if (state.impactOn && state.impact && state.impact.dist.size > 1) {
     if (n.kind === 'field') return !state.impact.dist.has(n.owner);
     return !state.impact.dist.has(id);
   }
   return false;
+}
+
+function edgeDim(edge) {
+  if (state.focus && !state.focus.edges.has(edge)) return true;
+  return nodeDim(edge.from) || nodeDim(edge.to);
 }
 
 function applySearch() {
@@ -725,7 +1057,8 @@ function applySearch() {
     for (const n of NODES) n.match = null;
   } else {
     for (const n of NODES) {
-      const hay = [n.id, n.name, n.path, n.type, n.entry_point, n.location, n.kind]
+      const hay = [n.id, n.name, n.path, n.type, n.location,
+        n.stage, n.cluster, nodeCluster(n), n.description, n.kind]
         .filter(Boolean).join(' ').toLowerCase();
       n.match = hay.includes(q) ? true : null;
     }
@@ -851,6 +1184,8 @@ function select(id) {
   state.selected = id;
   state.selectedEdge = null;
   const start = node ? (node.kind === 'field' ? node.owner : node.id) : null;
+  state.focus = node && node.kind === 'flow' ? flowFocus(node.id)
+    : node && node.kind === 'entrypoint' ? entrypointFocus(node.id) : null;
   state.impact = start ? computeImpact(start) : null;
   renderPanel(node, null);
   state.dirty = true;
@@ -859,6 +1194,7 @@ function select(id) {
 function pickEdge(edge) {
   state.selected = null;
   state.selectedEdge = edge;
+  state.focus = null;
   renderPanel(null, edge);
   state.dirty = true;
 }
@@ -867,6 +1203,7 @@ function renderEdgePanel(edge) {
   const meta = EDGE[edge.kind] || { color: '#94a3b8' };
   const from = N.get(edge.from), to = N.get(edge.to);
   const rows = [];
+  if (edge.description) rows.push(['description', edge.description]);
   if (edge.note) rows.push(['note', edge.note]);
   if (edge.file_path) rows.push(['file', edge.file_path]);
   let html = `<span class="badge" style="color:${meta.color}">${esc(edge.kind)}</span>`;
@@ -894,30 +1231,21 @@ function renderEdgePanel(edge) {
   panel.scrollTop = 0;
 }
 
-function renderFlowPanel(node) {
-  const contract = node.contract || {};
-  const meta = KIND[node.kind] || KIND.entry;
+function renderFlowNodePanel(node) {
+  const meta = KIND.flow;
   const rows = [];
   const push = (key, value) => {
     if (value === undefined || value === null || value === '') return;
     rows.push([key, String(value)]);
   };
-  push('role', node.role);
-  push('span', node.span);
-  push('contract', node.contract_id);
-  push('description', contract.description);
-  push('entry point', contract.entry_point);
-  push('location', contract.location);
-  push('entry type', contract.entry_type);
-  push('store type', contract.store_type);
-  push('channel', contract.channel);
-  push('repo', contract.repo);
-  push('commit', contract.commit_sha);
-  push('file', node.file_path || contract.file_path);
+  push('description', node.description);
+  push('cluster', node.cluster);
+  push('repo', node.repo);
+  push('commit', node.commit_sha);
+  push('file', node.file_path);
 
-  let html = `<span class="badge" style="color:${meta.color}">${meta.label}` +
-    (node.role ? ` · ${esc(node.role)}` : '') + '</span>';
-  html += `<h2 class="node-name">${esc(node.name || node.contract_id || node.id)}</h2>`;
+  let html = `<span class="badge" style="color:${meta.color}">Flow</span>`;
+  html += `<h2 class="node-name">${esc(node.name || node.id)}</h2>`;
   html += `<div class="node-id">${esc(node.id)}</div>`;
   if (rows.length) {
     html += '<div class="kv">' + rows.map(([k, v]) =>
@@ -927,33 +1255,140 @@ function renderFlowPanel(node) {
     html += '<div class="section"><div class="title">References</div><div class="refs">' +
       node.refs.map((r) => `<code>${esc(r)}</code>`).join('') + '</div></div>';
   }
-  const links = (NEIGH.get(node.id) || []).slice().sort((a, b) =>
-    a.dir.localeCompare(b.dir) || String(a.other).localeCompare(String(b.other)));
-  if (links.length) {
-    html += '<div class="section"><div class="title">Feeds</div><div class="conn">' +
-      links.map(({ other, dir }) => {
-        const target = N.get(other);
-        const arrow = dir === 'out' ? '\u2192' : '\u2190';
-        return `<div class="item"><span class="kind">${esc(dir)}</span>` +
-          `<span>${arrow} <span class="link" data-id="${esc(other)}">` +
-          `${esc(target ? (target.name || other) : other)}</span></span></div>`;
+
+  const entities = (NEIGH.get(node.id) || [])
+    .filter((link) => link.dir === 'out' && link.edge.kind === 'use')
+    .map((link) => N.get(link.other))
+    .filter(Boolean)
+    .sort((a, b) => a.id.localeCompare(b.id));
+  html += `<div class="section"><div class="title">Entities (${entities.length})</div>`;
+  html += entities.length
+    ? '<div class="conn">' + entities.map((entity) =>
+        `<div class="item"><span class="kind">${esc(entity.kind)}</span>` +
+        `<span class="link" data-id="${esc(entity.id)}">${esc(entity.name || entity.id)}</span>` +
+        '</div>').join('') + '</div>'
+    : '<div class="empty">This flow does not use any entity yet.</div>';
+  html += '</div>';
+
+  const passages = EDGES
+    .filter((edge) => (edge.kind === 'flow' || edge.kind === 'transform') &&
+      edge.flow_id === node.id)
+    .sort((a, b) => a.from.localeCompare(b.from) || a.to.localeCompare(b.to));
+  html += `<div class="section"><div class="title">Passages (${passages.length})</div>`;
+  html += passages.length
+    ? '<div class="conn">' + passages.map((edge) => {
+        const from = N.get(edge.from), to = N.get(edge.to);
+        return `<div class="item"><span class="kind" style="color:${EDGE[edge.kind].color}">` +
+          `${esc(edge.kind)}</span><span>` +
+          `<span class="link" data-id="${esc(edge.from)}">${esc(from ? (from.name || edge.from) : edge.from)}</span>` +
+          ' → ' +
+          `<span class="link" data-id="${esc(edge.to)}">${esc(to ? (to.name || edge.to) : edge.to)}</span>` +
+          '</span></div>';
+      }).join('') + '</div>'
+    : '<div class="empty">No flow/transform passages carry this <code>flow_id</code>.</div>';
+  html += '</div>';
+
+  const rules = EDGES.filter((edge) => edge.kind === 'rule' && edge.from === node.id)
+    .map((edge) => N.get(edge.to)).filter(Boolean);
+  html += `<div class="section"><div class="title">Rules (${rules.length})</div>`;
+  html += rules.length
+    ? '<div class="conn">' + rules.map((rule) =>
+        `<div class="item"><span class="kind">rule</span><span>` +
+        `<span class="link" data-id="${esc(rule.id)}">${esc(rule.name || rule.id)}</span>` +
+        `<div class="node-id">${esc(rule.description || '')}</div></span></div>`).join('') + '</div>'
+    : '<div class="empty">No rule is attached to this flow.</div>';
+  html += '</div>';
+  html += '<div class="impact-note">The entities, passages and rules above are ' +
+    'highlighted; everything else is dimmed. Click empty space to clear.</div>';
+
+  panel.innerHTML = html;
+  panel.scrollTop = 0;
+}
+
+function renderEntryPointPanel(node) {
+  const refs = node.refs || [];
+  const directFlows = EDGES
+    .filter((edge) => edge.kind === 'trigger' && edge.from === node.id)
+    .map((edge) => edge.to);
+  const focus = entrypointFocus(node.id);
+  const flows = [...focus.nodes].map((id) => N.get(id))
+    .filter((item) => item && item.kind === 'flow')
+    .sort((a, b) => a.id.localeCompare(b.id));
+  let html = `<span class="badge" style="color:${KIND.entrypoint.color}">EntryPoint</span>`;
+  html += `<h2 class="node-name">${esc(node.name || node.id)}</h2>`;
+  html += `<div class="node-id">${esc(node.id)}</div>`;
+  if (node.description) html += `<p>${esc(node.description)}</p>`;
+  const rows = [['cluster', node.cluster || nodeCluster(node)], ['repo', node.repo],
+    ['commit', node.commit_sha], ['file', node.file_path]]
+    .filter(([, value]) => value);
+  if (rows.length) html += '<div class="kv">' + rows.map(([key, value]) =>
+    `<div class="k">${esc(key)}</div><div class="v">${esc(value)}</div>`).join('') + '</div>';
+  if (refs.length) html += '<div class="section"><div class="title">References</div><div class="refs">' +
+    refs.map((ref) => `<code>${esc(ref)}</code>`).join('') + '</div></div>';
+  const relatedOut = EDGES.filter((edge) => edge.kind === 'related' && edge.from === node.id);
+  const relatedIn = EDGES.filter((edge) => edge.kind === 'related' && edge.to === node.id);
+  if (relatedOut.length) {
+    html += `<div class="section"><div class="title">Related entrypoints (${relatedOut.length})</div>` +
+      '<div class="conn">' + relatedOut.map((edge) => {
+        const target = N.get(edge.to);
+        return `<div class="item"><span class="kind">related</span><span>` +
+          `<span class="link" data-id="${esc(edge.to)}">${esc(target ? (target.name || edge.to) : edge.to)}</span>` +
+          `<div class="node-id">${esc(edge.description || '')}</div></span></div>`;
       }).join('') + '</div></div>';
   }
-  if (node.join > 1) {
-    const sources = (NEIGH.get(node.id) || [])
-      .filter((item) => item.dir === 'in')
-      .map((item) => N.get(item.other))
-      .filter(Boolean)
-      .map((item) => item.name || item.contract_id || item.id);
-    html += `<div class="section"><div class="title">Join (${sources.length} inputs)</div>` +
-      '<div class="conn">' + sources.map((source) =>
-        `<div class="item"><span class="kind">input</span><span>${esc(source)}</span></div>`)
-        .join('') + '</div></div>';
+  if (relatedIn.length) {
+    html += `<div class="section"><div class="title">Related from (${relatedIn.length})</div>` +
+      '<div class="conn">' + relatedIn.map((edge) => {
+        const source = N.get(edge.from);
+        return `<div class="item"><span class="kind">related</span><span>` +
+          `<span class="link" data-id="${esc(edge.from)}">${esc(source ? (source.name || edge.from) : edge.from)}</span>` +
+          `<div class="node-id">${esc(edge.description || '')}</div></span></div>`;
+      }).join('') + '</div></div>';
   }
-  const contractId = node.contract_id;
-  if (contractId && (DATA.nodes || []).some((item) => item.id === contractId)) {
-    html += '<div class="section"><span class="link" data-contract="' +
-      esc(contractId) + '">Open contract in Contracts tab</span></div>';
+  const rules = EDGES.filter((edge) => edge.kind === 'rule' && edge.from === node.id)
+    .map((edge) => N.get(edge.to)).filter(Boolean);
+  if (rules.length) {
+    html += `<div class="section"><div class="title">Rules (${rules.length})</div>` +
+      '<div class="conn">' + rules.map((rule) =>
+        `<div class="item"><span class="kind">rule</span><span>` +
+        `<span class="link" data-id="${esc(rule.id)}">${esc(rule.name || rule.id)}</span>` +
+        `<div class="node-id">${esc(rule.description || '')}</div></span></div>`).join('') +
+      '</div></div>';
+  }
+  html += `<div class="section"><div class="title">Reached flows (${flows.length})</div>`;
+  html += flows.length ? '<div class="conn">' + flows.map((flow) =>
+    `<div class="item"><span class="kind">${directFlows.includes(flow.id) ? 'flow' : 'related'}</span>` +
+    `<span class="link" data-id="${esc(flow.id)}">${esc(flow.name || flow.id)}</span></div>`
+  ).join('') + '</div>' : '<div class="empty">This entrypoint does not reach any flow.</div>';
+  html += '</div><div class="impact-note">Related entrypoints and reached flows are highlighted, ' +
+    'including their entities and passages. Click empty space to clear.</div>';
+  panel.innerHTML = html;
+  panel.scrollTop = 0;
+}
+
+function renderRulePanel(node) {
+  const attachedFlows = EDGES.filter((edge) => edge.kind === 'rule' && edge.to === node.id)
+    .map((edge) => N.get(edge.from)).filter(Boolean);
+  let html = `<span class="badge" style="color:${KIND.rule.color}">Rule</span>`;
+  html += `<h2 class="node-name">${esc(node.name || node.id)}</h2>`;
+  html += `<div class="node-id">${esc(node.id)}</div>`;
+  if (node.description) html += `<p>${esc(node.description)}</p>`;
+  const rows = [['cluster', nodeCluster(node)], ['repo', node.repo],
+    ['commit', node.commit_sha], ['file', node.file_path]]
+    .filter(([, value]) => value);
+  if (rows.length) html += '<div class="kv">' + rows.map(([key, value]) =>
+    `<div class="k">${esc(key)}</div><div class="v">${esc(value)}</div>`).join('') + '</div>';
+  html += `<div class="section"><div class="title">Attached to (${attachedFlows.length})</div>`;
+  html += attachedFlows.length
+    ? '<div class="conn">' + attachedFlows.map((item) =>
+        `<div class="item"><span class="kind">${esc(item.kind)}</span>` +
+        `<span class="link" data-id="${esc(item.id)}">${esc(item.name || item.id)}</span></div>`
+      ).join('') + '</div>'
+    : '<div class="empty">This rule is not attached to a flow or entrypoint.</div>';
+  html += '</div>';
+  if (node.refs && node.refs.length) {
+    html += '<div class="section"><div class="title">References</div><div class="refs">' +
+      node.refs.map((ref) => `<code>${esc(ref)}</code>`).join('') + '</div></div>';
   }
   panel.innerHTML = html;
   panel.scrollTop = 0;
@@ -962,34 +1397,28 @@ function renderFlowPanel(node) {
 function renderPanel(node, edge) {
   if (edge) { renderEdgePanel(edge); return; }
   if (!node) {
-    if (state.tab === 'flows') {
-      const flow = state.flow;
-      panel.innerHTML = flow
-        ? `<div class="empty">
-            <p><b>${esc(flow.name || flow.id)}</b></p>
-            <p>${NODES.length} steps, ${EDGES.length} feeds. Click a step for its
-            role, contract and feeds. Dashed steps are <b>context</b> inputs;
-            pink badges are <b>joins</b>.</p>
-          </div>`
-        : `<div class="empty">
-            <p><b>No flows embedded.</b></p>
-            <p>Run <code>flow build --from &lt;contract&gt;</code> and render again.</p>
-          </div>`;
-      return;
-    }
     panel.innerHTML = `
       <div class="empty">
-        <p><b>Interactive contract map.</b></p>
-        <p>Nodes are application contracts (Input, Entry, Storage). Enable
-        <b>Fields</b> to see every contract field, or click a contract to list its
-        fields in this panel.</p>
-        <p>Click an <b>edge</b> to see its note, references and endpoints.
-        <b>compose</b> is the structural pipeline, <b>transform</b> is where data
-        changes shape, <b>contains</b> links a contract to its fields.</p>
+        <p><b>Interactive data-flow map.</b></p>
+        <p>Lanes group the graph by kind: <b>EntryPoints</b> sit above <b>Flows</b>, with
+        <b>Rules</b> beside both in a column that spans their two lanes; then come
+        Inputs, Entries and one lane per Storage type. An <b>entrypoint</b> starts flows
+        with <b>trigger</b> and can reach another entrypoint through a directional
+        <b>related</b> edge. A <b>flow</b> uses entities with <b>use</b> edges; its
+        path is the chain of <b>flow</b>/<b>transform</b> passages carrying its
+        <code>flow_id</code>. Flows and entrypoints attach rules with <b>rule</b>.</p>
+        <p>Enable <b>Fields</b> to see every entity field, click an entity for its
+        attributes and flows, or click an <b>edge</b> for its note and
+        references. The <b>cluster</b> dropdown filters the map to one service,
+        repository or other grouping label. <b>compose</b> is composition (whole → part),
+        <b>transform</b> is where data changes shape, and <b>flow</b> is data
+        passing unchanged.</p>
       </div>`;
     return;
   }
-  if (state.tab === 'flows') { renderFlowPanel(node); return; }
+  if (node.kind === 'flow') { renderFlowNodePanel(node); return; }
+  if (node.kind === 'entrypoint') { renderEntryPointPanel(node); return; }
+  if (node.kind === 'rule') { renderRulePanel(node); return; }
   const meta = KIND[node.kind];
   const rows = [];
   const push = (key, value) => {
@@ -1002,11 +1431,10 @@ function renderPanel(node, edge) {
   push('type', node.type);
   push('required', node.required ? 'yes' : '');
   push('source', node.source && node.source !== 'declared' ? node.source : '');
-  push('channel', node.channel);
-  push('entry point', node.entry_point);
-  push('entry type', node.entry_type);
+  push('stage', node.stage);
   push('location', node.location);
   push('store type', node.store_type);
+  push('cluster', nodeCluster(node));
   push('repo', node.repo);
   push('commit', node.commit_sha);
   push('file', node.file_path);
@@ -1014,7 +1442,9 @@ function renderPanel(node, edge) {
   let html = `<span class="badge" style="color:${meta.color}">${meta.label}</span>`;
   html += `<h2 class="node-name">${esc(node.name || node.id)}</h2>`;
   html += `<div class="node-id">${esc(node.id)}</div>`;
-  if (node.kind !== 'field') html += impactSection(node);
+  if (node.kind === 'input' || node.kind === 'entry' || node.kind === 'storage') {
+    html += impactSection(node);
+  }
   if (rows.length) {
     html += '<div class="kv">' + rows.map(([k, v]) =>
       `<div class="k">${esc(k)}</div><div class="v">${esc(v)}</div>`).join('') + '</div>';
@@ -1022,6 +1452,15 @@ function renderPanel(node, edge) {
   if (node.refs && node.refs.length) {
     html += '<div class="section"><div class="title">References</div><div class="refs">' +
       node.refs.map((r) => `<code>${esc(r)}</code>`).join('') + '</div></div>';
+  }
+
+  const contractFlows = FLOWS_BY_CONTRACT.get(node.id) || [];
+  if (contractFlows.length) {
+    html += `<div class="section"><div class="title">Flows (${contractFlows.length})</div>` +
+      '<div class="conn">' + contractFlows.map((flow) =>
+        `<div class="item"><span class="kind">flow</span>` +
+        `<span><span class="link" data-id="${esc(flow.id)}">` +
+        `${esc(flow.name)}</span></span></div>`).join('') + '</div></div>';
   }
 
   if (node.kind === 'field') {
@@ -1067,53 +1506,17 @@ function renderPanel(node, edge) {
   panel.scrollTop = 0;
 }
 
-function buildFlowSelect() {
-  const flows = DATA.flows || [];
-  const select = document.getElementById('flowSelect');
-  select.innerHTML = flows.map((item, index) =>
-    `<option value="${index}">${esc(item.flow.name || item.flow.id)}</option>`).join('');
-  select.disabled = !flows.length;
-  select.value = String(Math.min(state.flowIndex, Math.max(0, flows.length - 1)));
-}
-
 function updateHeader() {
-  if (state.tab === 'flows') {
-    const flow = state.flow;
-    titleEl.textContent = flow ? (flow.name || flow.id) : 'Flows';
-    if (!flow) {
-      statsEl.textContent = 'no flows';
-    } else {
-      const joins = NODES.filter((n) => n.join > 1).length;
-      statsEl.textContent = `${NODES.length} steps · ${EDGES.length} feeds · ` +
-        `${joins} join${joins === 1 ? '' : 's'}`;
-    }
-    searchEl.placeholder = 'Search step or contract';
-  } else {
-    titleEl.textContent = DATA.title || 'Logistic map';
-    const nodes = DATA.nodes || [];
-    const contracts = nodes.filter((n) => n.kind !== 'field').length;
-    const fields = nodes.filter((n) => n.kind === 'field').length;
-    statsEl.textContent = `${contracts} contracts · ${fields} fields · ` +
-      `${(DATA.edges || []).length} edges`;
-    searchEl.placeholder = 'Search id, name or path';
-  }
-}
-
-function switchTab(tab) {
-  if (state.tab === tab && NODES.length) return;
-  state.tab = tab;
-  document.body.classList.toggle('mode-flows', tab === 'flows');
-  document.body.classList.toggle('mode-contracts', tab === 'contracts');
-  document.getElementById('tabContracts').classList.toggle('active', tab === 'contracts');
-  document.getElementById('tabFlows').classList.toggle('active', tab === 'flows');
-  buildWorld(tab, state.flowIndex);
-  updateHeader();
-}
-
-function openContract(contractId) {
-  if (!(DATA.nodes || []).some((node) => node.id === contractId)) return;
-  switchTab('contracts');
-  if (N.get(contractId)) select(contractId);
+  titleEl.textContent = DATA.title || 'Logistic map';
+  const nodes = DATA.nodes || [];
+  const contracts = nodes.filter(
+    (n) => ['input', 'entry', 'storage'].includes(n.kind)).length;
+  const fields = nodes.filter((n) => n.kind === 'field').length;
+  const flows = nodes.filter((n) => n.kind === 'flow').length;
+  const rules = nodes.filter((n) => n.kind === 'rule').length;
+  statsEl.textContent =
+    `${flows} flows · ${rules} rules · ${contracts} entities · ${fields} fields`;
+  searchEl.placeholder = 'Search id, name, path, cluster or flow';
 }
 
 function initControls() {
@@ -1143,11 +1546,6 @@ function initControls() {
       el.closest('.chip').classList.toggle('on', el.checked);
       updateVisibility();
     });
-  });
-  const contextToggle = document.getElementById('contextToggle');
-  contextToggle.addEventListener('change', () => {
-    state.showContext = contextToggle.checked;
-    updateVisibility();
   });
 }
 
@@ -1250,27 +1648,26 @@ function bindEvents() {
   }, { passive: false });
 
   panel.addEventListener('click', (e) => {
-    const contractEl = e.target.closest('[data-contract]');
-    if (contractEl) { openContract(contractEl.dataset.contract); return; }
     const el = e.target.closest('[data-id]');
     if (!el) return;
     select(el.dataset.id);
   });
 
-  document.getElementById('tabContracts').addEventListener('click', () => switchTab('contracts'));
-  document.getElementById('tabFlows').addEventListener('click', () => switchTab('flows'));
-  document.getElementById('flowSelect').addEventListener('change', (event) => {
-    state.flowIndex = Number(event.target.value) || 0;
-    buildWorld('flows', state.flowIndex);
-    updateHeader();
-  });
-
   searchEl.addEventListener('input', () => {
     state.query = searchEl.value;
+    state.focus = null;
     applySearch();
   });
   searchEl.addEventListener('keydown', (e) => {
     if (e.key === 'Escape') { searchEl.value = ''; state.query = ''; applySearch(); searchEl.blur(); }
+  });
+  clusterEl.addEventListener('change', () => {
+    state.cluster = clusterEl.value;
+    if (state.selected) {
+      const node = N.get(state.selected);
+      if (!node || (state.cluster && nodeCluster(node) !== state.cluster)) select(null);
+    }
+    updateVisibility();
   });
 
   document.getElementById('fit').addEventListener('click', () => fit());
@@ -1299,11 +1696,11 @@ function loop() {
 }
 
 function boot() {
-  buildFlowSelect();
   bindEvents();
   initControls();
   resize();
-  switchTab('contracts');
+  buildWorld();
+  updateHeader();
   requestAnimationFrame(loop);
 }
 
