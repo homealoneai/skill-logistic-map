@@ -1,6 +1,6 @@
 ---
 name: logistic-map
-description: Build, query and audit a Kuzu graph of application data flow as a logistics process — EntryPoint activations, Flow paths, Input, Entry, Storage and Field contracts, joins, and the paths data takes. Use when asked to map data movement between services, queues, endpoints, jobs and storages; to find contract mismatches between producer and consumer; to trace a field; or to query, report on, or render the graph.
+description: Build, query and audit a LadybugDB graph of application data flow as a logistics process — EntryPoint activations, Flow paths, Input, Entry, Storage and Field contracts, joins, and the paths data takes. Use when asked to map data movement between services, queues, endpoints, jobs and storages; to find contract mismatches between producer and consumer; to trace a field; or to query, report on, or render the graph.
 ---
 
 # Logistic map
@@ -10,7 +10,7 @@ an intermediate form the cargo takes inside the application, **Storage** is the
 warehouse, and **Field** trees are the cargo manifest. Every node is a **data
 entity**, never a function or class.
 
-A repository-local graph database (Kuzu) records **which data exists, how it
+A repository-local graph database (LadybugDB) records **which data exists, how it
 changes, and which fields each entity carries**. The point is contract
 visibility: a field that the producer sends but the consumer never reads, or a
 field whose type disagrees between two contracts, becomes a query result instead
@@ -30,17 +30,21 @@ skill was cloned.
 SKILL_DIR=/path/to/logistic-map   # directory containing SKILL.md
 PY=.logistic-map/.venv/bin/python
 
-# one-time: venv + kuzu + schema (idempotent)
+# one-time: venv + ladybug + schema (idempotent)
 bash "$SKILL_DIR/scripts/bootstrap.sh"
 
 # later sessions: just confirm the database
 "$PY" "$SKILL_DIR/scripts/logistic_map.py" doctor
 ```
 
-The database lives at `.logistic-map/graph.kuzu`; the venv at `.logistic-map/.venv`.
-Override with `--db PATH` or `LOGISTIC_MAP_DB`. Kuzu is installed with pip inside
+The database lives at `.logistic-map/graph.lbdb`; the venv at `.logistic-map/.venv`.
+Override with `--db PATH` or `LOGISTIC_MAP_DB`. LadybugDB is installed with pip inside
 the project venv, so nothing global changes. Nothing here depends on a specific
 agent harness: the CLI is plain Python and `render` produces a static HTML file.
+
+An existing Kuzu graph is converted once with
+`migrate-db --from .logistic-map/graph.kuzu --to .logistic-map/graph.lbdb`
+(see `references/cli.md`); engine branches are recreated from master afterwards.
 
 ## Model
 
@@ -271,8 +275,8 @@ Use a branch when the graph change must be reviewed or applied as one unit:
 
 ## Rules
 
-- **CLI is the only writer.** `query` is guarded read-only; never edit the Kuzu
-  directory by hand. `export` + `apply` is the supported bulk path.
+- **CLI is the only writer.** `query` is guarded read-only; never edit the database
+  files by hand. `export` + `apply` is the supported bulk path.
 - **Always record `--file`, `--ref`, `--repo`/`--commit` when known.** Without
   references the report is much less useful; `--check-files` verifies them.
 - **Use `--cluster` for the grouping that matters.** Give contracts, flows and
@@ -334,7 +338,7 @@ Read only what the task needs:
 
 | Symptom | Fix |
 |---|---|
-| `kuzu is not installed` | `bash "$SKILL_DIR/scripts/bootstrap.sh"` |
+| `ladybug is not installed` | `bash "$SKILL_DIR/scripts/bootstrap.sh"` |
 | `no logistic-map database` | `"$PY" .../logistic_map.py init` |
 | `uses vN of the schema` | `"$PY" .../logistic_map.py migrate` (old passages become unassigned; add a flow and re-add them) |
 | database lock / IO error | another process holds the DB; close it and retry |

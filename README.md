@@ -5,7 +5,7 @@ process**: inputs are cargo arriving, entries are the intermediate shapes cargo
 takes inside the application, storages are warehouses, fields are the cargo
 manifest, and procedures are where cargo is merged (a join) or split.
 
-It keeps a [Kuzu](https://kuzudb.com/) graph of those **data entities** and
+It keeps a [LadybugDB](https://github.com/LadybugDB/ladybug) graph of those **data entities** and
 answers the questions a contract review usually misses:
 
 - Which input does this field come from, and what changes it on the way?
@@ -27,10 +27,10 @@ service, no harness-specific runtime.
 
 ## Requirements
 
-- Python 3.8 or newer
+- Python 3.10 or newer
 - Bash (macOS or Linux)
 - No global installs: `scripts/bootstrap.sh` creates a project-local venv and
-  installs Kuzu (`>=0.11,<0.12`) with pip.
+  installs LadybugDB (`ladybug>=0.22,<0.23`) with pip.
 
 ## Install
 
@@ -68,8 +68,8 @@ Any harness that follows the common skill layout (YAML frontmatter in
 
 If you used the pre-rename version of this skill, rename the runtime directory
 `.dataflow/` to `.logistic-map/` (or point `--db` at the old file). New runs use
-only `.logistic-map/graph.kuzu`; the old `flows.kuzu` database is obsolete and
-its flows now live in the main graph.
+only `.logistic-map/graph.lbdb`; the old `flows.kuzu`/`flows.lbdb` database is
+obsolete and its flows now live in the main graph.
 
 ### Use without a harness
 
@@ -77,9 +77,31 @@ The CLI has no agent dependency:
 
 ```sh
 python3 -m venv .logistic-map/.venv
-.logistic-map/.venv/bin/pip install "kuzu>=0.11,<0.12"
+.logistic-map/.venv/bin/pip install "ladybug>=0.22,<0.23"
 .logistic-map/.venv/bin/python /path/to/logistic-map/scripts/logistic_map.py init
 ```
+
+### Migrating a Kuzu database
+
+Kuzu was archived in favor of LadybugDB, and their database files are not
+interchangeable. Convert an existing graph once:
+
+```sh
+SKILL_DIR=/path/to/logistic-map
+PY=.logistic-map/.venv/bin/python
+
+# either straight from the old database (needs `pip install kuzu==0.11.3`)
+"$PY" "$SKILL_DIR/scripts/logistic_map.py" migrate-db \
+  --from .logistic-map/graph.kuzu --to .logistic-map/graph.lbdb
+
+# or from a snapshot exported by the previous release
+"$PY" "$SKILL_DIR/scripts/logistic_map.py" migrate-db \
+  --from old-export.json --to .logistic-map/graph.lbdb
+```
+
+The command rebuilds the graph in a new LadybugDB file and validates the node
+and edge counts. Branches are local engine files and are not migrated; recreate
+them from the new master.
 
 ## Quick start
 
@@ -169,7 +191,7 @@ A batch seed is available at `examples/orders-flow.json`:
 |---|---|
 | `init` | Create the graph schema |
 | `migrate` | Convert a v1-v6 database to v7 |
-| `doctor` | Check Python/Kuzu/database/git |
+| `doctor` | Check Python/LadybugDB/database/git |
 | `add-node` / `add-field` / `add-edge` | Register entities, fields and relationships |
 | `add-entrypoint` | Register an outer activation that triggers or relates to other entrypoints |
 | `add-rule` | Register a limit or condition followed by a flow or entrypoint |
@@ -308,7 +330,7 @@ involved. It exercises schema creation and migration, fields, edges, reports,
 batch apply, flows, rendering and the exported graphs from the evaluation runs.
 
 ```sh
-make setup                              # .logistic-map/.venv with Kuzu
+make setup                              # .logistic-map/.venv with LadybugDB
 make test
 make sample SAMPLE=node                 # import a sample and open its HTML
 make sample-no-open SAMPLE=web          # render without opening a browser
@@ -338,7 +360,7 @@ SKILL.md               agent instructions
 README.md              repository and install guide
 references/            schema, CLI, modeling, report and flow rules
 scripts/logistic_map.py    CLI: schema, writes, queries, reports, export, render
-scripts/bootstrap.sh   venv + Kuzu + init
+scripts/bootstrap.sh   venv + LadybugDB + init
 assets/graph.html      self-contained visualization template
 assets/preview.png     example rendering
 examples/              seed graphs

@@ -1,7 +1,7 @@
 # Tests
 
 Deterministic tests for `scripts/logistic_map.py`. They use only the standard
-library test runner plus Kuzu: no model, gateway or Docker involved.
+library test runner plus LadybugDB: no model, gateway or Docker involved.
 
 ## Setup and run
 

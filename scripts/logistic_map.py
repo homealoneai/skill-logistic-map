@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Kuzu-backed logistic map for application data flow.
+"""LadybugDB-backed logistic map for application data flow.
 
 Schema v7
 ---------
@@ -47,7 +47,7 @@ from functools import lru_cache
 from pathlib import Path
 
 SCHEMA_VERSION = 7
-DEFAULT_DB = os.environ.get("LOGISTIC_MAP_DB", ".logistic-map/graph.kuzu")
+DEFAULT_DB = os.environ.get("LOGISTIC_MAP_DB", ".logistic-map/graph.lbdb")
 DEFAULT_RENDER = "graph.html"
 
 CONTRACT_KINDS = ("input", "entry", "storage")
@@ -259,14 +259,29 @@ def is_contract(node_id: str) -> bool:
 # database
 # --------------------------------------------------------------------------
 
+def load_ladybug():
+    try:
+        import ladybug  # noqa: F401
+    except Exception as exc:  # pragma: no cover - depends on environment
+        raise LogisticMapError(
+            "ladybug is not installed for this Python interpreter "
+            f"({sys.executable}). Run scripts/bootstrap.sh, or "
+            "`python3 -m venv .logistic-map/.venv && "
+            ".logistic-map/.venv/bin/pip install ladybug`."
+        ) from exc
+    return ladybug
+
+
 def load_kuzu():
+    """Legacy engine, only used by `migrate-db` in a subprocess."""
     try:
         import kuzu  # noqa: F401
     except Exception as exc:  # pragma: no cover - depends on environment
         raise LogisticMapError(
-            "kuzu is not installed for this Python interpreter "
-            f"({sys.executable}). Run scripts/bootstrap.sh, or "
-            "`python3 -m venv .logistic-map/.venv && .logistic-map/.venv/bin/pip install kuzu`."
+            "reading a Kuzu database requires the archived kuzu package; "
+            "install it temporarily with `pip install kuzu==0.11.3`, or "
+            "export the graph to JSON with the old CLI and use "
+            "`migrate-db --from snapshot.json`."
         ) from exc
     return kuzu
 
@@ -275,9 +290,9 @@ class DB:
     def __init__(self, path):
         self.path = Path(path).expanduser()
         self.path.parent.mkdir(parents=True, exist_ok=True)
-        kuzu = load_kuzu()
-        self._db = kuzu.Database(str(self.path))
-        self.conn = kuzu.Connection(self._db)
+        ladybug = load_ladybug()
+        self._db = ladybug.Database(str(self.path))
+        self.conn = ladybug.Connection(self._db)
 
     def run(self, cypher: str, params=None):
         result = self.conn.execute(cypher, params or {})
@@ -305,6 +320,36 @@ class DB:
         return self.path.parent / "meta.json"
 
 
+class KuzuDB:
+    """Read-only adapter for importing a legacy Kuzu database.
+
+    Kuzu and LadybugDB register the same native types, so the legacy file is
+    read in a separate process; this class is only instantiated there.
+    """
+
+    def __init__(self, path):
+        kuzu = load_kuzu()
+        self.path = Path(path).expanduser()
+        self._db = kuzu.Database(str(self.path), read_only=True)
+        self.conn = kuzu.Connection(self._db)
+
+    def run(self, cypher: str, params=None):
+        result = self.conn.execute(cypher, params or {})
+        columns = result.get_column_names()
+        rows = []
+        while result.has_next():
+            rows.append(result.get_next())
+        result.close()
+        return columns, rows
+
+    def close(self) -> None:
+        for target in (getattr(self, "conn", None), getattr(self, "_db", None)):
+            try:
+                target.close()
+            except Exception:
+                pass
+
+
 def read_meta(db: DB) -> dict:
     path = db.meta_path()
     if not path.exists():
@@ -326,8 +371,13 @@ def db_schema_version(db: DB) -> int:
 def open_db(args, initialize: bool = False, allow_old: bool = False) -> DB:
     path = Path(args.db).expanduser()
     if not initialize and not path.exists():
+        legacy = path.with_suffix(".kuzu")
+        hint = ""
+        if path.suffix == ".lbdb" and legacy.exists():
+            hint = (f" found legacy {legacy}; run `migrate-db --from {legacy} "
+                    f"--to {path}` to convert it.")
         raise LogisticMapError(
-            f"no logistic-map database at {path}; run `init` first")
+            f"no logistic-map database at {path}; run `init` first.{hint}")
     db = DB(path)
     if not initialize and "Field" not in db.tables():
         raise LogisticMapError(
@@ -475,7 +525,7 @@ def _branch_rows(state: dict) -> list:
 
 
 def copy_db(src: Path, dst: Path) -> None:
-    """Copy a Kuzu database, whether it is a single file or a directory."""
+    """Copy a graph database, whether it is a single file or a directory."""
     if src.is_dir():
         shutil.copytree(src, dst)
     else:
@@ -1556,16 +1606,16 @@ def render_html(db: DB, out_path: Path, title: str) -> Path:
 # --------------------------------------------------------------------------
 
 def write_meta(db: DB, version: int | None = None) -> None:
-    kuzu_version = ""
+    ladybug_version = ""
     try:
         from importlib.metadata import version as package_version
-        kuzu_version = package_version("kuzu")
+        ladybug_version = package_version("ladybug")
     except Exception:
         pass
     meta = {
         "schema_version": SCHEMA_VERSION if version is None else version,
         "updated_at": now_iso(),
-        "kuzu": kuzu_version,
+        "ladybug": ladybug_version,
         "tool": "logistic-map",
     }
     db.meta_path().write_text(json.dumps(meta, indent=2) + "\n", encoding="utf-8")
@@ -1577,7 +1627,7 @@ def ensure_gitignore(db: DB) -> None:
     if gitignore.exists():
         return
     gitignore.write_text(
-        "# Kuzu database, venv and generated artifacts\n"
+        "# LadybugDB database, venv and generated artifacts\n"
         "*\n"
         "!.gitignore\n"
         "!exports/\n"
@@ -1677,7 +1727,7 @@ def migrate_db(db: DB) -> dict:
         return {"before": before, "after": SCHEMA_VERSION, "actions": actions,
                 "compose_to_flow": 0, "rebuilt": {}}
 
-    # The v2 FLOW rel table collides with the new Flow node table in Kuzu's
+    # The v2 FLOW rel table collides with the new Flow node table in the
     # case-insensitive binding. Move it aside before creating USES.
     tables = db.tables()
     if "FLOW" in tables:
@@ -1747,11 +1797,166 @@ def migrate_db(db: DB) -> dict:
             "compose_to_flow": moved, "rebuilt": rebuilt}
 
 
+LEGACY_EXPORT_CODE = r"""
+import json, sys
+sys.path.insert(0, sys.argv[2])
+import logistic_map as lm
+db = lm.KuzuDB(sys.argv[1])
+try:
+    nodes, edges = lm.load_graph(db)
+finally:
+    db.close()
+payload = {
+    "schema_version": lm.SCHEMA_VERSION,
+    "nodes": sorted(nodes.values(), key=lambda item: (item["kind"], item["id"])),
+    "edges": edges,
+}
+print(json.dumps(payload))
+"""
+
+
+def read_legacy_kuzu_payload(source: Path) -> dict:
+    """Read a Kuzu database through a subprocess.
+
+    Importing kuzu and ladybug in the same process can clash in their native
+    type registration, so the legacy engine is loaded in a child process.
+    """
+    meta_path = source.parent / "meta.json"
+    if meta_path.exists():
+        try:
+            version = int(json.loads(meta_path.read_text(encoding="utf-8"))
+                          .get("schema_version", 0))
+        except (json.JSONDecodeError, OSError, TypeError, ValueError):
+            version = 0
+        if version and version != SCHEMA_VERSION:
+            raise LogisticMapError(
+                f"{source} uses schema v{version}; convert it to "
+                f"v{SCHEMA_VERSION} with the previous release of the CLI, "
+                "then run `migrate-db` again")
+    proc = subprocess.run(
+        [sys.executable, "-c", LEGACY_EXPORT_CODE, str(source),
+         str(Path(__file__).resolve().parent)],
+        capture_output=True, text=True,
+    )
+    if proc.returncode != 0:
+        detail = (proc.stderr or proc.stdout).strip()
+        raise LogisticMapError(
+            "could not read the legacy Kuzu database: " + (detail or "unknown error"))
+    return json.loads(proc.stdout)
+
+
+def read_migration_payload(source: Path) -> dict:
+    if source.suffix == ".json":
+        try:
+            payload = json.loads(source.read_text(encoding="utf-8"))
+        except json.JSONDecodeError as exc:
+            raise LogisticMapError(f"invalid JSON in {source}: {exc}") from exc
+        if not isinstance(payload, dict):
+            raise LogisticMapError("snapshot must be a JSON object")
+        return payload
+    return read_legacy_kuzu_payload(source)
+
+
+def import_graph_payload(db: DB, payload: dict) -> dict:
+    """Rebuild a graph from an exported payload without upsert heuristics."""
+    nodes = payload.get("nodes", [])
+    edges = payload.get("edges", [])
+    db.run("BEGIN TRANSACTION")
+    try:
+        for item in nodes:
+            kind = item.get("kind")
+            if kind not in LABELS:
+                raise LogisticMapError(
+                    f"invalid node kind in migration: {kind!r}")
+            if not item.get("id"):
+                raise LogisticMapError("every migrated node needs an id")
+            props = dict(item)
+            props["refs"] = props.get("refs") or []
+            if kind == "field" and not props.get("path") and "#" in item["id"]:
+                props["path"] = item["id"].split("#", 1)[1]
+            merge_node(db, kind, item["id"], props)
+        for edge in edges:
+            kind = edge.get("kind")
+            if kind not in RELS:
+                raise LogisticMapError(
+                    f"invalid edge kind in migration: {kind!r}")
+            props = {"refs": edge.get("refs") or []}
+            for key in ("flow_id", "description", "file_path", "note"):
+                value = edge.get(key)
+                if value not in (None, ""):
+                    props[key] = value
+            merge_edge(db, kind, edge["from"], edge["to"], props)
+        db.run("COMMIT")
+    except Exception:
+        try:
+            db.run("ROLLBACK")
+        except Exception:
+            pass
+        raise
+    return {"nodes": len(nodes), "edges": len(edges)}
+
+
+def cmd_migrate_db(args) -> int:
+    source = Path(args.source).expanduser()
+    target = Path(args.to or args.db).expanduser()
+    if source == target:
+        raise LogisticMapError("--from and --to must be different databases")
+    if not source.exists():
+        raise LogisticMapError(f"source database not found: {source}")
+    if target.exists():
+        if not args.force:
+            raise LogisticMapError(
+                f"{target} already exists; pass --force to replace it")
+        state_path = branch_state_path(target)
+        if state_path.exists():
+            for name in read_branch_state(target).get("branches", {}):
+                remove_db(branch_db_path(target, name))
+            state_path.unlink()
+        remove_db(target)
+    payload = read_migration_payload(source)
+    db = DB(target)
+    try:
+        for statement in DDL:
+            db.run(statement)
+        write_meta(db)
+        ensure_gitignore(db)
+        imported = import_graph_payload(db, payload)
+        nodes, edges = load_graph(db)
+        if len(nodes) < imported["nodes"]:
+            raise LogisticMapError(
+                f"migration wrote {len(nodes)} of {imported['nodes']} nodes")
+        counts = {"nodes": len(nodes), "edges": len(edges)}
+    finally:
+        db.close()
+    dropped = []
+    state_path = branch_state_path(source)
+    if state_path.exists():
+        try:
+            state = read_branch_state(source)
+            dropped = sorted(state.get("branches", {}))
+        except Exception:
+            dropped = []
+    result = {"ok": True, "from": str(source), "to": str(target),
+              "nodes": counts["nodes"], "edges": counts["edges"],
+              "dropped_branches": dropped}
+    if args.json:
+        print(json.dumps(result, indent=2))
+    else:
+        print(f"migrated {source} -> {target} "
+              f"({counts['nodes']} nodes, {counts['edges']} edges)")
+        if dropped:
+            print("branches were not migrated: " + ", ".join(dropped))
+            print("recreate them from the new master with `branch create`")
+    return 0
+
+
 def cmd_migrate(args) -> int:
     db = open_db(args, initialize=True, allow_old=True)
     result = migrate_db(db)
-    legacy_flow_db = db.path.parent / "flows.kuzu"
-    result["legacy_flow_db"] = str(legacy_flow_db) if legacy_flow_db.exists() else ""
+    legacy_flows = [db.path.parent / name
+                    for name in ("flows.lbdb", "flows.kuzu")
+                    if (db.path.parent / name).exists()]
+    result["legacy_flow_db"] = str(legacy_flows[0]) if legacy_flows else ""
     result["ok"] = True
     if args.json:
         print(json.dumps(result, indent=2))
@@ -1776,9 +1981,9 @@ def cmd_doctor(args) -> int:
     info = {"python": sys.version.split()[0], "executable": sys.executable}
     try:
         from importlib.metadata import version
-        info["kuzu"] = version("kuzu")
+        info["ladybug"] = version("ladybug")
     except Exception:
-        info["kuzu"] = ""
+        info["ladybug"] = ""
     info["git_repo"] = git_value("repo")
     info["git_commit"] = git_value("commit")
     db_path = Path(args.db).expanduser()
@@ -1803,14 +2008,14 @@ def cmd_doctor(args) -> int:
         print(json.dumps(info, indent=2))
     else:
         print(f"python:  {info['python']} ({info['executable']})")
-        print(f"kuzu:    {info['kuzu'] or 'MISSING'}")
+        print(f"ladybug: {info['ladybug'] or 'MISSING'}")
         print(f"db:      {info['db']} ({'found' if info['exists'] else 'missing'})")
         print(f"git:     {info['git_repo'] or '-'} @ {info['git_commit'] or '-'}")
         if info.get("tables"):
             print("tables:  " + ", ".join(info["tables"]))
         if info.get("nodes") is not None:
             print(f"graph:   {info['nodes']} nodes, {info['edges']} edges")
-    return 0 if info["kuzu"] else 1
+    return 0 if info["ladybug"] else 1
 
 
 def cmd_add_node(args) -> int:
@@ -3339,17 +3544,17 @@ def cmd_branch_drop(args) -> int:
 def build_parser() -> argparse.ArgumentParser:
     common = argparse.ArgumentParser(add_help=False)
     common.add_argument("--db", default=argparse.SUPPRESS,
-                        help=f"Kuzu database path (default: {DEFAULT_DB})")
+                        help=f"LadybugDB database path (default: {DEFAULT_DB})")
     common.add_argument("--json", action="store_true", default=argparse.SUPPRESS,
                         help="machine-readable output")
 
     parser = argparse.ArgumentParser(
         prog="logistic_map.py",
-        description="Kuzu-backed logistic map for application data flow.")
+        description="LadybugDB-backed logistic map for application data flow.")
     # Global forms are accepted before the subcommand; the per-command
     # duplicates in `common` accept the same options after it.
     parser.add_argument("--db", default=None,
-                        help=f"Kuzu database path (default: {DEFAULT_DB})")
+                        help=f"LadybugDB database path (default: {DEFAULT_DB})")
     parser.add_argument("--json", action="store_true", default=None,
                         help="machine-readable output")
     sub = parser.add_subparsers(dest="command", required=True)
@@ -3361,6 +3566,18 @@ def build_parser() -> argparse.ArgumentParser:
         "migrate", parents=[common],
         help="convert a schema v1-v6 database to v7 (rules)")
     migrate.set_defaults(func=cmd_migrate)
+
+    migrate_db_cmd = sub.add_parser(
+        "migrate-db", parents=[common],
+        help="convert a legacy Kuzu database or JSON snapshot to LadybugDB")
+    migrate_db_cmd.add_argument(
+        "--from", dest="source", required=True,
+        help="legacy .kuzu database or JSON export to read")
+    migrate_db_cmd.add_argument(
+        "--to", help="target LadybugDB path (default: --db)")
+    migrate_db_cmd.add_argument(
+        "--force", action="store_true", help="replace the target if it exists")
+    migrate_db_cmd.set_defaults(func=cmd_migrate_db)
 
     doctor = sub.add_parser("doctor", parents=[common], help="check environment and database")
     doctor.set_defaults(func=cmd_doctor)
@@ -3597,7 +3814,7 @@ def main(argv=None) -> int:
         args.db = DEFAULT_DB
     if getattr(args, "json", None) is None:
         args.json = False
-    master_commands = {"init", "migrate", "doctor", "branch"}
+    master_commands = {"init", "migrate", "migrate-db", "doctor", "branch"}
     if args.command not in master_commands:
         args.db = str(resolve_active_db(Path(args.db).expanduser()))
     try:
@@ -3608,7 +3825,7 @@ def main(argv=None) -> int:
         else:
             print(f"error: {exc}", file=sys.stderr)
         return 2
-    except Exception as exc:  # surface Kuzu errors without a traceback
+    except Exception as exc:  # surface LadybugDB errors without a traceback
         if getattr(args, "json", False):
             print(json.dumps({"ok": False, "error": str(exc)}))
         else:

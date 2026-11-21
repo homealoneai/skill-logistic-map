@@ -1,6 +1,6 @@
 # Graph schema v7
 
-Kuzu property graph. Seven node tables, eight relationship tables, all
+LadybugDB property graph. Seven node tables, eight relationship tables, all
 directional. `init` creates them with `IF NOT EXISTS`, so it is safe to re-run.
 
 Contracts are **data entities**: `Input` is data that arrives, `Entry` is an
@@ -74,7 +74,7 @@ and alternative descriptions between the same pair are independent rows.
 
 `RULE` attaches a `Rule` to a flow or entrypoint. A rule has a required
 `description` and may be attached to several flows and entrypoints; it carries
-no data and is not part of `Impact`. Kuzu binds table names case-insensitively,
+no data and is not part of `Impact`. LadybugDB binds table names case-insensitively,
 so the physical relation is `RULE_REL` while the model and CLI call it `rule`.
 
 `contains` edges between two fields must stay inside one contract: both ids must
@@ -212,6 +212,6 @@ by normal commands; run `migrate` to convert it in place:
   no cluster is guessed.
 - v6 → v7: add the `Rule` node table and the `RULE_REL` relation. Existing
   nodes and edges are preserved; no rule is invented.
-- The old `flows.kuzu` database (`Flow`, `Step`, `FEEDS`) is obsolete and no
+- The old `flows.kuzu`/`flows.lbdb` database (`Flow`, `Step`, `FEEDS`) is obsolete and no
   longer read or written. Use `flow use` and `add-edge --flow` to describe the
   paths explicitly; `report` lists passages that still need a flow.

@@ -121,7 +121,7 @@ def sanitize_refs(snapshot: dict, case_dir: Path) -> None:
 
 def validate_sample(sample_path: Path, case_dir: Path) -> dict:
     with tempfile.TemporaryDirectory(prefix="logistic-sample-") as tmp:
-        db = Path(tmp) / "graph.kuzu"
+        db = Path(tmp) / "graph.lbdb"
         run_cli(["init"], db, case_dir)
         run_cli(["apply", "--file", str(sample_path)], db, case_dir)
         report = json.loads(run_cli(["report", "--format", "json", "--check-files"], db, case_dir).stdout)

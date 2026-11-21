@@ -3,7 +3,7 @@
 All commands: `python "$SKILL_DIR/scripts/logistic_map.py" <command>`, where
 `SKILL_DIR` is the directory containing `SKILL.md`.
 Global options `--db PATH` and `--json` are accepted before or after the
-command. `--db` defaults to `$LOGISTIC_MAP_DB` or `.logistic-map/graph.kuzu`.
+command. `--db` defaults to `$LOGISTIC_MAP_DB` or `.logistic-map/graph.lbdb`.
 When a branch is active, `--db` still names the master database; graph commands
 are routed to the branch automatically (see `branch`).
 
@@ -17,10 +17,31 @@ crossed, `2` usage or runtime error. With `--json`, failures print
 |---|---|
 | `init` | Create the node and relationship tables, write `meta.json` and `.logistic-map/.gitignore`. Idempotent; it never rewrites the schema version of an older database. |
 | `migrate` | Convert v1-v6 databases in place. v3 `Input.entry_point`/`channel` are dropped without guessing EntryPoints or triggers; v4 adds `RELATED` without inventing relations; v5 adds an empty `cluster` column; v6 adds the `Rule` node and `RULE_REL` relation. Idempotent. |
-| `doctor` | Print Python, Kuzu version, DB path, tables, node/edge counts, detected git repo/commit. Exits 1 only when Kuzu is missing. |
+| `migrate-db` | Convert a legacy Kuzu database or JSON export into a new LadybugDB database. |
+| `doctor` | Print Python, LadybugDB version, DB path, tables, node/edge counts, detected git repo/commit. Exits 1 only when LadybugDB is missing. |
 
-`scripts/bootstrap.sh` creates `.logistic-map/.venv`, installs `kuzu>=0.11,<0.12`
+`scripts/bootstrap.sh` creates `.logistic-map/.venv`, installs `ladybug>=0.22,<0.23`
 and runs `init`. Use `--no-init` to skip initialization.
+
+### migrate-db
+
+```
+migrate-db --from PATH [--to PATH] [--force]
+```
+
+Moves an existing graph into a fresh LadybugDB database. `--from` accepts either
+a legacy Kuzu database (requires the archived `kuzu` package to read it in a
+subprocess) or a JSON snapshot produced by `export`. `--to` defaults to `--db`.
+`--force` replaces an existing target. Branches are not portable across engines;
+recreate them from the new master.
+
+```sh
+# direct from the old Kuzu file
+logistic_map.py migrate-db --from .logistic-map/graph.kuzu --to .logistic-map/graph.lbdb
+
+# or from a snapshot exported by the previous release
+logistic_map.py migrate-db --from old-export.json --to .logistic-map/graph.lbdb
+```
 
 ## writing
 
@@ -308,7 +329,7 @@ export [--out PATH]        # default: .logistic-map/exports/graph.json
 ```
 
 Writes the snapshot described in `schema.md`. Commit it when the team wants the
-map reviewed with code changes; the Kuzu directory stays ignored.
+map reviewed with code changes; the database files stay ignored.
 
 ### export-md
 

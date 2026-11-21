@@ -233,4 +233,4 @@ add-edge --kind rule --from flow:search-products --to rule:search-limit
 | `Storage` for an external API | The graph no longer distinguishes your data from someone else's |
 | Reusing a `Field` node across contracts to avoid duplicates | Hides type conflicts and missing fields |
 | Guessing field types | The report reports guesses as facts; leave the type empty instead |
-| Editing the Kuzu directory directly | Bypasses edge creation and invariants; use `export`/`apply` |
+| Editing the database files directly | Bypasses edge creation and invariants; use `export`/`apply` |

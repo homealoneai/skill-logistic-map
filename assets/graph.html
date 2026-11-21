@@ -68,7 +68,7 @@
   .chip input { accent-color: #3b82f6; margin: 0; }
   .chip .swatch { width: 8px; height: 8px; border-radius: 50%; }
   .chip.on { color: var(--text); border-color: #334155; }
-  #stage { flex: 1; display: flex; min-height: 0; }
+  #stage { flex: 1; display: flex; min-height: 0; position: relative; }
   #clusterFilter {
     background: #0b1424; color: var(--text); border: 1px solid var(--line);
     border-radius: 7px; padding: 6px 8px; font: inherit; max-width: 220px;
@@ -81,19 +81,60 @@
     position: absolute; left: 12px; bottom: 12px; display: flex; flex-direction: column;
     gap: 4px; padding: 8px 10px; border: 1px solid var(--line); border-radius: 8px;
     background: rgba(10, 17, 32, .82); backdrop-filter: blur(6px); font-size: 11px;
-    color: var(--muted); pointer-events: none;
+    color: var(--muted);
   }
   #legend .row { display: flex; align-items: center; gap: 7px; }
   #legend .line { width: 18px; height: 0; border-top: 2px solid; }
   #legend .dashed { border-top-style: dashed; }
+  #legendHead {
+    display: flex; align-items: center; justify-content: space-between; gap: 10px;
+    margin: -2px 0 2px; color: var(--muted); font-size: 10px;
+    text-transform: uppercase; letter-spacing: .08em;
+  }
+  #legendClose {
+    width: 22px; height: 22px; padding: 0; line-height: 1; font-size: 14px;
+    border-color: transparent; background: transparent; color: var(--muted);
+  }
+  #legendClose:hover { color: var(--text); border-color: var(--line); }
+  #canvasWrap.legend-closed #legend { display: none; }
+  #legendOpen {
+    display: none; position: absolute; left: 12px; bottom: 12px; z-index: 2;
+    border: 1px solid var(--line); border-radius: 8px; padding: 6px 10px;
+    background: rgba(10, 17, 32, .9); color: var(--muted); font-size: 11px;
+    cursor: pointer;
+  }
+  #legendOpen:hover { color: var(--text); border-color: #334155; background: #16233a; }
+  #canvasWrap.legend-closed #legendOpen { display: inline-flex; }
   #hint {
     position: absolute; right: 12px; bottom: 12px; font-size: 11px; color: #475569;
     pointer-events: none;
   }
   aside {
     width: 340px; min-width: 280px; border-left: 1px solid var(--line);
-    background: var(--panel); overflow: auto; padding: 14px;
+    background: var(--panel); display: flex; flex-direction: column;
+    min-height: 0;
   }
+  #panelHead {
+    display: flex; align-items: center; justify-content: space-between; gap: 8px;
+    padding: 8px 10px 8px 14px; border-bottom: 1px solid var(--line);
+    color: var(--muted); font-size: 10px; text-transform: uppercase;
+    letter-spacing: .08em; flex: none;
+  }
+  #panelClose {
+    width: 26px; height: 26px; padding: 0; line-height: 1; font-size: 16px;
+    border-radius: 6px; background: transparent; color: var(--muted);
+  }
+  #panelClose:hover { color: var(--text); }
+  #panelContent { flex: 1; overflow: auto; padding: 14px; min-height: 0; }
+  #stage.panel-closed #panel { display: none; }
+  #panelOpen {
+    display: none; position: absolute; right: 0; top: 12px; z-index: 2;
+    border: 1px solid var(--line); border-right: 0; border-radius: 7px 0 0 7px;
+    background: rgba(10, 17, 32, .9); color: var(--muted); padding: 6px 9px;
+    font-size: 11px; cursor: pointer;
+  }
+  #panelOpen:hover { color: var(--text); border-color: #334155; background: #16233a; }
+  #stage.panel-closed #panelOpen { display: inline-flex; }
   aside h2 { font-size: 12px; text-transform: uppercase; letter-spacing: .08em;
     color: var(--muted); margin: 0 0 8px; font-weight: 600; }
   .badge {
@@ -177,26 +218,40 @@
   <div id="canvasWrap">
     <canvas id="graph"></canvas>
     <div id="legend">
-      <div class="row"><span class="swatch" style="width:8px;height:8px;border-radius:50%;background:var(--flow-node)"></span>Flow</div>
-      <div class="row"><span class="swatch" style="width:8px;height:8px;border-radius:50%;background:var(--entrypoint)"></span>EntryPoint</div>
-      <div class="row"><span class="swatch" style="width:8px;height:8px;border-radius:50%;background:var(--rule)"></span>Rule</div>
-      <div class="row"><span class="swatch" style="width:8px;height:8px;border-radius:50%;background:var(--input)"></span>Input</div>
-      <div class="row"><span class="swatch" style="width:8px;height:8px;border-radius:50%;background:var(--entry)"></span>Entry</div>
-      <div class="row"><span class="swatch" style="width:8px;height:8px;border-radius:50%;background:var(--storage)"></span>Storage</div>
-      <div class="row"><span class="swatch" style="width:8px;height:8px;border-radius:50%;background:var(--field)"></span>Field</div>
-      <div class="row" style="margin-top:4px"><span class="line" style="border-color:var(--use)"></span>use (flow uses entity)</div>
-      <div class="row"><span class="line" style="border-color:var(--entrypoint)"></span>trigger (entrypoint starts flow)</div>
-      <div class="row"><span class="line dashed" style="border-color:var(--related)"></span>related (entrypoint → entrypoint)</div>
-      <div class="row"><span class="line dashed" style="border-color:var(--rule)"></span>rule (flow/entrypoint → rule)</div>
-      <div class="row"><span class="line" style="border-color:var(--compose)"></span>compose (whole → part)</div>
-      <div class="row"><span class="line" style="border-color:var(--transform)"></span>transform (shape change)</div>
-      <div class="row"><span class="line dashed" style="border-color:var(--flow)"></span>flow (passes unchanged)</div>
-      <div class="row"><span class="line dashed" style="border-color:var(--contains)"></span>contains</div>
-      <div class="row" style="margin-top:4px"><span class="line" style="border-color:var(--storage)"></span>lanes: entrypoint above flow, rule beside them (full height), then kind / store_type</div>
+      <div id="legendHead">
+        <span>Legend</span>
+        <button id="legendClose" type="button" title="Hide legend" aria-label="Hide legend">×</button>
+      </div>
+      <div id="legendBody">
+        <div class="row"><span class="swatch" style="width:8px;height:8px;border-radius:50%;background:var(--flow-node)"></span>Flow</div>
+        <div class="row"><span class="swatch" style="width:8px;height:8px;border-radius:50%;background:var(--entrypoint)"></span>EntryPoint</div>
+        <div class="row"><span class="swatch" style="width:8px;height:8px;border-radius:50%;background:var(--rule)"></span>Rule</div>
+        <div class="row"><span class="swatch" style="width:8px;height:8px;border-radius:50%;background:var(--input)"></span>Input</div>
+        <div class="row"><span class="swatch" style="width:8px;height:8px;border-radius:50%;background:var(--entry)"></span>Entry</div>
+        <div class="row"><span class="swatch" style="width:8px;height:8px;border-radius:50%;background:var(--storage)"></span>Storage</div>
+        <div class="row"><span class="swatch" style="width:8px;height:8px;border-radius:50%;background:var(--field)"></span>Field</div>
+        <div class="row" style="margin-top:4px"><span class="line" style="border-color:var(--use)"></span>use (flow uses entity)</div>
+        <div class="row"><span class="line" style="border-color:var(--entrypoint)"></span>trigger (entrypoint starts flow)</div>
+        <div class="row"><span class="line dashed" style="border-color:var(--related)"></span>related (entrypoint → entrypoint)</div>
+        <div class="row"><span class="line dashed" style="border-color:var(--rule)"></span>rule (flow/entrypoint → rule)</div>
+        <div class="row"><span class="line" style="border-color:var(--compose)"></span>compose (whole → part)</div>
+        <div class="row"><span class="line" style="border-color:var(--transform)"></span>transform (shape change)</div>
+        <div class="row"><span class="line dashed" style="border-color:var(--flow)"></span>flow (passes unchanged)</div>
+        <div class="row"><span class="line dashed" style="border-color:var(--contains)"></span>contains</div>
+        <div class="row" style="margin-top:4px"><span class="line" style="border-color:var(--storage)"></span>lanes: entrypoint above flow, rule beside them (full height), then kind / store_type</div>
+      </div>
     </div>
+    <button id="legendOpen" type="button" title="Show legend" aria-label="Show legend">Legend</button>
     <div id="hint">drag to pan · wheel to zoom · click a node</div>
   </div>
-  <aside id="panel"></aside>
+  <aside id="panel">
+    <div id="panelHead">
+      <span>Details</span>
+      <button id="panelClose" type="button" title="Close panel" aria-label="Close panel">×</button>
+    </div>
+    <div id="panelContent"></div>
+  </aside>
+  <button id="panelOpen" type="button" title="Show panel" aria-label="Show panel">Details</button>
 </div>
 <script>
 const DATA = __DATA__;
@@ -319,6 +374,9 @@ const titleEl = document.getElementById('title');
 const statsEl = document.getElementById('stats');
 const visibleStatsEl = document.getElementById('visibleStats');
 const panel = document.getElementById('panel');
+const panelBody = document.getElementById('panelContent');
+const stage = document.getElementById('stage');
+const panelOpenBtn = document.getElementById('panelOpen');
 const searchEl = document.getElementById('search');
 const clusterEl = document.getElementById('clusterFilter');
 const canvas = document.getElementById('graph');
@@ -1179,6 +1237,19 @@ function impactSection(node) {
   return html;
 }
 
+function setPanelOpen(open) {
+  const before = wrap.getBoundingClientRect().width;
+  stage.classList.toggle('panel-closed', !open);
+  requestAnimationFrame(() => {
+    const after = wrap.getBoundingClientRect().width;
+    if (after !== before) {
+      state.view.x += (after - before) / 2;
+      state.dirty = true;
+      draw();
+    }
+  });
+}
+
 function select(id) {
   const node = id ? N.get(id) : null;
   state.selected = id;
@@ -1187,6 +1258,7 @@ function select(id) {
   state.focus = node && node.kind === 'flow' ? flowFocus(node.id)
     : node && node.kind === 'entrypoint' ? entrypointFocus(node.id) : null;
   state.impact = start ? computeImpact(start) : null;
+  if (node) setPanelOpen(true);
   renderPanel(node, null);
   state.dirty = true;
 }
@@ -1195,6 +1267,7 @@ function pickEdge(edge) {
   state.selected = null;
   state.selectedEdge = edge;
   state.focus = null;
+  setPanelOpen(true);
   renderPanel(null, edge);
   state.dirty = true;
 }
@@ -1227,8 +1300,8 @@ function renderEdgePanel(edge) {
   html += '<div class="section"><div class="title">Endpoints</div><div class="conn">' +
     endpoint(edge.from, from, from ? from.kind : 'from') +
     endpoint(edge.to, to, to ? to.kind : 'to') + '</div></div>';
-  panel.innerHTML = html;
-  panel.scrollTop = 0;
+  panelBody.innerHTML = html;
+  panelBody.scrollTop = 0;
 }
 
 function renderFlowNodePanel(node) {
@@ -1301,8 +1374,8 @@ function renderFlowNodePanel(node) {
   html += '<div class="impact-note">The entities, passages and rules above are ' +
     'highlighted; everything else is dimmed. Click empty space to clear.</div>';
 
-  panel.innerHTML = html;
-  panel.scrollTop = 0;
+  panelBody.innerHTML = html;
+  panelBody.scrollTop = 0;
 }
 
 function renderEntryPointPanel(node) {
@@ -1362,8 +1435,8 @@ function renderEntryPointPanel(node) {
   ).join('') + '</div>' : '<div class="empty">This entrypoint does not reach any flow.</div>';
   html += '</div><div class="impact-note">Related entrypoints and reached flows are highlighted, ' +
     'including their entities and passages. Click empty space to clear.</div>';
-  panel.innerHTML = html;
-  panel.scrollTop = 0;
+  panelBody.innerHTML = html;
+  panelBody.scrollTop = 0;
 }
 
 function renderRulePanel(node) {
@@ -1390,14 +1463,14 @@ function renderRulePanel(node) {
     html += '<div class="section"><div class="title">References</div><div class="refs">' +
       node.refs.map((ref) => `<code>${esc(ref)}</code>`).join('') + '</div></div>';
   }
-  panel.innerHTML = html;
-  panel.scrollTop = 0;
+  panelBody.innerHTML = html;
+  panelBody.scrollTop = 0;
 }
 
 function renderPanel(node, edge) {
   if (edge) { renderEdgePanel(edge); return; }
   if (!node) {
-    panel.innerHTML = `
+    panelBody.innerHTML = `
       <div class="empty">
         <p><b>Interactive data-flow map.</b></p>
         <p>Lanes group the graph by kind: <b>EntryPoints</b> sit above <b>Flows</b>, with
@@ -1502,8 +1575,8 @@ function renderPanel(node, edge) {
           `<span>${arrow} <span class="link" data-id="${esc(other)}">${esc(other)}</span></span></div>`;
       }).join('') + '</div></div>';
   }
-  panel.innerHTML = html;
-  panel.scrollTop = 0;
+  panelBody.innerHTML = html;
+  panelBody.scrollTop = 0;
 }
 
 function updateHeader() {
@@ -1651,6 +1724,16 @@ function bindEvents() {
     const el = e.target.closest('[data-id]');
     if (!el) return;
     select(el.dataset.id);
+  });
+
+  document.getElementById('panelClose').addEventListener('click', () => setPanelOpen(false));
+  panelOpenBtn.addEventListener('click', () => setPanelOpen(true));
+  document.getElementById('legendClose').addEventListener('click',
+    () => wrap.classList.add('legend-closed'));
+  document.getElementById('legendOpen').addEventListener('click',
+    () => wrap.classList.remove('legend-closed'));
+  document.addEventListener('keydown', (e) => {
+    if (e.key === 'Escape' && document.activeElement !== searchEl) setPanelOpen(false);
   });
 
   searchEl.addEventListener('input', () => {

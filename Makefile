@@ -7,7 +7,7 @@ EVAL_PY ?= eval/.venv/bin/python
 
 help:
 	@printf '%s\n' \
-	  'make setup          create .logistic-map/.venv with Kuzu' \
+	  'make setup          create .logistic-map/.venv with LadybugDB' \
 	  'make test           run the deterministic CLI test suite' \
 	  'make sample         build and open a sample map (SAMPLE=go)' \
 	  'make sample-no-open build a sample map without opening it' \

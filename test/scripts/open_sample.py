@@ -81,7 +81,7 @@ def main() -> int:
     out_dir = Path(args.out) if args.out else BUILD_DIR / args.sample
     shutil.rmtree(out_dir, ignore_errors=True)
     out_dir.mkdir(parents=True, exist_ok=True)
-    db_path = out_dir / "graph.kuzu"
+    db_path = out_dir / "graph.lbdb"
     html_path = out_dir / "graph.html"
 
     run_cli(["init"], db_path, case_dir)

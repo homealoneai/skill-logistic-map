@@ -145,6 +145,38 @@ class InitAndGraphTests(GraphTestCase):
         self.assertEqual(stats["kinds"], {"entry": 1, "field": 1, "input": 1})
         self.assertEqual(stats["edge_kinds"], {"compose": 1, "contains": 1})
 
+    def test_migrate_db_from_snapshot(self) -> None:
+        self.cli("add-node", "--kind", "input", "--id", "input:a",
+                 "--name", "a", "--cluster", "svc")
+        self.cli("add-flow", "--id", "flow:f", "--name", "F", "--cluster", "svc")
+        self.cli("flow", "use", "--id", "flow:f", "--entity", "input:a")
+        self.cli("add-entrypoint", "--id", "entrypoint:e", "--name", "E",
+                 "--description", "activation", "--cluster", "svc")
+        self.cli("add-edge", "--kind", "trigger", "--from", "entrypoint:e",
+                 "--to", "flow:f")
+        snapshot = self.tmp / "snapshot.json"
+        self.cli("export", "--out", snapshot)
+
+        target = self.tmp / "migrated.lbdb"
+        result = self.cli("migrate-db", "--from", snapshot, "--to", target)
+        self.assertIn("migrated", result.stdout)
+        exported = self.tmp / "migrated.json"
+        run_cli(["export", "--out", exported], target, cwd=self.tmp)
+        payload = json.loads(exported.read_text(encoding="utf-8"))
+        self.assertEqual(
+            {node["id"] for node in payload["nodes"]},
+            {"input:a", "flow:f", "entrypoint:e"})
+        self.assertIn(
+            ("trigger", "entrypoint:e", "flow:f"),
+            {(edge["kind"], edge["from"], edge["to"]) for edge in payload["edges"]})
+
+        blocked = self.cli("migrate-db", "--from", snapshot, "--to", target,
+                           expect=2)
+        self.assertIn("already exists", blocked.stderr)
+        self.cli("migrate-db", "--from", snapshot, "--to", target, "--force")
+        info = json.loads(run_cli(["doctor", "--json"], target, cwd=self.tmp).stdout)
+        self.assertIn("ladybug", info)
+
 
 class ReportTests(GraphTestCase):
     def test_type_aliases_do_not_conflict(self) -> None:
@@ -614,14 +646,14 @@ class SemanticsTests(GraphTestCase):
         self.assertNotIn(("transform", ""), kinds)
 
     def test_migrate_converts_v1_pipeline_edges(self) -> None:
-        path = self.tmp / "v1" / "graph.kuzu"
+        path = self.tmp / "v1" / "graph.lbdb"
         path.parent.mkdir(parents=True)
         script = r"""
 import json, sys
-import kuzu
+import ladybug as lb
 path = sys.argv[1]
-db = kuzu.Database(path)
-conn = kuzu.Connection(db)
+db = lb.Database(path)
+conn = lb.Connection(db)
 conn.execute("CREATE NODE TABLE Field(id STRING, name STRING, path STRING, type STRING, description STRING, required BOOLEAN, source STRING, repo STRING, commit_sha STRING, file_path STRING, refs STRING[], PRIMARY KEY(id))")
 conn.execute("CREATE NODE TABLE Input(id STRING, name STRING, description STRING, entry_point STRING, channel STRING, repo STRING, commit_sha STRING, file_path STRING, refs STRING[], PRIMARY KEY(id))")
 conn.execute("CREATE NODE TABLE Storage(id STRING, name STRING, description STRING, location STRING, store_type STRING, repo STRING, commit_sha STRING, file_path STRING, refs STRING[], PRIMARY KEY(id))")
@@ -844,6 +876,10 @@ class RenderTests(GraphTestCase):
         self.assertIn("id=\"clusterFilter\"", html)
         self.assertIn("nodeCluster", html)
         self.assertIn("All clusters", html)
+        self.assertIn("id=\"panelClose\"", html)
+        self.assertIn("setPanelOpen", html)
+        self.assertIn("id=\"legendClose\"", html)
+        self.assertIn("id=\"legendOpen\"", html)
         self.assertNotIn("__DATA__", html)
 
 
@@ -874,7 +910,7 @@ class BranchTests(GraphTestCase):
         result = self.cli("branch", "apply", "feat-a")
         self.assertIn("applied feat-a", result.stdout)
         self.assertEqual(self.node_ids(), {"input:base", "input:from-a"})
-        self.assertFalse((self.tmp / "graph.kuzu.feat-a").exists())
+        self.assertFalse((self.tmp / "graph.lbdb.feat-a").exists())
         rows = self.branch_rows()
         self.assertEqual(rows["feat-a"]["status"], "applied")
         status = json.loads(self.cli("branch", "status", "--json").stdout)
@@ -930,7 +966,7 @@ class BranchTests(GraphTestCase):
         dropped = self.cli("branch", "drop", "feat-a")
         self.assertIn("feat-a", dropped.stdout)
         self.assertEqual(self.branch_rows(), {})
-        self.assertFalse((self.tmp / "graph.kuzu.feat-a").exists())
+        self.assertFalse((self.tmp / "graph.lbdb.feat-a").exists())
 
         self.cli("branch", "create", "master", expect=2)
         self.cli("branch", "create", "Bad Name", expect=2)

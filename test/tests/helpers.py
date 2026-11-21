@@ -37,12 +37,12 @@ def load_manifest() -> dict:
 
 
 class GraphTestCase(unittest.TestCase):
-    """A test case with a temporary, initialised Kuzu database."""
+    """A test case with a temporary, initialised LadybugDB database."""
 
     def setUp(self) -> None:
         self._tmp = tempfile.TemporaryDirectory(prefix="logistic-test-")
         self.tmp = Path(self._tmp.name)
-        self.db = self.tmp / "graph.kuzu"
+        self.db = self.tmp / "graph.lbdb"
         proc = run_cli(["init"], self.db, cwd=self.tmp)
         self.assertEqual(proc.returncode, 0, proc.stderr)
 

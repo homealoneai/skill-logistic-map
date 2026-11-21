@@ -13,7 +13,7 @@ framework.
 
 Requirements: Python 3.11+ and network access to the LiteLLM gateway. Docker is
 not needed: the tools only read files and run the skill CLI against a throwaway
-Kuzu database.
+LadybugDB database.
 
 ```sh
 cd eval
@@ -108,7 +108,7 @@ the regenerated Go HTML for visual review.
 
 ## Isolation
 
-- Every sample gets a temporary Kuzu database under `eval/.work/`; it is deleted
+- Every sample gets a temporary LadybugDB database under `eval/.work/`; it is deleted
   after scoring, so the sample repositories are never modified.
 - The extractor can only read inside the case directory (plus `SKILL.md`,
   `references/`, `examples/` and `scripts/` under `skill/`).

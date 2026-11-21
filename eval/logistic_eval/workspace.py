@@ -14,14 +14,14 @@ from .config import SKILL_CLI, WORK_DIR
 
 
 class MapSession:
-    """Owns the Kuzu database and JSON artefacts for one evaluated case."""
+    """Owns the LadybugDB database and JSON artefacts for one evaluated case."""
 
     def __init__(self, spec: dict) -> None:
         self.spec = spec
         self.case_dir = Path(spec["case_dir"])
         WORK_DIR.mkdir(parents=True, exist_ok=True)
         self.root = Path(tempfile.mkdtemp(prefix=f"{spec['id']}-", dir=WORK_DIR))
-        self.db_path = self.root / "graph.kuzu"
+        self.db_path = self.root / "graph.lbdb"
         self.export_path = self.root / "graph.json"
         self.call_count = 0
         self.apply_count = 0
@@ -33,7 +33,7 @@ class MapSession:
         session.spec = metadata["spec"]
         session.case_dir = Path(metadata["case_dir"])
         session.root = Path(metadata["work_dir"])
-        session.db_path = session.root / "graph.kuzu"
+        session.db_path = session.root / "graph.lbdb"
         session.export_path = session.root / "graph.json"
         session.call_count = int(metadata.get("cli_calls", 0))
         session.apply_count = 0
