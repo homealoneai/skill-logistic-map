@@ -54,7 +54,7 @@ class SampleFixtureTests(GraphTestCase):
         fields = [node for node in nodes if node.get("kind") == "field"]
 
         # --- file integrity -------------------------------------------------
-        self.assertEqual(data.get("schema_version"), 7)
+        self.assertEqual(data.get("schema_version"), 8)
         self.assertEqual(len(by_id), len(nodes), "duplicate node ids in the sample")
         kinds = Counter(node.get("kind") for node in nodes if node.get("kind") != "field")
         edge_kinds = Counter(edge.get("kind") for edge in edges)
@@ -67,6 +67,9 @@ class SampleFixtureTests(GraphTestCase):
         self.assertGreaterEqual(
             len(entrypoints), 1, "every sample must include an entrypoint")
         self.assertEqual(len(rules), meta["counts"].get("rules", 0))
+        externals = [node for node in nodes if node.get("kind") == "external"]
+        external_ids = {node["id"] for node in externals}
+        self.assertEqual(len(externals), meta["counts"].get("externals", 0))
         self.assertEqual(
             len([edge for edge in edges if edge.get("kind") == "related"]),
             meta["counts"].get("related", 0),
@@ -97,6 +100,9 @@ class SampleFixtureTests(GraphTestCase):
                 self.assertEqual(node_id.split(":", 1)[0], "rule", node_id)
                 self.assertTrue(node.get("description"), node_id)
                 self.assertTrue(node.get("file_path") or node.get("refs"), node_id)
+            elif node.get("kind") == "external":
+                self.assertEqual(node_id.split(":", 1)[0], "external", node_id)
+                self.assertTrue(node.get("file_path") or node.get("refs"), node_id)
             else:
                 self.assertEqual(node.get("kind"), "field", node_id)
                 self.assertIn("#", node_id)
@@ -122,6 +128,16 @@ class SampleFixtureTests(GraphTestCase):
             elif edge.get("kind") == "rule":
                 self.assertIn(edge["from"], entrypoint_ids | {flow["id"] for flow in flows}, edge)
                 self.assertIn(edge["to"], rule_ids, edge)
+            elif edge.get("kind") == "calls":
+                self.assertIn(edge["from"], {flow["id"] for flow in flows}, edge)
+                self.assertIn(edge["to"], external_ids, edge)
+            elif edge.get("kind") == "delivers-to":
+                self.assertIn(
+                    edge["from"],
+                    {contract["id"] for contract in contracts
+                     if contract["kind"] == "entry"}, edge)
+                self.assertIn(edge["to"], external_ids, edge)
+                self.assertIn(edge.get("flow_id"), {flow["id"] for flow in flows}, edge)
 
         for rule in rules:
             self.assertTrue(

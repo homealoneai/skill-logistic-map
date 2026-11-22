@@ -316,6 +316,16 @@ def make_tools(session: MapSession) -> list[Tool]:
             and {"kind": "rule", "from": "flow:list-products",
              "to": "rule:page-limit"}.
 
+            For an external system, add a node named with kind `external` and
+            link it from the flow (and from an entry delivering a payload):
+            {"kind": "external", "id": "external:sms-gateway",
+             "name": "SMS gateway", "provider": "Twilio",
+             "protocol": "HTTP", "refs": ["notify/sms.go:12"]}
+            {"kind": "calls", "from": "flow:notify-user",
+             "to": "external:sms-gateway"}
+            {"kind": "delivers-to", "from": "entry:sms-request",
+             "to": "external:sms-gateway", "flow_id": "flow:notify-user"}.
+
             Args:
                 graph: Object with optional `nodes`, `fields` and `edges` lists.
                 timeout: Seconds before the command is aborted (max 240).

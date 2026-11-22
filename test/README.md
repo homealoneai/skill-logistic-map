@@ -44,7 +44,7 @@ To regenerate the fixtures after an eval run:
 make samples
 ```
 
-This picks the newest **schema-v7** snapshot per case from `eval/logs/*.eval`,
+This picks the newest **schema-v8** snapshot per case from `eval/logs/*.eval`,
 validates it by applying it to a temporary database, and rewrites `test/sample/`
 and the manifest. It never reports success by mixing a current manifest with
 stale v3 graphs, so rerun the evals after a schema change. Refs whose file or line does not resolve are dropped while copying
@@ -56,7 +56,7 @@ eval environment (`./eval/bootstrap.sh`) because it reads Inspect logs.
 `test_cli.py` checks the CLI contract:
 
 - schema creation and empty stats
-- v1-v6 → v7 migration (unassigned passages, dropped Input activation fields, no invented triggers/relations/rules, empty clusters)
+- v1-v7 → v8 migration (unassigned passages, dropped Input activation fields, no invented triggers/relations/rules/externals, empty clusters)
 - EntryPoint validation: `TRIGGER` only EntryPoint → Flow; directional `RELATED` only EntryPoint → EntryPoint
 - node, field and edge properties after an export round trip, including entrypoints, flows, rules, `cluster`, `trigger`, `related`, `rule` and `use`
 - two entities in one flow and the same pair in two flows
@@ -72,6 +72,7 @@ eval environment (`./eval/bootstrap.sh`) because it reads Inspect logs.
 - Markdown documentation export (entities, entrypoints, flows, index, stale-page cleanup)
 - standalone HTML rendering with EntryPoint/Flow/Rule lanes, `related` focus, cluster filter and rule panels
 - linear branches: isolation from master, apply, stale propagation and no branch-of-branch
+- external systems: `calls` from flows, `delivers-to` with `flow_id`, validation and removal
 
 `test_samples.py` checks every fixture:
 

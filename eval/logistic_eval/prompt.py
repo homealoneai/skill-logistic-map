@@ -42,6 +42,11 @@ Rules for this evaluation:
   cache policy or validation. Give it a specific `description`, code refs and a
   cluster, then attach it with a `rule` edge from the flow or entrypoint. Only
   record rules you can justify from the code; never invent one.
+- Register an `external` node (an External System) when the code calls a service
+  outside the mapped repositories, such as an SMS provider, payment gateway or
+  shipping API. Attach the Flow with `calls`, and each Entry whose payload is
+  delivered with `delivers-to` plus the owning `flow_id`. External Systems are
+  not local data entities: they never appear in a passage or `Impact`.
 - One user-visible operation is normally one flow. Cache hit/miss and conditional
   branches stay inside that flow; do not split them into separate flows. Do not
   model UI state, navigation arguments, framework props, or one contract per class
@@ -59,8 +64,8 @@ Rules for this evaluation:
   payload really exists as a distinct intermediate shape; pass-through
   functions, classes and DTO definitions are not entries.
 - `compose` means whole → part (composition). Never use it for pipeline order.
-- Do not invent an EntryPoint, `trigger`, `related` or `rule`: only record
-  code-evidenced activation.
+- Do not invent an EntryPoint, `trigger`, `related`, `rule` or external system:
+  only record code-evidenced activations and dependencies.
   `transform` must carry a `note` (or a ref) describing the mapping.
 - A passage (`flow` or `transform`) belongs to exactly one flow and both of its
   endpoints must be listed with `use` for that flow.
@@ -105,9 +110,9 @@ def user_prompt(spec: dict) -> str:
     context = ", ".join(spec.get("context_files", []))
     task = """\
 Produce the graph for this scope now. Prefer one `apply_graph` payload
-with EntryPoints, data entities, fields, flows, rules, clusters, `trigger`,
-`related`, `rule` and `use` edges and the `flow`/`transform` passages (`flow_id`
-set); then run `report`, fix any
+with EntryPoints, data entities, fields, flows, rules, external systems,
+clusters, `trigger`, `related`, `rule`, `use`, `calls` and `delivers-to` edges
+and the `flow`/`transform` passages (`flow_id` set); then run `report`, fix any
 structural problems, and answer with a short summary.
 """
     return f"""\

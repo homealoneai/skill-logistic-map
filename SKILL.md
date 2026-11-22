@@ -1,6 +1,6 @@
 ---
 name: logistic-map
-description: Build, query and audit a LadybugDB graph of application data flow as a logistics process — EntryPoint activations, Flow paths, Input, Entry, Storage and Field contracts, joins, and the paths data takes. Use when asked to map data movement between services, queues, endpoints, jobs and storages; to find contract mismatches between producer and consumer; to trace a field; or to query, report on, or render the graph.
+description: Build, query and audit a LadybugDB graph of application data flow as a logistics process — EntryPoint activations, Flow paths, Input, Entry, Storage, External Systems and Field contracts, joins, and the paths data takes. Use when asked to map data movement between services, queues, endpoints, jobs and storages; to find contract mismatches between producer and consumer; to trace a field; or to query, report on, or render the graph.
 ---
 
 # Logistic map
@@ -58,6 +58,8 @@ Entry ──contains─────┘
 EntryPoint ──trigger──▶ Flow ──use──▶ Input|Entry|Storage
 EntryPoint ──related──▶ EntryPoint  (directional activation relation)
 Flow|EntryPoint ──rule──▶ Rule       (limit or condition, no data)
+Flow ──calls──▶ External             (external service dependency)
+Entry ──delivers-to {flow_id}──▶ External  (payload delivered in a flow)
 whole ──compose──▶ part              (composition, not execution order)
 source ──flow {flow_id}──▶ next      (data passes unchanged)
 source ──transform {flow_id}──▶ result  (data changes shape)
@@ -71,6 +73,7 @@ source ──transform {flow_id}──▶ result  (data changes shape)
 | `Storage` | Persisted data: database, Redis, object store, file (never an external service) | `location`, `store_type`, `cluster` |
 | `Flow` | A named path that groups the entities it uses and their passages | `name`, `description`, `cluster` |
 | `Rule` | A limit or condition followed by a flow or entrypoint | `description`, `cluster` |
+| `External` | An External System outside the mapped repositories: SMS, payment, shipping, identity | `provider`, `protocol`, `location`, `cluster` |
 | `Field` | One field of one entity; can contain nested fields | `path`, `type`, `required`, `source` |
 
 | Edge | From → To | Meaning |
@@ -80,6 +83,8 @@ source ──transform {flow_id}──▶ result  (data changes shape)
 | `trigger` | EntryPoint → Flow | this code-level entrypoint starts this flow |
 | `related` | EntryPoint → EntryPoint | directional activation relationship with `description` and `refs` |
 | `rule` | Flow/EntryPoint → Rule | the activation follows this limit or condition |
+| `calls` | Flow → External | the flow calls the external system |
+| `delivers-to` | Entry → External, with `flow_id` | the entry payload is delivered in that flow |
 | `compose` | entity → entity | **whole → part**: this entity is composed of that one |
 | `transform` | entity → entity, with `flow_id` | the data changes shape; `note` records the mapping |
 | `flow` | entity → entity, with `flow_id` | data passes without changing shape |
@@ -88,6 +93,12 @@ source ──transform {flow_id}──▶ result  (data changes shape)
 register explicitly; `flow_id` on every passage identifies that flow. The same
 data pair may participate in several flows, so a passage is identified by
 `(kind, from, to, flow)`.
+
+`calls` links a Flow to an External System. `delivers-to` links an Entry to an
+External System and requires `flow_id`; the same entry may deliver to the same
+system in several flows, so the delivery is identified by `(from, to, flow)`.
+External Systems are dependencies, not data: they never appear in a passage and
+are excluded from `Impact`.
 
 `related` links activation points without carrying data. It is directional and
 identified by `(from, to, description)`, so a screen → HTTP relation and the
@@ -108,7 +119,7 @@ to the code. Two distinct entities may point at the same file.
 `cluster` is a single free-form label used to group nodes by the logic that
 matters for the map: a service, repository, module, deployable unit or bounded
 context. Use one stable value per boundary (`orders-service`, `checkout-ui`,
-`billing`) and set it on contracts, flows and entrypoints; a field inherits its
+`billing`) and set it on contracts, flows, entrypoints, rules and external systems; a field inherits its
 owner's cluster. `report` warns when an entrypoint and the flow it triggers are
 in different clusters, and `render` exposes a cluster dropdown that filters the
 whole graph.
@@ -145,11 +156,16 @@ stable slugs, not display names.
    with `add-edge --kind rule` to the Flow or EntryPoint it constrains. Rules
    replace ad-hoc documentation for limits, timeouts, pagination, auth, feature
    flags, cache policy and validation.
-7. **Audit** with `report`; treat warnings as questions for the code, not as
+7. **Register external systems** with `add-external` when the code calls a
+   service outside the mapped repositories. Link the Flow with
+   `add-edge --kind calls`; link a specific Entry payload with
+   `add-edge --kind delivers-to --flow ...`.
+8. **Audit** with `report`; treat warnings as questions for the code, not as
    facts. Fix the graph when the code says the report is wrong.
-8. **Publish**: `export` for a git-friendly snapshot, `export-md` for Markdown
+9. **Publish**: `export` for a git-friendly snapshot, `export-md` for Markdown
    docs a coding agent can read, and `render` for a standalone HTML graph. The
-    HTML has lanes for **EntryPoints**, **Flows** and **Rules**; selecting an
+    HTML has lanes for **EntryPoints**, **Flows**, **Rules** and **External
+    Systems**, plus **All / Flows / External Systems** view tabs; selecting an
     EntryPoint follows `related` entrypoints and highlights the flows they reach,
     and the **cluster** dropdown filters the graph to one service, repository or
     other grouping label. With an entity selected, turn on **Impact** to
@@ -255,6 +271,21 @@ share `file_path`/`refs` — that is evidence, not identity. Details in
   --ref controller/controller.go:58
 ```
 
+### External systems on a flow
+
+```sh
+"$PY" "$SKILL_DIR/scripts/logistic_map.py" add-external \
+  --id external:sms-gateway --name "SMS gateway" \
+  --description "Sends order confirmation SMS" \
+  --provider Twilio --protocol HTTP \
+  --cluster notification-service --ref notify/sms.go:12
+"$PY" "$SKILL_DIR/scripts/logistic_map.py" add-edge --kind calls \
+  --from flow:create-order --to external:sms-gateway
+"$PY" "$SKILL_DIR/scripts/logistic_map.py" add-edge --kind delivers-to \
+  --flow flow:create-order --from entry:order-validated \
+  --to external:sms-gateway
+```
+
 ## Branches
 
 Use a branch when the graph change must be reviewed or applied as one unit:
@@ -288,6 +319,10 @@ Use a branch when the graph change must be reviewed or applied as one unit:
   `add-rule` and attach it with `add-edge --kind rule` instead of writing a
   separate Markdown note. A rule needs a `--description` and code evidence, and
   may constrain more than one flow or entrypoint.
+- **External Systems are dependencies, not data.** Register an `add-external`
+  node for services outside the repositories; never model the vendor's internal
+  tables or fields. Use `calls` from the Flow and `delivers-to` (with `--flow`)
+  from the Entry whose payload is sent.
 - **A field belongs to one contract.** The same logical path in two contracts is
   two `Field` nodes, compared by `path` during `report` — do not merge them into
   one node to "fix" a conflict.

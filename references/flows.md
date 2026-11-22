@@ -25,6 +25,8 @@ entry:order-validated ──FLOW {flow_id: flow:create-order}──▶ storage:o
 | `TRIGGER` | `EntryPoint → Flow`: this activation starts the flow |
 | `RELATED` | `EntryPoint → EntryPoint`: directional activation relationship |
 | `RULE` | `Flow/EntryPoint → Rule`: a limit or condition the activation follows |
+| `CALLS` | `Flow → External`: the flow calls an external system |
+| `DELIVERS_TO` | `Entry → External` with `flow_id`: payload delivered in that flow |
 | `USE` | `Flow → entity`: this flow uses this entity |
 | `FLOW` passage | The data passes unchanged; carries `flow_id` |
 | `TRANSFORM` passage | The data changes shape; carries `flow_id` and a note |
@@ -43,6 +45,24 @@ cluster; `report` warns when they differ.
 
 `Rule` records a limit or condition the flow follows; attach it with
 `add-edge --kind rule`. A rule is not a step and carries no data.
+
+An External System represents a service outside the mapped repositories. A Flow
+calls it with `calls`; an Entry delivers a payload to it with `delivers-to` and
+a required `flow_id`:
+
+```sh
+"$PY" "$SKILL_DIR/scripts/logistic_map.py" add-external \
+  --id external:sms-gateway --name "SMS gateway" --provider Twilio \
+  --protocol HTTP --cluster notification-service
+"$PY" "$SKILL_DIR/scripts/logistic_map.py" add-edge --kind calls \
+  --from flow:send-sms --to external:sms-gateway
+"$PY" "$SKILL_DIR/scripts/logistic_map.py" add-edge --kind delivers-to \
+  --flow flow:send-sms --from entry:sms-request --to external:sms-gateway
+```
+
+The same Entry may deliver to the same External System in several flows; the
+delivery is identified by `(from, to, flow_id)`. External Systems are not data
+entities, never appear in a passage and are excluded from `Impact`.
 
 A passage is identified by `(kind, from, to, flow_id)`: the same pair may appear
 in several flows without one overwriting the other. Two entities may have the
@@ -131,6 +151,8 @@ under `JOINS`; the HTML shows the passages, but does not badge joins.
   through `related`; untriggered flows are reported as informational findings;
 - `related` edges carry a description and refs and connect only EntryPoints.
 - Rules are attached to a Flow or EntryPoint and carry a description and refs.
+- `delivers-to` edges carry a `flow_id` and their Entry is USEd by that flow;
+  external systems with neither `calls` nor `delivers-to` are reported.
 
 ## Reading a flow
 
@@ -156,15 +178,17 @@ PATH
 
 ## Rendering
 
-`render` draws EntryPoints above flows, with rules beside both in a column that
-spans their two lanes. Selecting an EntryPoint
+`render` draws EntryPoints above flows, with rules and External Systems beside
+both in columns that span their two lanes. The view tabs switch between **All**,
+**Flows** and **External Systems**. Selecting an EntryPoint
 follows outgoing `related` edges and highlights the flows those entrypoints
 trigger, including their entities, `use` edges and passages. The cluster
 dropdown filters every lane to nodes with the selected cluster. Selecting a flow
-highlights its entities, `use` edges, `rule` edges and `flow`/`transform`
-passages, and dims everything else; selecting an entity lists the flows that use
+highlights its entities, `use` edges, `rule` edges, `calls`/`delivers-to`
+edges and `flow`/`transform` passages, and dims everything else; selecting an entity lists the flows that use
 it. Impact follows `flow`/`transform` passages only, so `use`, `compose`,
-`trigger`, `related` and `rule` never appear in an impact path.
+`trigger`, `related`, `rule`, `calls` and `delivers-to` never appear in an
+impact path.
 
 `export-md` writes one Markdown page per flow with the path, passages, joins and
 links to the entity pages. Entity pages list the flows that use them. A

@@ -1,6 +1,6 @@
-# Graph schema v7
+# Graph schema v8
 
-LadybugDB property graph. Seven node tables, eight relationship tables, all
+LadybugDB property graph. Eight node tables, ten relationship tables, all
 directional. `init` creates them with `IF NOT EXISTS`, so it is safe to re-run.
 
 Contracts are **data entities**: `Input` is data that arrives, `Entry` is an
@@ -8,7 +8,8 @@ intermediate entity inside the application, `Storage` is persisted data. A
 `Flow` is an explicit named path that groups the entities it uses. `EntryPoint`
 is a code-level activation mechanism: it connects to Flow with `trigger` and to
 another EntryPoint with the directional `related` relation. `Rule` describes a
-limit or condition that a Flow or EntryPoint follows.
+limit or condition that a Flow or EntryPoint follows. `External` (an External
+System) is a service outside the mapped repositories.
 
 ## Node tables
 
@@ -19,7 +20,7 @@ Common properties on every node:
 | `id` | STRING (primary key) | Stable identifier; see ID rules |
 | `name` | STRING | Human label (entry point name, table name, flow name) |
 | `description` | STRING | Short explanation of the contract or flow |
-| `cluster` | STRING | Grouping label on contracts, flows and entrypoints; `Field` inherits it |
+| `cluster` | STRING | Grouping label on contracts, flows, entrypoints, rules and external systems; `Field` inherits it |
 | `repo` | STRING | Repository URL or path that owns the code |
 | `commit_sha` | STRING | Commit the mapping was taken from |
 | `file_path` | STRING | Primary file that implements the contract |
@@ -33,10 +34,11 @@ Common properties on every node:
 | `Flow` | — |
 | `EntryPoint` | — |
 | `Rule` | — |
+| `External` | `provider`, `protocol`, `location` |
 | `Field` | `path`, `type`, `required` (BOOLEAN), `source` (`declared` / `inferred`) |
 
 `cluster` is a single free-form string. Use one stable value per boundary and
-apply it to contracts, flows and entrypoints; a field has no own cluster and
+apply it to contracts, flows, entrypoints, rules and external systems; a field has no own cluster and
 inherits the one from its owner. Example values: `orders-service`,
 `checkout-ui`, `github.com/acme/billing` or `module:users`.
 
@@ -62,6 +64,8 @@ All relationship rows carry `refs STRING[]` and `file_path STRING`; `compose`,
 | `TRIGGER` | `EntryPoint→Flow` | The entrypoint starts the flow |
 | `RELATED` | `EntryPoint→EntryPoint` | Directional activation relationship; carries `description` |
 | `RULE_REL` | `Flow→Rule`, `EntryPoint→Rule` | The activation follows this limit or condition (exposed as the `rule` edge) |
+| `CALLS` | `Flow→External` | The flow calls an external system (exposed as `calls`) |
+| `DELIVERS_TO` | `Entry→External` | The entry payload is delivered in a flow; carries `flow_id` |
 
 `TRANSFORM` and `FLOWS` rows carry `flow_id STRING`. A passage is identified by
 `(kind, from, to, flow_id)`, so the same pair can participate in several flows.
@@ -77,6 +81,11 @@ and alternative descriptions between the same pair are independent rows.
 no data and is not part of `Impact`. LadybugDB binds table names case-insensitively,
 so the physical relation is `RULE_REL` while the model and CLI call it `rule`.
 
+`CALLS` links a Flow to an External System. `DELIVERS_TO` links an Entry to an
+External System and requires `flow_id`: the same entry may deliver to the same
+external system in several flows, so the identity is `(from, to, flow_id)`.
+External Systems never carry data and are not part of `Impact`.
+
 `contains` edges between two fields must stay inside one contract: both ids must
 share the same owner prefix.
 
@@ -84,7 +93,7 @@ share the same owner prefix.
 
 ```
    entrypoint:<slug>   input:<slug>   entry:<slug>   storage:<slug>   flow:<slug>
-   rule:<slug>
+   rule:<slug>   external:<slug>
 <owner-id>#<path>                                           # fields
 ```
 
@@ -113,6 +122,9 @@ Enforced by the CLI:
   `description` and at least one `refs` entry are required.
 - `rule` goes only from an existing `Flow` or `EntryPoint` to an existing
   `Rule`; `Rule` requires a description.
+- `calls` goes only from an existing `Flow` to an existing `External`.
+- `delivers-to` goes only from an existing `Entry` to an existing `External`
+  and requires `--flow`; the Entry must be USEd by that flow.
 - `contains` cannot cross contract boundaries.
 - Every node referenced by an edge must exist.
 
@@ -131,6 +143,8 @@ legitimate while modelling):
   have one (`cluster_mismatch`);
 - a rule is attached to a flow or entrypoint (`orphan_rule`), has a description
   and has code evidence;
+- an external system is called or delivered to (`orphan_external`) and has code
+  evidence; every `delivers-to` carries a known `flow_id`;
 - `transform` passages carry a note, file or ref explaining the mapping;
 - fields declared by hand have a type;
 - paths that exist on one side of a `flow` passage but not the other
@@ -143,7 +157,7 @@ legitimate while modelling):
 
 ```json
 {
-  "schema_version": 7,
+  "schema_version": 8,
   "generated_at": "2026-11-17T11:20:00+00:00",
   "repo": "github.com/acme/logistics",
   "commit": "a1b2c3d",
@@ -164,6 +178,9 @@ legitimate while modelling):
     {"kind": "rule", "id": "rule:order-limit",
      "name": "Order item limit", "cluster": "orders-service",
      "description": "An order may contain at most 20 items"},
+    {"kind": "external", "id": "external:sms-gateway",
+     "name": "SMS gateway", "provider": "Twilio", "protocol": "HTTP",
+     "location": "https://api.twilio.com", "cluster": "notifications"},
     {"kind": "field", "id": "input:orders.created#total", "owner": "input:orders.created",
      "path": "total", "type": "string", "...": "..."}
   ],
@@ -171,6 +188,9 @@ legitimate while modelling):
     {"kind": "use", "from": "flow:create-order", "to": "input:orders.created"},
     {"kind": "trigger", "from": "entrypoint:create-order", "to": "flow:create-order"},
     {"kind": "rule", "from": "flow:create-order", "to": "rule:order-limit"},
+    {"kind": "calls", "from": "flow:create-order", "to": "external:sms-gateway"},
+    {"kind": "delivers-to", "from": "entry:order-validated",
+     "to": "external:sms-gateway", "flow_id": "flow:create-order"},
     {"kind": "related", "from": "entrypoint:orders-screen",
      "to": "entrypoint:create-order",
      "description": "the screen submits the order form",
@@ -212,6 +232,8 @@ by normal commands; run `migrate` to convert it in place:
   no cluster is guessed.
 - v6 → v7: add the `Rule` node table and the `RULE_REL` relation. Existing
   nodes and edges are preserved; no rule is invented.
+- v7 → v8: add the `External` node table plus `CALLS` and `DELIVERS_TO`.
+  Existing nodes and edges are preserved; no external system is invented.
 - The old `flows.kuzu`/`flows.lbdb` database (`Flow`, `Step`, `FEEDS`) is obsolete and no
   longer read or written. Use `flow use` and `add-edge --flow` to describe the
   paths explicitly; `report` lists passages that still need a flow.

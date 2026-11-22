@@ -23,6 +23,7 @@
     --rule: #a3e635;
     --related: #a78bfa;
     --use: #f9a8d4;
+    --external: #2dd4bf;
     --contains: #64748b;
   }
   * { box-sizing: border-box; }
@@ -44,6 +45,17 @@
     background: var(--compose); box-shadow: 0 0 12px var(--compose);
   }
   h1 { font-size: 13px; font-weight: 600; margin: 0; white-space: nowrap; }
+  #viewTabs {
+    display: inline-flex; border: 1px solid var(--line); border-radius: 8px;
+    overflow: hidden; flex: none;
+  }
+  #viewTabs button {
+    border: 0; border-radius: 0; background: transparent; color: var(--muted);
+    padding: 6px 10px; font-size: 12px;
+  }
+  #viewTabs button + button { border-left: 1px solid var(--line); }
+  #viewTabs button.on { background: #16233a; color: var(--text); }
+  #viewTabs button:hover { background: #111c30; color: var(--text); }
   .stats { color: var(--muted); font-size: 12px; white-space: nowrap; }
   .spacer { flex: 1; }
   input[type=search] {
@@ -186,6 +198,11 @@
   <div class="brand"><span class="dot"></span><h1 id="title">Logistic map</h1></div>
   <div class="stats" id="stats"></div>
   <div class="spacer"></div>
+  <div id="viewTabs" role="tablist" aria-label="Map view">
+    <button type="button" class="on" data-view="all" role="tab">All</button>
+    <button type="button" data-view="flows" role="tab">Flows</button>
+    <button type="button" data-view="external" role="tab">External Systems</button>
+  </div>
   <select id="clusterFilter" title="Filter the graph by cluster">
     <option value="">All clusters</option>
   </select>
@@ -198,6 +215,7 @@
   <label class="chip on"><input type="checkbox" data-kind="flow" checked><span class="swatch" style="background:var(--flow-node)"></span>Flows</label>
   <label class="chip on"><input type="checkbox" data-kind="entrypoint" checked><span class="swatch" style="background:var(--entrypoint)"></span>EntryPoints</label>
   <label class="chip on"><input type="checkbox" data-kind="rule" checked><span class="swatch" style="background:var(--rule)"></span>Rules</label>
+  <label class="chip on"><input type="checkbox" data-kind="external" checked><span class="swatch" style="background:var(--external)"></span>External Systems</label>
   <label class="chip on"><input type="checkbox" data-kind="input" checked><span class="swatch" style="background:var(--input)"></span>Inputs</label>
   <label class="chip on"><input type="checkbox" data-kind="entry" checked><span class="swatch" style="background:var(--entry)"></span>Entries</label>
   <label class="chip on"><input type="checkbox" data-kind="storage" checked><span class="swatch" style="background:var(--storage)"></span>Storages</label>
@@ -206,6 +224,8 @@
   <label class="chip on"><input type="checkbox" data-rel="trigger" checked><span class="swatch" style="background:var(--entrypoint)"></span>trigger</label>
   <label class="chip on"><input type="checkbox" data-rel="related" checked><span class="swatch" style="background:var(--related)"></span>related</label>
   <label class="chip on"><input type="checkbox" data-rel="rule" checked><span class="swatch" style="background:var(--rule)"></span>rule</label>
+  <label class="chip on"><input type="checkbox" data-rel="calls" checked><span class="swatch" style="background:var(--external)"></span>calls</label>
+  <label class="chip on"><input type="checkbox" data-rel="delivers-to" checked><span class="swatch" style="background:var(--external)"></span>delivers-to</label>
   <label class="chip on"><input type="checkbox" data-rel="compose" checked><span class="swatch" style="background:var(--compose)"></span>compose</label>
   <label class="chip on"><input type="checkbox" data-rel="transform" checked><span class="swatch" style="background:var(--transform)"></span>transform</label>
   <label class="chip on"><input type="checkbox" data-rel="flow" checked><span class="swatch" style="background:var(--flow)"></span>flow</label>
@@ -226,6 +246,7 @@
         <div class="row"><span class="swatch" style="width:8px;height:8px;border-radius:50%;background:var(--flow-node)"></span>Flow</div>
         <div class="row"><span class="swatch" style="width:8px;height:8px;border-radius:50%;background:var(--entrypoint)"></span>EntryPoint</div>
         <div class="row"><span class="swatch" style="width:8px;height:8px;border-radius:50%;background:var(--rule)"></span>Rule</div>
+        <div class="row"><span class="swatch" style="width:8px;height:8px;border-radius:50%;background:var(--external)"></span>External System</div>
         <div class="row"><span class="swatch" style="width:8px;height:8px;border-radius:50%;background:var(--input)"></span>Input</div>
         <div class="row"><span class="swatch" style="width:8px;height:8px;border-radius:50%;background:var(--entry)"></span>Entry</div>
         <div class="row"><span class="swatch" style="width:8px;height:8px;border-radius:50%;background:var(--storage)"></span>Storage</div>
@@ -234,11 +255,13 @@
         <div class="row"><span class="line" style="border-color:var(--entrypoint)"></span>trigger (entrypoint starts flow)</div>
         <div class="row"><span class="line dashed" style="border-color:var(--related)"></span>related (entrypoint → entrypoint)</div>
         <div class="row"><span class="line dashed" style="border-color:var(--rule)"></span>rule (flow/entrypoint → rule)</div>
+        <div class="row"><span class="line dashed" style="border-color:var(--external)"></span>calls (flow → external system)</div>
+        <div class="row"><span class="line dashed" style="border-color:var(--external)"></span>delivers-to (entry → external system)</div>
         <div class="row"><span class="line" style="border-color:var(--compose)"></span>compose (whole → part)</div>
         <div class="row"><span class="line" style="border-color:var(--transform)"></span>transform (shape change)</div>
         <div class="row"><span class="line dashed" style="border-color:var(--flow)"></span>flow (passes unchanged)</div>
         <div class="row"><span class="line dashed" style="border-color:var(--contains)"></span>contains</div>
-        <div class="row" style="margin-top:4px"><span class="line" style="border-color:var(--storage)"></span>lanes: entrypoint above flow, rule beside them (full height), then kind / store_type</div>
+        <div class="row" style="margin-top:4px"><span class="line" style="border-color:var(--storage)"></span>lanes: entrypoint above flow, rule and external systems beside them, then kind / store_type</div>
       </div>
     </div>
     <button id="legendOpen" type="button" title="Show legend" aria-label="Show legend">Legend</button>
@@ -260,6 +283,7 @@ const KIND = {
   flow:    { label: 'Flow',    color: '#f472b6', r: 12 },
   entrypoint: { label: 'EntryPoint', color: '#fb923c', r: 12 },
   rule:    { label: 'Rule',    color: '#a3e635', r: 9 },
+  external: { label: 'External System', color: '#2dd4bf', r: 10 },
   input:   { label: 'Input',   color: '#60a5fa', r: 10 },
   entry:   { label: 'Entry',   color: '#c084fc', r: 10 },
   storage: { label: 'Storage', color: '#34d399', r: 10 },
@@ -269,6 +293,8 @@ const EDGE = {
   trigger:   { color: '#fb923c', width: 1.7, dash: [], spring: 130, label: 'trigger' },
   related:   { color: '#a78bfa', width: 1.4, dash: [1, 4], spring: 150, label: 'related', faint: true },
   rule:      { color: '#a3e635', width: 1.2, dash: [3, 3], spring: 110, label: 'rule', faint: true },
+  calls:     { color: '#2dd4bf', width: 1.3, dash: [2, 3], spring: 140, label: 'calls', faint: true },
+  'delivers-to': { color: '#5eead4', width: 1.3, dash: [5, 3], spring: 140, label: 'delivers-to', faint: true },
   contains:  { color: '#64748b', width: 1.1, dash: [4, 4], spring: 38,  label: 'contains' },
   use:       { color: '#f9a8d4', width: 1.2, dash: [2, 4], spring: 130, label: 'use', faint: true },
   compose:   { color: '#38bdf8', width: 1.7, dash: [],      spring: 115, label: 'compose' },
@@ -394,13 +420,14 @@ const state = {
   drag: null,
   pan: null,
   moved: false,
-  kindOn: { entrypoint: true, flow: true, rule: true, input: true, entry: true, storage: true, field: false },
-  relOn: { use: true, trigger: true, related: true, rule: true, compose: true, transform: true, flow: true, contains: true },
+  kindOn: { entrypoint: true, flow: true, rule: true, external: true, input: true, entry: true, storage: true, field: false },
+  relOn: { use: true, trigger: true, related: true, rule: true, calls: true, 'delivers-to': true, compose: true, transform: true, flow: true, contains: true },
   impactOn: false,
   impact: null,
   focus: null,
   query: '',
   cluster: '',
+  viewMode: 'all',
 };
 
 let W = 0, H = 0, DPR = 1;
@@ -441,10 +468,20 @@ function buildClusterOptions() {
   state.cluster = current;
 }
 
+function viewAllowsKind(kind) {
+  if (state.viewMode === 'flows') return kind !== 'external';
+  if (state.viewMode === 'external') {
+    return kind === 'external' || kind === 'flow' || kind === 'entry'
+      || kind === 'entrypoint';
+  }
+  return true;
+}
+
 function layerOf(n) {
   if (n.kind === 'entrypoint') return { key: 'entrypoint', label: 'EntryPoints', kind: 'entrypoint' };
   if (n.kind === 'flow') return { key: 'flow', label: 'Flow', kind: 'flow' };
   if (n.kind === 'rule') return { key: 'rule', label: 'Rules', kind: 'rule' };
+  if (n.kind === 'external') return { key: 'external', label: 'External Systems', kind: 'external' };
   if (n.kind === 'input') return { key: 'input', label: 'Input', kind: 'input' };
   if (n.kind === 'entry') return { key: 'entry', label: 'Entry', kind: 'entry' };
   if (n.kind === 'storage') {
@@ -461,19 +498,20 @@ function layerOf(n) {
 function buildLayers() {
   LAYERS = [];
   const byKey = new Map();
-  for (const n of contractNodes()) {
+  for (const n of contractNodes().filter((n) => viewAllowsKind(n.kind))) {
     const info = layerOf(n);
     if (!info) continue;
     if (!byKey.has(info.key)) byKey.set(info.key, { ...info, count: 0 });
     byKey.get(info.key).count += 1;
   }
 
-  const ranks = { entrypoint: 0, flow: 0, rule: 0, input: 1, entry: 2, storage: 3 };
+  const ranks = { entrypoint: 0, flow: 0, rule: 0, external: 0,
+    input: 1, entry: 2, storage: 3 };
   const rank = (layer) => ranks[layer.kind] ?? 9;
   const layers = [...byKey.values()].sort((a, b) => {
     if (rank(a) !== rank(b)) return rank(a) - rank(b);
     if (a.kind !== b.kind) {
-      const order = { entrypoint: 0, flow: 1, rule: 2 };
+      const order = { entrypoint: 0, flow: 1, rule: 2, external: 3 };
       return (order[a.kind] ?? 9) - (order[b.kind] ?? 9);
     }
     if (a.key === 'storage:unspecified') return 1;
@@ -485,7 +523,7 @@ function buildLayers() {
 
   for (const layer of layers) {
     const list = contractNodes()
-      .filter((n) => (layerOf(n) || {}).key === layer.key)
+      .filter((n) => viewAllowsKind(n.kind) && (layerOf(n) || {}).key === layer.key)
       .sort((a, b) => String(a.id).localeCompare(String(b.id)));
     const cols = Math.max(1, Math.min(6, Math.ceil(Math.sqrt(list.length * 1.6))));
     const rows = Math.ceil(list.length / cols);
@@ -501,12 +539,14 @@ function buildLayers() {
     });
   }
 
-  // EntryPoints sit above Flows; Rules stand beside both, spanning their
-  // combined height. Every other kind keeps its own full-width band.
+  // EntryPoints sit above Flows; Rules and External Systems stand beside
+  // them, each spanning the combined height. Every other kind keeps its own
+  // full-width band below.
   const topLayers = layers.filter((layer) => rank(layer) === 0);
   const entryLayers = topLayers.filter((layer) => layer.kind === 'entrypoint');
   const flowLayers = topLayers.filter((layer) => layer.kind === 'flow');
   const ruleLayers = topLayers.filter((layer) => layer.kind === 'rule');
+  const externalLayers = topLayers.filter((layer) => layer.kind === 'external');
   const stackLayers = (list, left, width, top) => {
     let y = top;
     for (const layer of list) {
@@ -518,44 +558,65 @@ function buildLayers() {
     }
     return list.length ? y - LANE_GAP - top : 0;
   };
+  const placeColumn = (list, height, left) => {
+    let x = left;
+    for (const layer of list) {
+      layer.left = x;
+      layer.centerX = x + layer.width / 2;
+      layer.top = 0;
+      layer.height = height;
+      layer.y = height / 2;
+      layer.rowGap = layer.rows > 1
+        ? Math.min(SLOT_Y * 1.8, (height - 90) / (layer.rows - 1))
+        : 0;
+      x += layer.width + LANE_GAP;
+    }
+    return x - left - LANE_GAP;
+  };
 
   const stacked = [...entryLayers, ...flowLayers];
   const hasLeft = stacked.length > 0;
   const hasRules = ruleLayers.length > 0;
+  const hasExternals = externalLayers.length > 0;
   const leftWidth = hasLeft ? Math.max(...stacked.map((layer) => layer.width)) : 0;
   const ruleWidth = hasRules ? Math.max(...ruleLayers.map((layer) => layer.width)) : 0;
-  const topWidth = leftWidth + (hasLeft && hasRules ? LANE_GAP : 0) + ruleWidth;
+  const externalWidth = hasExternals
+    ? Math.max(...externalLayers.map((layer) => layer.width)) : 0;
+  const columnsWidth = (hasRules ? ruleWidth + LANE_GAP : 0) +
+    (hasExternals ? externalWidth + LANE_GAP : 0);
+  const topWidth = leftWidth + columnsWidth;
   const topLeft = -topWidth / 2;
 
   let cursor = 0;
   let leftColumnX = 0;
-  const placeRules = (ruleHeight, ruleLeft) => {
-    for (const layer of ruleLayers) {
-      layer.left = ruleLeft;
-      layer.centerX = ruleLeft + layer.width / 2;
-      layer.top = 0;
-      layer.height = ruleHeight;
-      layer.y = ruleHeight / 2;
-      layer.rowGap = layer.rows > 1
-        ? Math.min(SLOT_Y * 1.8, (ruleHeight - 90) / (layer.rows - 1))
-        : 0;
-      ruleLeft += layer.width + LANE_GAP;
-    }
-  };
+  const columnHeight = (stackHeight) => Math.max(stackHeight, 168);
 
   if (hasLeft) {
     const stackHeight = stackLayers(stacked, topLeft, leftWidth, 0);
     leftColumnX = topLeft + leftWidth / 2;
-    cursor = stackHeight + LANE_GAP;
+    const height = columnHeight(stackHeight);
+    let x = topLeft + leftWidth;
     if (hasRules) {
-      const ruleHeight = Math.max(stackHeight, 168);
-      placeRules(ruleHeight, topLeft + leftWidth + LANE_GAP);
-      cursor = Math.max(stackHeight, ruleHeight) + LANE_GAP;
+      x += LANE_GAP;
+      placeColumn(ruleLayers, height, x);
+      x += ruleWidth;
     }
-  } else if (hasRules) {
-    const ruleHeight = 168;
-    placeRules(ruleHeight, -ruleWidth / 2);
-    cursor = ruleHeight + LANE_GAP;
+    if (hasExternals) {
+      x += LANE_GAP;
+      placeColumn(externalLayers, height, x);
+    }
+    cursor = height + LANE_GAP;
+  } else if (hasRules || hasExternals) {
+    const height = 168;
+    let x = -topWidth / 2;
+    if (hasRules) {
+      placeColumn(ruleLayers, height, x);
+      x += ruleWidth + LANE_GAP;
+    }
+    if (hasExternals) {
+      placeColumn(externalLayers, height, x);
+    }
+    cursor = height + LANE_GAP;
   }
 
   for (const layer of layers.filter((layer) => rank(layer) !== 0)) {
@@ -635,10 +696,29 @@ function seed() {
 
 function allVisible() { return NODES.filter((n) => n.visible); }
 
+function setViewMode(mode) {
+  if (!['all', 'flows', 'external'].includes(mode)) return;
+  state.viewMode = mode;
+  for (const btn of document.querySelectorAll('#viewTabs button')) {
+    btn.classList.toggle('on', btn.dataset.view === mode);
+  }
+  state.selected = null;
+  state.selectedEdge = null;
+  state.focus = null;
+  state.impact = null;
+  buildLayers();
+  seed();
+  updateVisibility();
+  fit();
+  renderPanel(null, null);
+  state.dirty = true;
+}
+
 function updateVisibility() {
   const cluster = state.cluster;
   for (const n of NODES) {
-    n.visible = !!state.kindOn[n.kind] && (!cluster || nodeCluster(n) === cluster);
+    n.visible = viewAllowsKind(n.kind) && !!state.kindOn[n.kind] &&
+      (!cluster || nodeCluster(n) === cluster);
   }
   for (const e of EDGES) {
     e.visible = !!state.relOn[e.kind] && N.get(e.from).visible && N.get(e.to).visible;
@@ -648,8 +728,10 @@ function updateVisibility() {
     (n) => n.visible && ['input', 'entry', 'storage'].includes(n.kind)).length;
   const fields = NODES.filter((n) => n.visible && n.kind === 'field').length;
   const rules = NODES.filter((n) => n.visible && n.kind === 'rule').length;
+  const externals = NODES.filter((n) => n.visible && n.kind === 'external').length;
   visibleStatsEl.textContent =
-    `visible: ${flows} flows, ${rules} rules, ${contracts} entities, ${fields} fields` +
+    `visible: ${flows} flows, ${rules} rules, ${externals} external systems, ` +
+    `${contracts} entities, ${fields} fields` +
     (cluster ? ` · cluster: ${cluster}` : '');
   state.dirty = true;
 }
@@ -1049,6 +1131,11 @@ function flowFocus(flowId) {
       nodes.add(e.from);
       nodes.add(e.to);
       edges.add(e);
+    } else if ((e.kind === 'calls' && e.from === flowId && N.has(e.to)) ||
+               (e.kind === 'delivers-to' && e.flow_id === flowId &&
+                N.has(e.to))) {
+      nodes.add(e.to);
+      edges.add(e);
     }
   }
   return { nodes, edges };
@@ -1116,7 +1203,8 @@ function applySearch() {
   } else {
     for (const n of NODES) {
       const hay = [n.id, n.name, n.path, n.type, n.location,
-        n.stage, n.cluster, nodeCluster(n), n.description, n.kind]
+        n.stage, n.cluster, nodeCluster(n), n.description, n.kind,
+        n.provider, n.protocol]
         .filter(Boolean).join(' ').toLowerCase();
       n.match = hay.includes(q) ? true : null;
     }
@@ -1278,6 +1366,7 @@ function renderEdgePanel(edge) {
   const rows = [];
   if (edge.description) rows.push(['description', edge.description]);
   if (edge.note) rows.push(['note', edge.note]);
+  if (edge.flow_id) rows.push(['flow', edge.flow_id]);
   if (edge.file_path) rows.push(['file', edge.file_path]);
   let html = `<span class="badge" style="color:${meta.color}">${esc(edge.kind)}</span>`;
   html += `<h2 class="node-name">${esc(from ? (from.name || from.id) : edge.from)} ` +
@@ -1359,6 +1448,35 @@ function renderFlowNodePanel(node) {
           '</span></div>';
       }).join('') + '</div>'
     : '<div class="empty">No flow/transform passages carry this <code>flow_id</code>.</div>';
+  html += '</div>';
+
+  const externalLinks = [];
+  for (const edge of EDGES) {
+    if (edge.kind === 'calls' && edge.from === node.id && N.has(edge.to)) {
+      externalLinks.push({ edge, external: N.get(edge.to) });
+    } else if (edge.kind === 'delivers-to' && edge.flow_id === node.id &&
+               N.has(edge.to)) {
+      externalLinks.push({ edge, external: N.get(edge.to) });
+    }
+  }
+  const externalById = new Map();
+  for (const link of externalLinks) {
+    if (!externalById.has(link.external.id)) {
+      externalById.set(link.external.id, { external: link.external, via: [] });
+    }
+    externalById.get(link.external.id).via.push(link.edge.kind);
+  }
+  const externalSystems = [...externalById.values()]
+    .sort((a, b) => a.external.id.localeCompare(b.external.id));
+  html += `<div class="section"><div class="title">External systems (${externalSystems.length})</div>`;
+  html += externalSystems.length
+    ? '<div class="conn">' + externalSystems.map(({ external, via }) =>
+        `<div class="item"><span class="kind" style="color:${KIND.external.color}">` +
+        `${esc([...new Set(via)].join(', '))}</span><span>` +
+        `<span class="link" data-id="${esc(external.id)}">${esc(external.name || external.id)}</span>` +
+        `<div class="node-id">${esc(external.provider || external.description || '')}</div>` +
+        '</span></div>').join('') + '</div>'
+    : '<div class="empty">This flow does not call an external system.</div>';
   html += '</div>';
 
   const rules = EDGES.filter((edge) => edge.kind === 'rule' && edge.from === node.id)
@@ -1467,6 +1585,53 @@ function renderRulePanel(node) {
   panelBody.scrollTop = 0;
 }
 
+function renderExternalPanel(node) {
+  const meta = KIND.external;
+  let html = `<span class="badge" style="color:${meta.color}">External System</span>`;
+  html += `<h2 class="node-name">${esc(node.name || node.id)}</h2>`;
+  html += `<div class="node-id">${esc(node.id)}</div>`;
+  if (node.description) html += `<p>${esc(node.description)}</p>`;
+  const rows = [['provider', node.provider], ['protocol', node.protocol],
+    ['location', node.location], ['cluster', nodeCluster(node)],
+    ['repo', node.repo], ['commit', node.commit_sha], ['file', node.file_path]]
+    .filter(([, value]) => value);
+  if (rows.length) html += '<div class="kv">' + rows.map(([key, value]) =>
+    `<div class="k">${esc(key)}</div><div class="v">${esc(value)}</div>`).join('') + '</div>';
+
+  const calledBy = EDGES.filter((edge) => edge.kind === 'calls' && edge.to === node.id)
+    .map((edge) => N.get(edge.from)).filter(Boolean);
+  html += `<div class="section"><div class="title">Called by flows (${calledBy.length})</div>`;
+  html += calledBy.length
+    ? '<div class="conn">' + calledBy.map((flow) =>
+        `<div class="item"><span class="kind">calls</span>` +
+        `<span class="link" data-id="${esc(flow.id)}">${esc(flow.name || flow.id)}</span></div>`
+      ).join('') + '</div>'
+    : '<div class="empty">No flow calls this external system.</div>';
+  html += '</div>';
+
+  const deliveredFrom = EDGES
+    .filter((edge) => edge.kind === 'delivers-to' && edge.to === node.id);
+  html += `<div class="section"><div class="title">Receives from entries (${deliveredFrom.length})</div>`;
+  html += deliveredFrom.length
+    ? '<div class="conn">' + deliveredFrom.map((edge) => {
+        const entry = N.get(edge.from);
+        const flow = N.get(edge.flow_id);
+        return `<div class="item"><span class="kind">delivers-to</span><span>` +
+          `<span class="link" data-id="${esc(edge.from)}">${esc(entry ? (entry.name || edge.from) : edge.from)}</span>` +
+          (flow ? ` via <span class="link" data-id="${esc(flow.id)}">${esc(flow.name || flow.id)}</span>` : '') +
+          '</span></div>';
+      }).join('') + '</div>'
+    : '<div class="empty">No entry delivers data to this external system.</div>';
+  html += '</div>';
+
+  if (node.refs && node.refs.length) {
+    html += '<div class="section"><div class="title">References</div><div class="refs">' +
+      node.refs.map((ref) => `<code>${esc(ref)}</code>`).join('') + '</div></div>';
+  }
+  panelBody.innerHTML = html;
+  panelBody.scrollTop = 0;
+}
+
 function renderPanel(node, edge) {
   if (edge) { renderEdgePanel(edge); return; }
   if (!node) {
@@ -1479,7 +1644,10 @@ function renderPanel(node, edge) {
         with <b>trigger</b> and can reach another entrypoint through a directional
         <b>related</b> edge. A <b>flow</b> uses entities with <b>use</b> edges; its
         path is the chain of <b>flow</b>/<b>transform</b> passages carrying its
-        <code>flow_id</code>. Flows and entrypoints attach rules with <b>rule</b>.</p>
+        <code>flow_id</code>. Flows and entrypoints attach rules with <b>rule</b>,
+        and <b>External Systems</b> are reached with <b>calls</b> from a Flow and
+        <b>delivers-to</b> from an Entry. Use the view tabs to switch between the
+        full map, the flow view and the external systems view.</p>
         <p>Enable <b>Fields</b> to see every entity field, click an entity for its
         attributes and flows, or click an <b>edge</b> for its note and
         references. The <b>cluster</b> dropdown filters the map to one service,
@@ -1492,6 +1660,7 @@ function renderPanel(node, edge) {
   if (node.kind === 'flow') { renderFlowNodePanel(node); return; }
   if (node.kind === 'entrypoint') { renderEntryPointPanel(node); return; }
   if (node.kind === 'rule') { renderRulePanel(node); return; }
+  if (node.kind === 'external') { renderExternalPanel(node); return; }
   const meta = KIND[node.kind];
   const rows = [];
   const push = (key, value) => {
@@ -1521,6 +1690,21 @@ function renderPanel(node, edge) {
   if (rows.length) {
     html += '<div class="kv">' + rows.map(([k, v]) =>
       `<div class="k">${esc(k)}</div><div class="v">${esc(v)}</div>`).join('') + '</div>';
+  }
+  if (node.kind === 'entry') {
+    const deliveries = EDGES.filter((edge) =>
+      edge.kind === 'delivers-to' && edge.from === node.id);
+    if (deliveries.length) {
+      html += `<div class="section"><div class="title">Delivers to (${deliveries.length})</div>` +
+        '<div class="conn">' + deliveries.map((edge) => {
+          const external = N.get(edge.to);
+          const flow = N.get(edge.flow_id);
+          return `<div class="item"><span class="kind">delivers-to</span><span>` +
+            `<span class="link" data-id="${esc(edge.to)}">${esc(external ? (external.name || edge.to) : edge.to)}</span>` +
+            (flow ? ` via <span class="link" data-id="${esc(flow.id)}">${esc(flow.name || flow.id)}</span>` : '') +
+            '</span></div>';
+        }).join('') + '</div></div>';
+    }
   }
   if (node.refs && node.refs.length) {
     html += '<div class="section"><div class="title">References</div><div class="refs">' +
@@ -1587,8 +1771,10 @@ function updateHeader() {
   const fields = nodes.filter((n) => n.kind === 'field').length;
   const flows = nodes.filter((n) => n.kind === 'flow').length;
   const rules = nodes.filter((n) => n.kind === 'rule').length;
+  const externals = nodes.filter((n) => n.kind === 'external').length;
   statsEl.textContent =
-    `${flows} flows · ${rules} rules · ${contracts} entities · ${fields} fields`;
+    `${flows} flows · ${rules} rules · ${externals} external systems · ` +
+    `${contracts} entities · ${fields} fields`;
   searchEl.placeholder = 'Search id, name, path, cluster or flow';
 }
 
@@ -1753,6 +1939,9 @@ function bindEvents() {
     updateVisibility();
   });
 
+  for (const btn of document.querySelectorAll('#viewTabs button')) {
+    btn.addEventListener('click', () => setViewMode(btn.dataset.view));
+  }
   document.getElementById('fit').addEventListener('click', () => fit());
   document.getElementById('relayout').addEventListener('click', () => {
     seed(); updateVisibility(); fit();

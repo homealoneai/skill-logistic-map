@@ -39,6 +39,7 @@ def _sample_record(sample, min_structural: float, min_judge: float) -> dict:
     contracts = [node for node in nodes if node.get("kind") in CONTRACT_KINDS]
     fields = [node for node in nodes if node.get("kind") == "field"]
     rules = [node for node in nodes if node.get("kind") == "rule"]
+    externals = [node for node in nodes if node.get("kind") == "external"]
     edges = snapshot.get("edges") or []
     report = (metadata.get("report") or {}).get("summary") or {}
     kinds = {kind: sum(1 for node in contracts if node.get("kind") == kind) for kind in CONTRACT_KINDS}
@@ -78,6 +79,7 @@ def _sample_record(sample, min_structural: float, min_judge: float) -> dict:
             "contracts": kinds,
             "fields": len(fields),
             "rules": len(rules),
+            "externals": len(externals),
             "edges": len(edges),
             "clusters": dict(clusters.most_common()),
             "report": report,
@@ -201,12 +203,15 @@ def render_markdown(report: dict) -> str:
         )
         fields_text = f"{graph['fields']} field{'' if graph['fields'] == 1 else 's'}"
         rules_text = f"{graph.get('rules', 0)} rule{'' if graph.get('rules') == 1 else 's'}"
+        externals_text = (f"{graph.get('externals', 0)} external "
+                          f"{'system' if graph.get('externals') == 1 else 'systems'}")
         edges_text = f"{graph['edges']} edge{'' if graph['edges'] == 1 else 's'}"
         lines.extend(
             [
                 f"### {case['id']} — {case['status']}",
                 "",
-                f"- Graph: {graph_text}, {fields_text}, {rules_text}, {edges_text}",
+                f"- Graph: {graph_text}, {fields_text}, {rules_text}, "
+                f"{externals_text}, {edges_text}",
                 f"- Clusters: {', '.join(f'{name}={count}' for name, count in graph.get('clusters', {}).items()) or 'none'}",
                 f"- Skill report: {findings.get('error', 0)} errors, "
                 f"{findings.get('warn', 0)} warnings, {findings.get('info', 0)} info",

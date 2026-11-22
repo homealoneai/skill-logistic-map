@@ -530,6 +530,58 @@ class SemanticsTests(GraphTestCase):
         self.assertEqual(json.loads(removed.stdout)["removed_edges"], 2)
         self.assertFalse(any(edge["kind"] == "rule" for edge in self.export()["edges"]))
 
+    def test_external_system_links_flow_and_entry(self) -> None:
+        self.cli("add-node", "--kind", "entry", "--id", "entry:sms-request",
+                 "--name", "SMS request", "--cluster", "notifications")
+        self.add_flow("flow:send-sms", "Send SMS", entities=["entry:sms-request"])
+        self.cli("add-external", "--id", "external:sms-gateway",
+                 "--name", "SMS gateway", "--description", "Sends SMS messages",
+                 "--provider", "Twilio", "--protocol", "HTTP",
+                 "--location", "https://api.twilio.com",
+                 "--cluster", "notifications", "--ref", "sms.go:12")
+        self.cli("add-edge", "--kind", "calls", "--from", "flow:send-sms",
+                 "--to", "external:sms-gateway", "--ref", "sms.go:20")
+        self.cli("add-edge", "--kind", "delivers-to", "--flow", "flow:send-sms",
+                 "--from", "entry:sms-request", "--to", "external:sms-gateway",
+                 "--ref", "sms.go:24")
+
+        payload = self.export()
+        external = next(node for node in payload["nodes"]
+                        if node["id"] == "external:sms-gateway")
+        self.assertEqual(external["kind"], "external")
+        self.assertEqual(external["provider"], "Twilio")
+        edges = {(edge["kind"], edge["from"], edge["to"],
+                  edge.get("flow_id") or "") for edge in payload["edges"]}
+        self.assertIn(("calls", "flow:send-sms", "external:sms-gateway", ""), edges)
+        self.assertIn(("delivers-to", "entry:sms-request",
+                       "external:sms-gateway", "flow:send-sms"), edges)
+
+        report = self.report()
+        self.assertEqual(report["summary"]["externals"], 1)
+        self.assertNotIn("orphan_external", report["summary"]["by_code"])
+        stats = self.stats()
+        self.assertEqual(stats["externals"], 1)
+
+        missing_flow = self.cli("add-edge", "--kind", "delivers-to",
+                                "--from", "entry:sms-request",
+                                "--to", "external:sms-gateway", expect=2)
+        self.assertIn("--flow", missing_flow.stderr)
+        self.cli("add-node", "--kind", "entry", "--id", "entry:other",
+                 "--name", "Other")
+        unused = self.cli("add-edge", "--kind", "delivers-to",
+                          "--flow", "flow:send-sms", "--from", "entry:other",
+                          "--to", "external:sms-gateway", expect=2)
+        self.assertIn("does not use", unused.stderr)
+        wrong = self.cli("add-edge", "--kind", "calls",
+                         "--from", "entry:sms-request",
+                         "--to", "external:sms-gateway", expect=2)
+        self.assertIn("Flow to an External System", wrong.stderr)
+
+        removed = self.cli("remove-node", "--id", "external:sms-gateway", "--json")
+        self.assertEqual(json.loads(removed.stdout)["removed_edges"], 2)
+        self.assertFalse(any(edge["kind"] in ("calls", "delivers-to")
+                             for edge in self.export()["edges"]))
+
     def test_related_entrypoints_are_directional_and_named_by_description(self) -> None:
         for name in ("screen", "http"):
             self.cli("add-entrypoint", "--id", f"entrypoint:{name}", "--name", name,
@@ -686,12 +738,15 @@ json.dump({"schema_version": 1}, open(sys.argv[2], "w"))
         info = json.loads(run_cli(["doctor", "--json"], path, cwd=self.tmp).stdout)
         self.assertIn("RELATED", info["tables"])
         self.assertIn("RULE_REL", info["tables"])
+        self.assertIn("External", info["tables"])
+        self.assertIn("CALLS", info["tables"])
+        self.assertIn("DELIVERS_TO", info["tables"])
 
         export_path = self.tmp / "migrated.json"
         exported = run_cli(["export", "--out", str(export_path)], path, cwd=self.tmp)
         self.assertEqual(exported.returncode, 0, exported.stderr)
         payload = json.loads(export_path.read_text(encoding="utf-8"))
-        self.assertEqual(payload["schema_version"], 7)
+        self.assertEqual(payload["schema_version"], 8)
         entry = next(item for item in payload["nodes"] if item["id"] == "entry:b")
         self.assertNotIn("entry_point", entry)
         legacy_input = next(item for item in payload["nodes"] if item["id"] == "input:legacy")
@@ -715,7 +770,7 @@ json.dump({"schema_version": 1}, open(sys.argv[2], "w"))
         self.assertEqual(added.returncode, 0, added.stderr)
         again = run_cli(["migrate"], path, cwd=self.tmp)
         self.assertEqual(again.returncode, 0, again.stderr)
-        self.assertIn("already at schema v7", again.stdout)
+        self.assertIn("already at schema v8", again.stdout)
         run_cli(["export", "--out", str(export_path)], path, cwd=self.tmp)
         payload = json.loads(export_path.read_text(encoding="utf-8"))
         self.assertIn(
@@ -774,6 +829,14 @@ class ExportMdTests(GraphTestCase):
                  "--ref", "validate.py:9")
         self.cli("add-edge", "--kind", "rule", "--from", "flow:orders",
                  "--to", "rule:order-limit")
+        self.cli("add-external", "--id", "external:sms-gateway",
+                 "--name", "SMS gateway", "--description", "Sends SMS messages",
+                 "--provider", "Twilio", "--protocol", "HTTP",
+                 "--ref", "sms.py:3")
+        self.cli("add-edge", "--kind", "calls", "--from", "flow:orders",
+                 "--to", "external:sms-gateway")
+        self.cli("add-edge", "--kind", "delivers-to", "--flow", "flow:orders",
+                 "--from", "entry:validated", "--to", "external:sms-gateway")
 
         out = self.tmp / "docs"
         result = self.cli("export-md", "--out", out, "--title", "Orders docs")
@@ -788,6 +851,13 @@ class ExportMdTests(GraphTestCase):
         self.assertIn("entrypoints/orders.md", readme)
         self.assertIn("## Rules (1)", readme)
         self.assertIn("rules/order-limit.md", readme)
+        self.assertIn("## External Systems (1)", readme)
+        self.assertIn("externals/sms-gateway.md", readme)
+        external_doc = (out / "externals" / "sms-gateway.md").read_text(
+            encoding="utf-8")
+        self.assertIn("Twilio", external_doc)
+        self.assertIn("../flows/orders.md", external_doc)
+        self.assertIn("../entities/entry/validated.md", external_doc)
         rule_doc = (out / "rules" / "order-limit.md").read_text(encoding="utf-8")
         self.assertIn("At most 20 items per order", rule_doc)
         self.assertIn("../flows/orders.md", rule_doc)
@@ -815,9 +885,13 @@ class ExportMdTests(GraphTestCase):
         self.assertIn("## Triggered by", flow)
         self.assertIn("../entrypoints/orders.md", flow)
         self.assertIn("## Path", flow)
+        self.assertIn("## Delivers to", entry)
+        self.assertIn("../../externals/sms-gateway.md", entry)
         self.assertIn("## Passages", flow)
         self.assertIn("## Rules", flow)
         self.assertIn("../rules/order-limit.md", flow)
+        self.assertIn("## External systems", flow)
+        self.assertIn("../externals/sms-gateway.md", flow)
         self.assertIn("storage/orders.md", flow)
         self.assertIn("| `transform` |", flow)
 
@@ -853,6 +927,16 @@ class RenderTests(GraphTestCase):
                  "--cluster", "render-ui", "--ref", "screen.py:9")
         self.cli("add-edge", "--kind", "rule", "--from", "flow:render",
                  "--to", "rule:render-limit", "--ref", "screen.py:9")
+        self.cli("add-node", "--kind", "entry", "--id", "entry:render-payload",
+                 "--name", "Render payload")
+        self.cli("flow", "use", "--id", "flow:render", "--entity", "entry:render-payload")
+        self.cli("add-external", "--id", "external:render-sms",
+                 "--name", "SMS gateway", "--provider", "Twilio",
+                 "--protocol", "HTTP", "--ref", "sms.py:2")
+        self.cli("add-edge", "--kind", "calls", "--from", "flow:render",
+                 "--to", "external:render-sms")
+        self.cli("add-edge", "--kind", "delivers-to", "--flow", "flow:render",
+                 "--from", "entry:render-payload", "--to", "external:render-sms")
         out = self.tmp / "map.html"
         result = self.cli("render", "--out", out, "--title", "Render check")
         self.assertIn("rendered", result.stdout)
@@ -880,6 +964,11 @@ class RenderTests(GraphTestCase):
         self.assertIn("setPanelOpen", html)
         self.assertIn("id=\"legendClose\"", html)
         self.assertIn("id=\"legendOpen\"", html)
+        self.assertIn("data-view=\"external\"", html)
+        self.assertIn("renderExternalPanel", html)
+        self.assertIn("external:render-sms", html)
+        self.assertIn("SMS gateway", html)
+        self.assertIn("External systems", html)
         self.assertNotIn("__DATA__", html)
 
 

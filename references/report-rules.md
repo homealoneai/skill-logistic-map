@@ -26,7 +26,7 @@ comment.
 |---|---|---|---|
 | `compose_cycle` | error | A cycle in `COMPOSE` (containment) edges | Remove the edge that closes the loop; composition is a DAG |
 | `orphan_field` | error | A `Field` has no `contains` edge at all | Re-add the field with `add-field`, or `remove-node` it |
-| `unknown_flow` | error | A `flow`/`transform` passage references a `flow_id` with no `Flow` node | Create the flow with `add-flow`, or remove the passage |
+| `unknown_flow` | error | A `flow`/`transform` passage or `delivers-to` edge references a `flow_id` with no `Flow` node | Create the flow with `add-flow`, or remove the edge |
 | `flow_cycle` | warn | A cycle among the passages of one flow | Break the loop; a flow is a path, not a cycle |
 | `unknown_trigger_flow` | error | A `trigger` points at an unknown Flow | Create the flow first; `trigger` is EntryPoint → Flow only |
 
@@ -35,6 +35,7 @@ comment.
 | Code | Severity | Trigger | Fix |
 |---|---|---|---|
 | `edge_without_flow` | warn | A `flow`/`transform` passage has no `flow_id` (legacy or unassigned) | Re-add the passage with `add-edge --flow`, or delete it |
+| `delivery_without_flow` | error | A `delivers-to` edge has no `flow_id` | Re-add it with `add-edge --kind delivers-to --flow ...` |
 | `edge_entity_not_used` | warn | A passage endpoint is not connected to that flow with `use` | `flow use --id FLOW --entity ENDPOINT` |
 | `flow_without_entities` | warn | A `Flow` does not `use` any entity | Add its entities with `flow use` |
 | `flow_without_path` | info | A `Flow` has no `flow`/`transform` passage | Add the passages with `add-edge --flow` |
@@ -43,6 +44,8 @@ comment.
 | `orphan_rule` | warn | A Rule is not attached to any Flow or EntryPoint | Add a `rule` edge from the activation it constrains |
 | `rule_without_description` | warn | A Rule has no description | Describe the enforced limit or condition |
 | `incomplete_rule` | info | A Rule has no `file_path` or `refs` | Record the code evidence |
+| `orphan_external` | warn | An External System is neither called nor delivered to | Add a `calls` or `delivers-to` edge, or remove the node |
+| `incomplete_external` | info | An External System has no `file_path` or `refs` | Record the code evidence |
 | `flow_without_trigger` | info | A Flow is not triggered by an EntryPoint | Record its activation mechanism when known |
 | `cluster_mismatch` | warn | An EntryPoint and the Flow it triggers have different non-empty clusters | Set the same `--cluster` on both, or fix the wrong grouping |
 | `incomplete_entrypoint` | info | An EntryPoint has no `file_path` or `refs` | Add code evidence |

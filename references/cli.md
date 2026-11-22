@@ -16,7 +16,7 @@ crossed, `2` usage or runtime error. With `--json`, failures print
 | Command | What it does |
 |---|---|
 | `init` | Create the node and relationship tables, write `meta.json` and `.logistic-map/.gitignore`. Idempotent; it never rewrites the schema version of an older database. |
-| `migrate` | Convert v1-v6 databases in place. v3 `Input.entry_point`/`channel` are dropped without guessing EntryPoints or triggers; v4 adds `RELATED` without inventing relations; v5 adds an empty `cluster` column; v6 adds the `Rule` node and `RULE_REL` relation. Idempotent. |
+| `migrate` | Convert v1-v7 databases in place. v3 `Input.entry_point`/`channel` are dropped without guessing EntryPoints or triggers; v4 adds `RELATED` without inventing relations; v5 adds an empty `cluster` column; v6 adds the `Rule` node and `RULE_REL`; v7 adds `External`, `CALLS` and `DELIVERS_TO`. Idempotent. |
 | `migrate-db` | Convert a legacy Kuzu database or JSON export into a new LadybugDB database. |
 | `doctor` | Print Python, LadybugDB version, DB path, tables, node/edge counts, detected git repo/commit. Exits 1 only when LadybugDB is missing. |
 
@@ -152,6 +152,29 @@ add-rule --id rule:search-limit --name "Search result limit" \
 add-edge --kind rule --from flow:search-products --to rule:search-limit
 ```
 
+### add-external
+
+```
+add-external [--id external:SLUG] [--name NAME] [--description TEXT]
+             [--provider TEXT] [--protocol TEXT] [--location TEXT]
+             [--cluster LABEL]
+             [--repo URL] [--commit SHA] [--file PATH] [--ref PATH:LINE ...]
+```
+
+Creates or updates an External System: a service outside the mapped
+repositories, such as an SMS provider, payment gateway or shipping API. Link it
+from a Flow with `calls` and from an Entry with `delivers-to` plus `--flow`.
+
+```sh
+add-external --id external:sms-gateway --name "SMS gateway" \
+  --description "Sends order confirmation SMS" --provider Twilio \
+  --protocol HTTP --location https://api.twilio.com \
+  --cluster notification-service --ref notify/sms.go:12
+add-edge --kind calls --from flow:send-sms --to external:sms-gateway
+add-edge --kind delivers-to --flow flow:send-sms \
+  --from entry:sms-request --to external:sms-gateway
+```
+
 ### flow use / flow unuse
 
 ```
@@ -166,7 +189,7 @@ passages whose endpoints are missing.
 ### add-edge
 
 ```
-add-edge --kind contains|compose|transform|flow|use|trigger|related|rule --from ID --to ID
+add-edge --kind contains|compose|transform|flow|use|trigger|related|rule|calls|delivers-to --from ID --to ID
          [--flow FLOW] [--description TEXT] [--note TEXT]
          [--file PATH] [--ref PATH:LINE ...]
 ```
@@ -184,9 +207,13 @@ containment.
   one `--ref`. It is identified by `(from, to, description)`, so both directions
   and several descriptions between the same pair coexist.
 - `rule`: `Flow|EntryPoint → Rule`; the endpoints are validated strictly.
+- `calls`: `Flow → External`; the flow calls the external system.
+- `delivers-to`: `Entry → External`; requires `--flow`, and the Entry must be
+  connected to that flow with `flow use`. Identified by `(from, to, flow_id)`.
 
-`flow` and `transform` **require `--flow`**. The same pair may appear in several
-flows; the passage is identified by `(kind, from, to, flow)`.
+`flow`, `transform` and `delivers-to` **require `--flow`**. The same pair may
+appear in several flows; passages are identified by
+`(kind, from, to, flow)`.
 
 A passage left **unassigned** by `migrate` (empty `flow_id`) is adopted when you
 add it again with `--flow`; no duplicate is created. `remove-edge --kind
@@ -251,7 +278,7 @@ removed; the reverse direction is a separate edge.
 ### list
 
 ```
-list [--kind entrypoint|input|entry|storage|flow|rule|field] [--owner CONTRACT_ID]
+list [--kind entrypoint|input|entry|storage|flow|rule|external|field] [--owner CONTRACT_ID]
      [--cluster LABEL] [--search TEXT]
 ```
 

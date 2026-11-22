@@ -15,9 +15,10 @@ answers the questions a contract review usually misses:
 
 It records **EntryPoint** activations (routes, consumers, jobs, UI actions),
 **Input** data contracts, **Entry** intermediate entities (validated, normalized
-or enriched payloads), **Storage** locations and the **Field** tree of each
-entity. A CLI writes the graph and produces reports; `render` turns it into a
-standalone **logistic map** where entrypoints, flows and entities share a single
+or enriched payloads), **Storage** locations, **External System** dependencies
+(SMS, payment, shipping APIs) and the **Field** tree of each entity. A CLI writes
+the graph and produces reports; `render` turns it into a standalone **logistic
+map** where entrypoints, flows, entities and external systems share a single
 interactive view.
 
 Everything runs on plain Python plus a static HTML file: no server, no cloud
@@ -190,11 +191,12 @@ A batch seed is available at `examples/orders-flow.json`:
 | Command | Purpose |
 |---|---|
 | `init` | Create the graph schema |
-| `migrate` | Convert a v1-v6 database to v7 |
+| `migrate` | Convert a v1-v7 database to v8 |
 | `doctor` | Check Python/LadybugDB/database/git |
 | `add-node` / `add-field` / `add-edge` | Register entities, fields and relationships |
 | `add-entrypoint` | Register an outer activation that triggers or relates to other entrypoints |
 | `add-rule` | Register a limit or condition followed by a flow or entrypoint |
+| `add-external` | Register an External System called by flows or entries |
 | `add-flow` / `flow use` | Register a flow and the entities it uses |
 | `apply --file` | Transactional batch upsert (same shape as `export`) |
 | `remove-node` / `remove-edge` | Remove nodes (with owned fields) or edges |
@@ -222,6 +224,25 @@ passages carrying its `flow_id` (`compose` is containment and never a path):
 "$PY" "$SKILL_DIR/scripts/logistic_map.py" flow show flow:create-order
 ```
 
+An External System is a service outside the mapped repositories. A flow calls it
+with `calls`; an entry delivers a payload to it with `delivers-to` and a
+mandatory `flow_id`:
+
+```sh
+"$PY" "$SKILL_DIR/scripts/logistic_map.py" add-external \
+  --id external:sms-gateway --name "SMS gateway" --provider Twilio \
+  --protocol HTTP --cluster notification-service
+"$PY" "$SKILL_DIR/scripts/logistic_map.py" add-edge --kind calls \
+  --from flow:create-order --to external:sms-gateway
+"$PY" "$SKILL_DIR/scripts/logistic_map.py" add-edge --kind delivers-to \
+  --flow flow:create-order --from entry:order-validated \
+  --to external:sms-gateway
+```
+
+The same entry may deliver to the same external system in different flows; the
+delivery is identified by `(from, to, flow_id)`. External systems carry no data
+and never appear in a passage or `Impact`.
+
 An entity may participate in several flows; a passage is identified by
 `(kind, from, to, flow)`, so the same pair can appear in more than one flow.
 Different entities may share the same `file_path`/`refs` — they are still
@@ -233,8 +254,9 @@ entrypoints reach, including entities, rules and passages; the entity panel list
 the flows that use it. The cluster dropdown filters the graph to one service,
 repository or other grouping label.
 
-Contracts, flows, entrypoints and rules can carry `--cluster` (a service,
-repository, module or deployable boundary); fields inherit their owner's cluster.
+Contracts, flows, entrypoints, rules and external systems can carry `--cluster`
+(a service, repository, module or deployable boundary); fields inherit their
+owner's cluster.
 Rules are nodes with a required description, attached to a flow or entrypoint
 with `add-edge --kind rule`; they keep limits, timeouts, pagination and similar
 behaviour in the graph instead of a separate document.
@@ -343,13 +365,15 @@ logs with `make samples`. See `test/README.md` for what is covered.
 
 `render` writes `.logistic-map/graph.html` (or `--out PATH`). It is self-contained:
 no CDN and no server. Nodes sit in horizontal lanes: **EntryPoints** above
-**Flows**, with **Rules** beside both in a column spanning their two lanes; then
-Input, Entry and one lane per `store_type`. `use` links a flow to an entity,
+**Flows**, with **Rules** and **External Systems** beside both in columns
+spanning their two lanes; then Input, Entry and one lane per `store_type`.
+View tabs switch between **All**, **Flows** and **External Systems**. `use` links a flow to an entity,
 `compose` means whole → part, `transform` means the data changes shape and `flow`
 means it passes unchanged. Click nodes or edges, enable **Fields**, or enable
 **Impact** to dim everything outside the selected entity's data reach (impact
-follows `flow`/`transform` only). Selecting a flow keeps its entities, its `use`
-edges and its passages lit and dims the rest; the flow panel lists them.
+follows `flow`/`transform` only). Selecting a flow keeps its entities, its `use` edges,
+its `calls`/`delivers-to` edges and its passages lit and dims the rest; the flow
+panel lists them.
 
 ![Flow lane](assets/preview-flows.png)
 

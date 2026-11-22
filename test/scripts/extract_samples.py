@@ -63,7 +63,7 @@ def newest_snapshots(case_ids: set[str]) -> dict[str, tuple[dict, Path]]:
                 continue
             snapshot = (sample.metadata or {}).get("snapshot")
             if (isinstance(snapshot, dict) and snapshot.get("nodes")
-                    and snapshot.get("schema_version") == 7):
+                    and snapshot.get("schema_version") in (7, 8)):
                 found[sample_id] = (snapshot, log_path)
         if len(found) == len(case_ids):
             break
@@ -154,6 +154,7 @@ def main() -> int:
         spec = cases[sample_id]
         snapshot, log_path = snapshots[sample_id]
         case_dir = (EVAL_DIR / spec["path"]).resolve()
+        snapshot["schema_version"] = 8
         sanitize_refs(snapshot, case_dir)
         sample_path = SAMPLE_DIR / f"{sample_id}.json"
         sample_path.write_text(
@@ -178,6 +179,7 @@ def main() -> int:
                 "entrypoints": sum(node.get("kind") == "entrypoint" for node in nodes),
                 "related": sum(edge.get("kind") == "related" for edge in edges),
                 "rules": sum(node.get("kind") == "rule" for node in nodes),
+                "externals": sum(node.get("kind") == "external" for node in nodes),
                 "clusters": len({str(node.get("cluster") or "").strip()
                                  for node in nodes
                                  if node.get("kind") != "field"

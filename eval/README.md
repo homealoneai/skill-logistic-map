@@ -74,7 +74,9 @@ Each sample produces two scores:
    `RELATED`, related edges connect only EntryPoints and carry description/refs,
    every contract, flow and EntryPoint carries a stable cluster label, a
    triggered flow shares its entrypoint cluster, rules resolve from a Flow or
-   EntryPoint and carry a description and evidence, Inputs contain no execution
+   EntryPoint and carry a description and evidence, external systems resolve
+   from a Flow (`calls`) or Entry (`delivers-to` with a known flow), Inputs
+   contain no execution
    metadata, expected activation names are present, referenced files are
    expected, at least one `file:line` reference exists and at most 20% of
    references are missing on disk, and `report` has no structural errors.
@@ -91,7 +93,7 @@ pass one and fail the other.
 ## Regenerate committed samples
 
 After changing the skill or schema, rerun all cases; do not retrofit old
-snapshots. The extractor accepts schema-v7 logs only:
+snapshots. The extractor accepts schema-v7/v8 logs only:
 
 ```sh
 ./run.sh --cases go,java,node,android,web,otel --max-messages 100
@@ -101,7 +103,7 @@ make test
 make sample SAMPLE=go
 ```
 
-`make samples` copies the newest v7 snapshot for each case into `test/sample/`,
+`make samples` copies the newest v7/v8 snapshot for each case into `test/sample/`,
 validates paths and references, and rebuilds `manifest.json` from the eval runs.
 Inspect the run report and manifest before committing. The final command opens
 the regenerated Go HTML for visual review.

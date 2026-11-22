@@ -115,6 +115,20 @@
       "commit": "a1b2c3d",
       "file_path": "services/orders/src/validate.py",
       "refs": ["services/orders/src/validate.py:18"]
+    },
+    {
+      "kind": "external",
+      "id": "external:sms-gateway",
+      "name": "SMS gateway",
+      "description": "Third-party provider that sends order confirmation SMS.",
+      "provider": "Twilio",
+      "protocol": "HTTP",
+      "location": "https://api.twilio.com",
+      "cluster": "notification-service",
+      "repo": "github.com/acme/logistics",
+      "commit": "a1b2c3d",
+      "file_path": "services/notifications/src/sms.py",
+      "refs": ["services/notifications/src/sms.py:14"]
     }
   ],
   "fields": [
@@ -152,6 +166,11 @@
     {"kind": "trigger", "from": "entrypoint:orders-created", "to": "flow:create-order"},
     {"kind": "rule", "from": "flow:create-order", "to": "rule:order-item-limit",
      "refs": ["services/orders/src/validate.py:18"]},
+    {"kind": "calls", "from": "flow:create-order", "to": "external:sms-gateway",
+     "refs": ["services/notifications/src/sms.py:20"]},
+    {"kind": "delivers-to", "flow_id": "flow:create-order",
+     "from": "entry:validate-order", "to": "external:sms-gateway",
+     "refs": ["services/notifications/src/sms.py:24"]},
     {"kind": "related", "from": "entrypoint:checkout-screen",
      "to": "entrypoint:orders-created",
      "description": "checkout submits the order form that publishes orders.created",

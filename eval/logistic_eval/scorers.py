@@ -92,6 +92,8 @@ def structural_scorer() -> Scorer:
         )
 
         contract_ids = {node.get("id") for node in contracts}
+        entry_ids = {node.get("id") for node in nodes
+                     if node.get("kind") == "entry"}
         flows = [node for node in nodes if node.get("kind") == "flow"]
         flow_ids = {node.get("id") for node in flows}
         entrypoints = [node for node in nodes if node.get("kind") == "entrypoint"]
@@ -141,6 +143,36 @@ def structural_scorer() -> Scorer:
             all(str(edge.get("description") or "").strip() and edge.get("refs")
                 for edge in related_edges),
             "related edge without description or refs",
+        )
+
+        externals = [node for node in nodes if node.get("kind") == "external"]
+        external_ids = {node.get("id") for node in externals}
+        calls_edges = [edge for edge in edges if edge.get("kind") == "calls"]
+        delivers_edges = [edge for edge in edges
+                          if edge.get("kind") == "delivers-to"]
+        check(
+            "calls edges resolve Flow to External System",
+            all(edge.get("from") in flow_ids and edge.get("to") in external_ids
+                for edge in calls_edges),
+            "calls edge points outside Flow/External",
+        )
+        check(
+            "delivers-to edges resolve Entry to External System",
+            all(edge.get("from") in entry_ids and edge.get("to") in external_ids
+                for edge in delivers_edges),
+            "delivers-to edge points outside Entry/External",
+        )
+        check(
+            "delivers-to edges carry a flow_id to a known flow",
+            all((edge.get("flow_id") or "") in flow_ids
+                for edge in delivers_edges),
+            "delivers-to edge without a known flow",
+        )
+        check(
+            "delivers-to entries are used by their flow",
+            all(edge.get("from") in uses_by_flow.get(edge.get("flow_id"), set())
+                for edge in delivers_edges),
+            "delivers-to entry is not USEd by the flow",
         )
 
         def reaches_trigger(start: str) -> bool:
@@ -428,6 +460,28 @@ def _digest(snapshot: dict, limit_contracts: int = 80, limit_fields: int = 100) 
                 + (f" | refs={refs}" if refs else "")
             )
 
+    externals = [node for node in nodes if node.get("kind") == "external"]
+    if externals:
+        lines.append("EXTERNAL SYSTEMS")
+        for node in externals:
+            refs = ", ".join((node.get("refs") or [])[:2])
+            lines.append(
+                f"- {node.get('id')} | {node.get('name', '')} | "
+                f"provider={node.get('provider', '')} | "
+                f"protocol={node.get('protocol', '')} | "
+                f"cluster={node.get('cluster', '')} | {node.get('description', '')}"
+                + (f" | refs={refs}" if refs else "")
+            )
+    external_links = [edge for edge in edges
+                      if edge.get("kind") in ("calls", "delivers-to")]
+    if external_links:
+        lines.append("EXTERNAL LINKS")
+        for edge in external_links:
+            suffix = (f" flow={edge.get('flow_id')}"
+                      if edge.get("flow_id") else "")
+            lines.append(
+                f"- {edge.get('kind')} {edge.get('from')} -> {edge.get('to')}{suffix}")
+
     lines.append("FIELDS")
     for field in fields[:limit_fields]:
         refs = ", ".join((field.get("refs") or [])[:2])
@@ -560,7 +614,9 @@ Grade these dimensions from 0 to 1:
   EntryPoints is valid when an outer activation such as a screen or action
   causes another activation; it must carry a description and evidence. RULE
   nodes are valid only when the code actually enforces the stated limit or
-  condition; a vague or invented rule lowers this.
+  condition; a vague or invented rule lowers this. External Systems are valid
+  only when the code calls a service outside the mapped repositories; CALLS
+  links the flow, DELIVERS_TO names the flow that carries the payload.
 - references: the recorded file:line references point at the declarations the
   map claims.
 - clustering: every contract, flow and entrypoint is assigned to a cluster that

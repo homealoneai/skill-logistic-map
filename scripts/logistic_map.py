@@ -46,23 +46,26 @@ from datetime import datetime, timezone
 from functools import lru_cache
 from pathlib import Path
 
-SCHEMA_VERSION = 7
+SCHEMA_VERSION = 8
 DEFAULT_DB = os.environ.get("LOGISTIC_MAP_DB", ".logistic-map/graph.lbdb")
 DEFAULT_RENDER = "graph.html"
 
 CONTRACT_KINDS = ("input", "entry", "storage")
-ALL_KINDS = ("input", "entry", "storage", "flow", "entrypoint", "rule", "field")
+ALL_KINDS = ("input", "entry", "storage", "flow", "entrypoint",
+             "rule", "external", "field")
 DATA_EDGE_KINDS = ("flow", "transform")
+FLOW_SCOPED_EDGE_KINDS = DATA_EDGE_KINDS + ("delivers-to",)
 
 LABELS = {"input": "Input", "entry": "Entry", "storage": "Storage",
           "flow": "Flow", "entrypoint": "EntryPoint", "rule": "Rule",
-          "field": "Field"}
+          "external": "External", "field": "Field"}
 PLURALS = {"input": "Inputs", "entry": "Entries", "storage": "Storages",
            "flow": "Flows", "entrypoint": "EntryPoints", "rule": "Rules",
-           "field": "Fields"}
+           "external": "External Systems", "field": "Fields"}
 RELS = {"contains": "CONTAINS", "compose": "COMPOSE",
         "transform": "TRANSFORM", "flow": "FLOWS", "use": "USES",
-        "trigger": "TRIGGER", "related": "RELATED", "rule": "RULE_REL"}
+        "trigger": "TRIGGER", "related": "RELATED", "rule": "RULE_REL",
+        "calls": "CALLS", "delivers-to": "DELIVERS_TO"}
 
 NODE_PROPS = {
     "input": ["name", "description", "cluster", "repo", "commit_sha",
@@ -77,6 +80,8 @@ NODE_PROPS = {
                    "repo", "commit_sha", "file_path", "refs"],
     "rule": ["name", "description", "cluster",
              "repo", "commit_sha", "file_path", "refs"],
+    "external": ["name", "description", "provider", "protocol", "location",
+                 "cluster", "repo", "commit_sha", "file_path", "refs"],
     "field": ["name", "path", "type", "description", "required", "source",
               "repo", "commit_sha", "file_path", "refs"],
 }
@@ -129,6 +134,11 @@ DDL = [
         id STRING, name STRING, description STRING, cluster STRING,
         repo STRING, commit_sha STRING, file_path STRING, refs STRING[],
         PRIMARY KEY(id))""",
+    """CREATE NODE TABLE IF NOT EXISTS External(
+        id STRING, name STRING, description STRING, provider STRING,
+        protocol STRING, location STRING, cluster STRING,
+        repo STRING, commit_sha STRING, file_path STRING, refs STRING[],
+        PRIMARY KEY(id))""",
     """CREATE REL TABLE IF NOT EXISTS CONTAINS(
         FROM Input TO Field, FROM Storage TO Field, FROM Entry TO Field,
         FROM Field TO Field,
@@ -149,6 +159,12 @@ DDL = [
     """CREATE REL TABLE IF NOT EXISTS RULE_REL(
         FROM Flow TO Rule, FROM EntryPoint TO Rule,
         refs STRING[], file_path STRING, note STRING)""",
+    """CREATE REL TABLE IF NOT EXISTS CALLS(
+        FROM Flow TO External,
+        refs STRING[], file_path STRING, note STRING)""",
+    """CREATE REL TABLE IF NOT EXISTS DELIVERS_TO(
+        FROM Entry TO External,
+        flow_id STRING, refs STRING[], file_path STRING, note STRING)""",
 ]
 
 TYPE_ALIASES = {
@@ -582,7 +598,7 @@ def merge_node(db: DB, kind: str, node_id: str, props: dict) -> None:
 def merge_edge(db: DB, kind: str, src: str, dst: str, props: dict) -> None:
     src_kind, dst_kind = kind_of(src), kind_of(dst)
     identity = ""
-    if kind in DATA_EDGE_KINDS and props.get("flow_id") is not None:
+    if kind in FLOW_SCOPED_EDGE_KINDS and props.get("flow_id") is not None:
         # A passage is identified by (kind, from, to, flow): the same pair can
         # participate in several flows.
         identity = " {flow_id:$flow_id}"
@@ -852,6 +868,47 @@ def upsert_rule(db: DB, node_id=None, name=None, description=None,
     return {"id": node_id, "created": not existing}
 
 
+def upsert_external(db: DB, node_id=None, name=None, description=None,
+                    provider=None, protocol=None, location=None,
+                    refs=None, repo=None, commit_sha=None, file_path=None,
+                    cluster=None) -> dict:
+    if node_id:
+        validate_node_id(node_id, "external")
+    else:
+        if not name:
+            raise LogisticMapError("--name or --id is required")
+        node_id = f"external:{slugify(name)}"
+        validate_node_id(node_id, "external")
+    existing = get_node(db, "external", node_id) or {}
+    props = {}
+    for key in NODE_PROPS["external"]:
+        default = [] if key == "refs" else ""
+        props[key] = existing.get(key, default)
+        if props[key] is None:
+            props[key] = default
+    props["name"] = name or props.get("name") or node_id.split(":", 1)[1]
+    for key, value in (("description", description), ("provider", provider),
+                       ("protocol", protocol), ("location", location)):
+        if value is not None:
+            props[key] = value
+    if cluster is not None:
+        props["cluster"] = str(cluster).strip()
+    if refs is not None:
+        props["refs"] = refs
+    if repo is not None:
+        props["repo"] = repo
+    elif not props.get("repo"):
+        props["repo"] = git_value("repo")
+    if commit_sha is not None:
+        props["commit_sha"] = commit_sha
+    elif not props.get("commit_sha"):
+        props["commit_sha"] = git_value("commit")
+    if file_path is not None:
+        props["file_path"] = file_path
+    merge_node(db, "external", node_id, props)
+    return {"id": node_id, "created": not existing}
+
+
 def upsert_edge(db: DB, kind: str, src: str, dst: str, refs=None,
                 file_path=None, note=None, flow_id=None,
                 description=None, allow_unassigned: bool = False) -> dict:
@@ -887,6 +944,31 @@ def upsert_edge(db: DB, kind: str, src: str, dst: str, refs=None,
         if src_kind not in ("flow", "entrypoint") or dst_kind != "rule":
             raise LogisticMapError(
                 "rule edges go from a Flow or EntryPoint to a Rule")
+    elif kind == "calls":
+        if flow_id:
+            raise LogisticMapError("calls edges do not use --flow")
+        if src_kind != "flow" or dst_kind != "external":
+            raise LogisticMapError(
+                "calls edges go from a Flow to an External System")
+    elif kind == "delivers-to":
+        if src_kind != "entry" or dst_kind != "external":
+            raise LogisticMapError(
+                "delivers-to edges go from an Entry to an External System")
+        if not flow_id:
+            raise LogisticMapError(
+                "delivers-to edges need --flow <flow:id>; the delivery belongs "
+                "to a flow")
+        validate_node_id(flow_id, "flow")
+        if not get_node(db, "flow", flow_id):
+            raise LogisticMapError(
+                f"flow {flow_id!r} does not exist; run add-flow first")
+        _, rows = db.run(
+            f"MATCH (f:{LABELS['flow']} {{id:$flow}})-[r:{RELS['use']}]->"
+            f"(e:{LABELS['entry']} {{id:$entry}}) RETURN count(r)",
+            {"flow": flow_id, "entry": src})
+        if not rows or not rows[0][0]:
+            raise LogisticMapError(
+                f"{flow_id} does not use {src}; run `flow use` first")
     elif kind != "contains":
         if src_kind not in CONTRACT_KINDS or dst_kind not in CONTRACT_KINDS:
             raise LogisticMapError(f"{kind} edges connect contract nodes only")
@@ -919,7 +1001,7 @@ def upsert_edge(db: DB, kind: str, src: str, dst: str, refs=None,
         raise LogisticMapError("--description is only used by related edges")
 
     props = {}
-    if kind in DATA_EDGE_KINDS:
+    if kind in FLOW_SCOPED_EDGE_KINDS:
         props["flow_id"] = flow_id or ""
     if kind == "related":
         props["description"] = str(description).strip()
@@ -940,7 +1022,7 @@ def upsert_edge(db: DB, kind: str, src: str, dst: str, refs=None,
         params["description"] = props["description"]
     _, rows = db.run(query, params)
     already = [row[0] for row in rows]
-    if kind in DATA_EDGE_KINDS:
+    if kind in FLOW_SCOPED_EDGE_KINDS:
         wanted = flow_id or ""
         existing = next((clean(row) for row in already
                          if (clean(row).get("flow_id") or "") == wanted), None)
@@ -970,7 +1052,7 @@ def upsert_edge(db: DB, kind: str, src: str, dst: str, refs=None,
 
     merge_edge(db, kind, src, dst, props)
     result = {"from": src, "to": dst, "kind": kind, "created": not existing}
-    if kind in DATA_EDGE_KINDS:
+    if kind in FLOW_SCOPED_EDGE_KINDS:
         result["flow_id"] = flow_id or ""
     if kind == "related":
         result["description"] = props["description"]
@@ -1023,9 +1105,28 @@ def remove_node(db: DB, node_id: str) -> dict:
             f"MATCH (n:{LABELS['flow']} {{id:$id}})-[r:{RELS['rule']}]->() "
             "RETURN count(r)", {"id": node_id})
         removed_edges += counts[0][0] if counts else 0
+        _, counts = db.run(
+            f"MATCH ()-[r:{RELS['delivers-to']} {{flow_id:$id}}]->() RETURN count(r)",
+            {"id": node_id})
+        removed_edges += counts[0][0] if counts else 0
+        db.run(f"MATCH ()-[r:{RELS['delivers-to']} {{flow_id:$id}}]->() DELETE r",
+               {"id": node_id})
+        _, counts = db.run(
+            f"MATCH (n:{LABELS['flow']} {{id:$id}})-[r:{RELS['calls']}]->() "
+            "RETURN count(r)", {"id": node_id})
+        removed_edges += counts[0][0] if counts else 0
     if kind == "rule":
         _, counts = db.run(
             f"MATCH ()-[r:{RELS['rule']}]->(n:{LABELS['rule']} {{id:$id}}) "
+            "RETURN count(r)", {"id": node_id})
+        removed_edges += counts[0][0] if counts else 0
+    if kind == "external":
+        _, counts = db.run(
+            f"MATCH ()-[r:{RELS['calls']}]->(n:{LABELS['external']} {{id:$id}}) "
+            "RETURN count(r)", {"id": node_id})
+        removed_edges += counts[0][0] if counts else 0
+        _, counts = db.run(
+            f"MATCH ()-[r:{RELS['delivers-to']}]->(n:{LABELS['external']} {{id:$id}}) "
             "RETURN count(r)", {"id": node_id})
         removed_edges += counts[0][0] if counts else 0
     db.run(f"MATCH (n:{LABELS[kind]} {{id:$id}}) DETACH DELETE n", {"id": node_id})
@@ -1038,7 +1139,10 @@ def remove_edge(db: DB, kind: str, src: str, dst: str, flow_id=None,
     if kind not in RELS:
         raise LogisticMapError(f"edge kind must be one of {tuple(RELS)}")
     src_kind, dst_kind = kind_of(src), kind_of(dst)
-    if kind in DATA_EDGE_KINDS:
+    if kind in FLOW_SCOPED_EDGE_KINDS:
+        if kind == "delivers-to" and not flow_id:
+            raise LogisticMapError(
+                "remove-edge --kind delivers-to needs --flow to identify the delivery")
         if flow_id:
             match = f"[r:{RELS[kind]} {{flow_id:$flow_id}}]"
             params = {"from": src, "to": dst, "flow_id": flow_id}
@@ -1077,7 +1181,7 @@ def remove_edge(db: DB, kind: str, src: str, dst: str, flow_id=None,
         f"(b:{LABELS[dst_kind]} {{id:$to}}) DELETE r",
         params)
     result = {"from": src, "to": dst, "kind": kind, "removed": count}
-    if kind in DATA_EDGE_KINDS:
+    if kind in FLOW_SCOPED_EDGE_KINDS:
         result["flow_id"] = flow_id
     if kind == "related":
         result["description"] = description
@@ -1168,6 +1272,8 @@ def build_report(db: DB, check_files: bool = False) -> dict:
     fields = {nid: node for nid, node in nodes.items() if node["kind"] == "field"}
     flows = {nid: node for nid, node in nodes.items() if node["kind"] == "flow"}
     rules = {nid: node for nid, node in nodes.items() if node["kind"] == "rule"}
+    externals = {nid: node for nid, node in nodes.items()
+                 if node["kind"] == "external"}
 
     def add(code, severity, message, nodes_involved=None, edge=None, refs=None,
             data=None):
@@ -1347,6 +1453,39 @@ def build_report(db: DB, check_files: bool = False) -> dict:
                 f"{rule_id} has neither file_path nor refs",
                 nodes_involved=[rule_id])
 
+    for edge in (item for item in edges if item["kind"] == "delivers-to"):
+        flow_id = edge.get("flow_id") or ""
+        label = {"kind": edge["kind"], "from": edge["from"],
+                 "to": edge["to"], "flow_id": flow_id}
+        if not flow_id:
+            add("delivery_without_flow", "error",
+                f"delivers-to {edge['from']} -> {edge['to']} has no flow_id",
+                nodes_involved=[edge["from"], edge["to"]], edge=label,
+                refs=edge.get("refs") or [])
+            continue
+        if flow_id not in flows:
+            add("unknown_flow", "error",
+                f"delivers-to {edge['from']} -> {edge['to']} references "
+                f"unknown flow {flow_id}",
+                nodes_involved=[edge["from"], edge["to"]], edge=label)
+            continue
+        if edge["from"] not in uses.get(flow_id, set()):
+            add("edge_entity_not_used", "warn",
+                f"{flow_id} delivers {edge['from']} to {edge['to']} but does "
+                "not USE it", nodes_involved=[edge["from"]], edge=label)
+
+    external_targets = {edge["to"] for edge in edges
+                        if edge["kind"] in ("calls", "delivers-to")}
+    for external_id, external in sorted(externals.items()):
+        if external_id not in external_targets:
+            add("orphan_external", "warn",
+                f"{external_id} is not called by any Flow or delivered to",
+                nodes_involved=[external_id], refs=external.get("refs") or [])
+        if not external.get("file_path") and not external.get("refs"):
+            add("incomplete_external", "info",
+                f"{external_id} has neither file_path nor refs",
+                nodes_involved=[external_id])
+
     for edge in (item for item in edges if item["kind"] == "trigger"):
         src_cluster = cluster_of(nodes.get(edge["from"], {}), nodes)
         dst_cluster = cluster_of(nodes.get(edge["to"], {}), nodes)
@@ -1507,6 +1646,7 @@ def build_report(db: DB, check_files: bool = False) -> dict:
             "contracts": len(contracts),
             "flows": len(flows),
             "rules": len(rules),
+            "externals": len(externals),
             "fields": len(fields),
             "edges": len(edges),
             "clusters": sorted({cluster for cluster in
@@ -1524,6 +1664,7 @@ def format_report_text(report: dict) -> str:
     lines = [
         f"Logistic map: {summary['contracts']} contracts, "
         f"{summary.get('flows', 0)} flows, {summary.get('rules', 0)} rules, "
+        f"{summary.get('externals', 0)} external systems, "
         f"{summary['fields']} fields, "
         f"{summary['edges']} edges",
         f"DB: {report['db']}",
@@ -1558,6 +1699,7 @@ def format_report_markdown(report: dict) -> str:
         f"- Contracts: **{summary['contracts']}**",
         f"- Flows: **{summary.get('flows', 0)}**",
         f"- Rules: **{summary.get('rules', 0)}**",
+        f"- External Systems: **{summary.get('externals', 0)}**",
         f"- Fields: **{summary['fields']}**",
         f"- Edges: **{summary['edges']}**",
         f"- Findings: **{summary['findings']['error']} errors**, "
@@ -1716,7 +1858,7 @@ def _ensure_data_rel(db: DB, table: str, legacy: list, ddl: str,
 
 
 def migrate_db(db: DB) -> dict:
-    """Convert a v1-v6 database to v7 in place (idempotent)."""
+    """Convert a v1-v7 database to v8 in place (idempotent)."""
     before = db_schema_version(db)
     actions = []
     moved = 0
@@ -1739,6 +1881,8 @@ def migrate_db(db: DB) -> dict:
 
     for statement in DDL:
         db.run(statement)
+    if before < 8 and "External" not in tables:
+        actions.append("added External System and CALLS/DELIVERS_TO tables")
 
     for table in ("Input", "Entry", "Storage", "Flow", "EntryPoint"):
         if table not in db.tables():
@@ -2104,6 +2248,22 @@ def cmd_add_rule(args) -> int:
     return 0
 
 
+def cmd_add_external(args) -> int:
+    db = open_db(args)
+    result = upsert_external(
+        db, node_id=args.id, name=args.name, description=args.description,
+        provider=args.provider, protocol=args.protocol, location=args.location,
+        refs=parse_refs(args.ref) if args.ref is not None else None,
+        repo=args.repo, commit_sha=args.commit, file_path=args.file,
+        cluster=args.cluster)
+    result["ok"] = True
+    if args.json:
+        print(json.dumps(result, indent=2))
+    else:
+        print(f"{'created' if result['created'] else 'updated'} {result['id']}")
+    return 0
+
+
 def cmd_add_edge(args) -> int:
     db = open_db(args)
     result = upsert_edge(
@@ -2164,7 +2324,7 @@ def cmd_apply(args) -> int:
 
     db = open_db(args)
     counts = {"nodes": 0, "flows": 0, "entrypoints": 0, "rules": 0,
-              "fields": 0, "edges": 0}
+              "externals": 0, "fields": 0, "edges": 0}
     db.run("BEGIN TRANSACTION")
     try:
         node_items = payload.get("nodes", [])
@@ -2202,6 +2362,18 @@ def cmd_apply(args) -> int:
                     file_path=item.get("file_path") or item.get("file"),
                     cluster=item.get("cluster"))
                 counts["rules"] += 1
+                continue
+            if kind == "external":
+                upsert_external(
+                    db, node_id=item.get("id"), name=item.get("name"),
+                    description=item.get("description"),
+                    provider=item.get("provider"), protocol=item.get("protocol"),
+                    location=item.get("location"), refs=item.get("refs"),
+                    repo=item.get("repo"),
+                    commit_sha=item.get("commit_sha") or item.get("commit"),
+                    file_path=item.get("file_path") or item.get("file"),
+                    cluster=item.get("cluster"))
+                counts["externals"] += 1
                 continue
             if kind not in CONTRACT_KINDS:
                 raise LogisticMapError(f"invalid node kind in apply: {kind!r}")
@@ -2245,7 +2417,11 @@ def cmd_apply(args) -> int:
                 commit_sha=item.get("commit_sha") or item.get("commit"),
                 file_path=item.get("file_path") or item.get("file"))
             counts["fields"] += 1
-        for item in payload.get("edges", []):
+        # USE first: delivers-to validates that the entry belongs to its flow.
+        edge_items = sorted(
+            payload.get("edges", []),
+            key=lambda item: 0 if item.get("kind") == "use" else 1)
+        for item in edge_items:
             if not item.get("kind") or not item.get("from") or not item.get("to"):
                 raise LogisticMapError("each edge needs kind, from and to")
             upsert_edge(
@@ -2268,7 +2444,7 @@ def cmd_apply(args) -> int:
     else:
         print(f"applied {counts['nodes']} nodes, {counts['flows']} flows, "
               f"{counts['entrypoints']} entrypoints, {counts['rules']} rules, "
-              f"{counts['fields']} fields, "
+              f"{counts['externals']} external systems, {counts['fields']} fields, "
               f"{counts['edges']} edges")
     return 0
 
@@ -2308,7 +2484,7 @@ def cmd_list(args) -> int:
             detail = node.get("location") or "-"
         elif node["kind"] == "entry":
             detail = node.get("stage") or "-"
-        elif node["kind"] in ("flow", "entrypoint", "rule"):
+        elif node["kind"] in ("flow", "entrypoint", "rule", "external"):
             detail = node.get("description") or "-"
         else:
             detail = "-"
@@ -2476,7 +2652,8 @@ def _relation_table(rows, slug_of, from_dir: str) -> list:
 
 
 def _entity_markdown(node: dict, fields: list, edges: list, flows: list,
-                     slug_of: dict, flow_slug_of: dict, from_dir: str = "entities") -> str:
+                     slug_of: dict, flow_slug_of: dict, from_dir: str = "entities",
+                     deliveries=None, external_slug_of=None) -> str:
     node_id = node["id"]
     title = node.get("name") or node_id.split(":", 1)[-1]
     lines = [f"# {_md_code(node_id)}", "",
@@ -2553,11 +2730,25 @@ def _entity_markdown(node: dict, fields: list, edges: list, flows: list,
                 lines.append(f"- {_md_cell(label)}")
         lines.append("")
 
+    if deliveries:
+        lines += ["## Delivers to", ""]
+        for item in deliveries:
+            external = item["external"]
+            slug = (external_slug_of or {}).get(external["id"])
+            label = _md_cell(external.get("name") or external["id"])
+            link = (f"[{label}](../../externals/{slug}.md)" if slug
+                    else _md_code(external["id"]))
+            flow = item.get("flow")
+            suffix = (f" — via {_md_code(flow)}" if flow else "")
+            lines.append(f"- {link}{suffix}")
+        lines.append("")
+
     return "\n".join(lines).rstrip() + "\n"
 
 
 def _flow_markdown(flow_payload: dict, slug_of: dict, triggered_by=None,
-                   entrypoint_slug_of=None, rules=None, rule_slug_of=None) -> str:
+                   entrypoint_slug_of=None, rules=None, rule_slug_of=None,
+                   externals=None, external_slug_of=None) -> str:
     flow = flow_payload["flow"]
     steps = sorted(flow_payload["steps"],
                    key=lambda step: (step.get("span") != "flow",
@@ -2604,6 +2795,17 @@ def _flow_markdown(flow_payload: dict, slug_of: dict, triggered_by=None,
             label = _md_cell(rule.get("name") or rule["id"])
             target = f"[{label}](../rules/{slug}.md)" if slug else _md_code(rule["id"])
             lines.append(f"- {target} — {_md_cell(rule.get('description') or '')}")
+        lines.append("")
+
+    if externals:
+        lines += ["## External systems", ""]
+        for item in externals:
+            external = item["external"]
+            slug = (external_slug_of or {}).get(external["id"])
+            label = _md_cell(external.get("name") or external["id"])
+            link = (f"[{label}](../externals/{slug}.md)" if slug
+                    else _md_code(external["id"]))
+            lines.append(f"- {link} — {_md_code(item.get('via') or '')}")
         lines.append("")
 
     lines += ["## Path", ""]
@@ -2670,7 +2872,8 @@ def _flow_markdown(flow_payload: dict, slug_of: dict, triggered_by=None,
 def _docs_readme(title: str, contracts: list, fields: list, edges: list,
                  slug_of: dict, flows: list, flow_slug_of: dict,
                  entrypoints: list, entrypoint_slug_of: dict,
-                 rules: list, rule_slug_of: dict) -> str:
+                 rules: list, rule_slug_of: dict,
+                 externals: list, external_slug_of: dict) -> str:
     counts = Counter(node["kind"] for node in contracts)
     lines = [f"# {title}", "",
              "> Generated by `logistic_map.py export-md`. Do not edit these "
@@ -2679,6 +2882,7 @@ def _docs_readme(title: str, contracts: list, fields: list, edges: list,
               f"{_count(len(entrypoints), 'entrypoint')} · "
               f"{_count(len(flows), 'flow')} · "
               f"{_count(len(rules), 'rule')} · "
+              f"{_count(len(externals), 'external system')} · "
              f"{_count(len(fields), 'field')}** · schema v{SCHEMA_VERSION}", ""]
 
     lines += ["## Reading these docs", "",
@@ -2701,12 +2905,14 @@ def _docs_readme(title: str, contracts: list, fields: list, edges: list,
               "| `trigger` | EntryPoint → Flow: the activation starts the flow |",
               "| `related` | EntryPoint → EntryPoint: directional activation relationship |",
               "| `rule` | Flow/EntryPoint → Rule: a limit or condition the activation follows |",
+              "| `calls` | Flow → External System: the flow calls an external service |",
+              "| `delivers-to` | Entry → External System: payload delivered in a flow |",
               "| `compose` | whole → part (composition) |",
               "| `flow` | data passes unchanged (inside one flow) |",
               "| `transform` | data changes shape; the note records the mapping |", ""]
 
     cluster_counts = defaultdict(lambda: {"entities": 0, "entrypoints": 0,
-                                          "rules": 0, "flows": 0})
+                                          "rules": 0, "externals": 0, "flows": 0})
     for node in contracts:
         cluster = str(node.get("cluster") or "").strip()
         if cluster:
@@ -2719,19 +2925,23 @@ def _docs_readme(title: str, contracts: list, fields: list, edges: list,
         cluster = str(node.get("cluster") or "").strip()
         if cluster:
             cluster_counts[cluster]["rules"] += 1
+    for node in externals:
+        cluster = str(node.get("cluster") or "").strip()
+        if cluster:
+            cluster_counts[cluster]["externals"] += 1
     for flow_payload in flows:
         cluster = str(flow_payload["flow"].get("cluster") or "").strip()
         if cluster:
             cluster_counts[cluster]["flows"] += 1
     if cluster_counts:
         lines += ["## Clusters", "",
-                  "| Cluster | Entities | EntryPoints | Rules | Flows |",
-                  "|---|---:|---:|---:|---:|"]
+                  "| Cluster | Entities | EntryPoints | Rules | External Systems | Flows |",
+                  "|---|---:|---:|---:|---:|---:|"]
         for cluster, counts in sorted(cluster_counts.items()):
             lines.append(
                 f"| {_md_code(cluster)} | {counts['entities']} "
                 f"| {counts['entrypoints']} | {counts['rules']} "
-                f"| {counts['flows']} |")
+                f"| {counts['externals']} | {counts['flows']} |")
         lines.append("")
 
     for kind in CONTRACT_KINDS:
@@ -2771,6 +2981,17 @@ def _docs_readme(title: str, contracts: list, fields: list, edges: list,
                          + (f" — {description}" if description else ""))
         lines.append("")
 
+    lines += [f"## External Systems ({len(externals)})", ""]
+    if not externals:
+        lines += ["_None._", ""]
+    else:
+        for node in externals:
+            description = _md_cell(node.get("description") or "")
+            lines.append(f"- [{_md_cell(node.get('name') or node['id'])}]"
+                         f"(externals/{external_slug_of[node['id']]}.md)"
+                         + (f" — {description}" if description else ""))
+        lines.append("")
+
     lines += [f"## Flows ({len(flows)})", ""]
     if not flows:
         lines += ["_No flows registered. Run `add-flow` and `flow use` and "
@@ -2802,6 +3023,8 @@ def write_markdown_docs(db: DB, out_dir: Path, title: str, flows: list) -> dict:
                           if node["kind"] == "entrypoint"), key=lambda n: n["id"])
     rules = sorted((node for node in nodes.values()
                     if node["kind"] == "rule"), key=lambda n: n["id"])
+    externals = sorted((node for node in nodes.values()
+                        if node["kind"] == "external"), key=lambda n: n["id"])
     fields_by_owner = defaultdict(list)
     for field in fields:
         fields_by_owner[owner_of(field["id"])].append(field)
@@ -2823,6 +3046,10 @@ def write_markdown_docs(db: DB, out_dir: Path, title: str, flows: list) -> dict:
     for node in rules:
         rule_slug_of[node["id"]] = _doc_slug(
             "", node["id"].split(":", 1)[-1], used_rules)
+    external_slug_of, used_externals = {}, set()
+    for node in externals:
+        external_slug_of[node["id"]] = _doc_slug(
+            "", node["id"].split(":", 1)[-1], used_externals)
 
     flows_by_contract = defaultdict(list)
     flow_by_id = {flow_payload["flow"]["id"]: flow_payload["flow"]
@@ -2845,6 +3072,26 @@ def write_markdown_docs(db: DB, out_dir: Path, title: str, flows: list) -> dict:
     for edge in edges:
         if edge["kind"] == "trigger" and edge["from"] in entrypoints_by_id:
             triggered_by[edge["to"]].append(entrypoints_by_id[edge["from"]])
+    externals_by_id = {node["id"]: node for node in externals}
+    externals_by_flow = defaultdict(list)
+    deliveries_by_entry = defaultdict(list)
+    for edge in edges:
+        if edge["kind"] == "calls":
+            external = externals_by_id.get(edge["to"])
+            if external and edge["from"] in flow_by_id:
+                externals_by_flow[edge["from"]].append(
+                    {"external": external, "via": "calls"})
+        elif edge["kind"] == "delivers-to":
+            external = externals_by_id.get(edge["to"])
+            flow_id = edge.get("flow_id") or ""
+            if not external:
+                continue
+            if flow_id in flow_by_id:
+                externals_by_flow[flow_id].append(
+                    {"external": external, "via": "delivers-to"})
+            if edge["from"] in nodes and nodes[edge["from"]]["kind"] == "entry":
+                deliveries_by_entry[edge["from"]].append(
+                    {"external": external, "flow": flow_id})
     uses = flow_uses(nodes, edges)
     for contract_id in nodes:
         if nodes[contract_id]["kind"] not in CONTRACT_KINDS:
@@ -2865,8 +3112,10 @@ def write_markdown_docs(db: DB, out_dir: Path, title: str, flows: list) -> dict:
     (out_dir / "flows").mkdir(parents=True, exist_ok=True)
     (out_dir / "entrypoints").mkdir(parents=True, exist_ok=True)
     (out_dir / "rules").mkdir(parents=True, exist_ok=True)
+    (out_dir / "externals").mkdir(parents=True, exist_ok=True)
     for pattern in ("entities/**/*.md", "flows/**/*.md",
-                    "entrypoints/**/*.md", "rules/**/*.md"):
+                    "entrypoints/**/*.md", "rules/**/*.md",
+                    "externals/**/*.md"):
         for stale in out_dir.glob(pattern):
             stale.unlink()
 
@@ -2880,7 +3129,9 @@ def write_markdown_docs(db: DB, out_dir: Path, title: str, flows: list) -> dict:
         path.write_text(
             _entity_markdown(node, fields_by_owner.get(node["id"], []), related,
                              flows_by_contract.get(node["id"], []), slug_of,
-                             flow_slug_of),
+                             flow_slug_of,
+                             deliveries=deliveries_by_entry.get(node["id"], []),
+                             external_slug_of=external_slug_of),
             encoding="utf-8")
         written += 1
 
@@ -2890,7 +3141,8 @@ def write_markdown_docs(db: DB, out_dir: Path, title: str, flows: list) -> dict:
         path.write_text(
             _flow_markdown(flow_payload, slug_of, triggered_by.get(flow_id, []),
                            entrypoint_slug_of, rules_by_flow.get(flow_id, []),
-                           rule_slug_of), encoding="utf-8")
+                           rule_slug_of, externals_by_flow.get(flow_id, []),
+                           external_slug_of), encoding="utf-8")
         written += 1
 
     for node in entrypoints:
@@ -2973,14 +3225,64 @@ def write_markdown_docs(db: DB, out_dir: Path, title: str, flows: list) -> dict:
         path.write_text("\n".join(lines).rstrip() + "\n", encoding="utf-8")
         written += 1
 
+    for external in externals:
+        attached = []
+        for edge in edges:
+            if edge["kind"] == "calls" and edge["to"] == external["id"]:
+                slug = flow_slug_of.get(edge["from"])
+                flow = flow_by_id.get(edge["from"], {})
+                label = _md_cell(flow.get("name") or edge["from"])
+                link = f"[{label}](../flows/{slug}.md)" if slug else _md_code(edge["from"])
+                attached.append(f"- {link} — `calls`")
+            elif edge["kind"] == "delivers-to" and edge["to"] == external["id"]:
+                entry_slug = slug_of.get(edge["from"])
+                entry = nodes.get(edge["from"], {})
+                entry_label = _md_cell(entry.get("name") or edge["from"])
+                entry_link = (f"[{entry_label}](../entities/{entry_slug}.md)"
+                              if entry_slug else _md_code(edge["from"]))
+                flow_id = edge.get("flow_id") or ""
+                flow_slug = flow_slug_of.get(flow_id)
+                flow = flow_by_id.get(flow_id, {})
+                flow_label = _md_cell(flow.get("name") or flow_id)
+                flow_link = (f"[{flow_label}](../flows/{flow_slug}.md)"
+                             if flow_slug else _md_code(flow_id))
+                attached.append(
+                    f"- {entry_link} — `delivers-to` via {flow_link}")
+        lines = [f"# {external.get('name') or external['id']}", "",
+                 _md_code(external["id"]), ""]
+        if external.get("description"):
+            lines += [_md_cell(external["description"]), ""]
+        attributes = []
+        for key, label in (("provider", "provider"), ("protocol", "protocol"),
+                           ("location", "location"), ("cluster", "cluster"),
+                           ("repo", "repo"), ("commit_sha", "commit"),
+                           ("file_path", "file")):
+            if external.get(key):
+                attributes.append(
+                    f"| {label} | {_md_code(external[key])} |")
+        if attributes:
+            lines += ["| Attribute | Value |", "|---|---|", *attributes, ""]
+        lines += ["## Used by", ""]
+        lines += attached or ["_No flow or entry uses this external system yet._"]
+        lines.append("")
+        if external.get("refs"):
+            lines += ["## References", ""]
+            lines.extend(f"- `{ref}`" for ref in external["refs"])
+            lines.append("")
+        path = out_dir / "externals" / (external_slug_of[external["id"]] + ".md")
+        path.write_text("\n".join(lines).rstrip() + "\n", encoding="utf-8")
+        written += 1
+
     (out_dir / "README.md").write_text(
         _docs_readme(title, contracts, fields, edges, slug_of, flows, flow_slug_of,
-                     entrypoints, entrypoint_slug_of, rules, rule_slug_of),
+                     entrypoints, entrypoint_slug_of, rules, rule_slug_of,
+                     externals, external_slug_of),
         encoding="utf-8")
     written += 1
     return {"out": str(out_dir), "entities": len(contracts),
             "flows": len(flows), "entrypoints": len(entrypoints),
-            "rules": len(rules), "files": written}
+            "rules": len(rules), "externals": len(externals),
+            "files": written}
 
 
 def cmd_export_md(args) -> int:
@@ -2993,7 +3295,7 @@ def cmd_export_md(args) -> int:
     else:
         print(f"wrote {result['files']} markdown files to {result['out']} "
               f"({result['entities']} entities, {result['flows']} flows, "
-              f"{result['rules']} rules)")
+              f"{result['rules']} rules, {result['externals']} external systems)")
     return 0
 
 
@@ -3017,6 +3319,7 @@ def cmd_stats(args) -> int:
     edge_kinds = Counter(edge["kind"] for edge in edges)
     entrypoints = sum(node["kind"] == "entrypoint" for node in nodes.values())
     rules = sum(node["kind"] == "rule" for node in nodes.values())
+    externals = sum(node["kind"] == "external" for node in nodes.values())
     stores = Counter(node.get("store_type") or "?" for node in contracts
                      if node["kind"] == "storage")
     per_contract = Counter(owner_of(field_id) for field_id in nodes if "#" in field_id)
@@ -3026,7 +3329,7 @@ def cmd_stats(args) -> int:
         "nodes": len(nodes), "edges": len(edges),
         "kinds": dict(kinds), "edge_kinds": dict(edge_kinds),
         "entrypoints": entrypoints, "store_types": dict(stores),
-        "rules": rules,
+        "rules": rules, "externals": externals,
         "clusters": dict(clusters.most_common()),
         "fields_per_contract": dict(per_contract.most_common(10)),
     }
@@ -3039,6 +3342,8 @@ def cmd_stats(args) -> int:
         print(f"entrypoints:    {entrypoints}")
     if rules:
         print(f"rules:          {rules}")
+    if externals:
+        print(f"externals:      {externals}")
     if clusters:
         print("clusters:       " + ", ".join(f"{k}={v}" for k, v in clusters.most_common()))
     if stores:
@@ -3130,7 +3435,25 @@ def build_flow_payload(nodes, edges, flow_id: str):
         "note": edge.get("note") or "",
         "flow_id": flow_id,
     } for edge in passages]
-    return {"flow": flow, "steps": steps, "feeds": feeds}
+    externals = []
+    for edge in edges:
+        if edge["kind"] == "calls" and edge["from"] == flow_id:
+            via = "calls"
+        elif (edge["kind"] == "delivers-to"
+              and (edge.get("flow_id") or "") == flow_id):
+            via = "delivers-to"
+        else:
+            continue
+        external = nodes.get(edge["to"])
+        if external and external["kind"] == "external":
+            externals.append({
+                "id": external["id"],
+                "name": external.get("name") or "",
+                "via": via,
+                "flow_id": flow_id,
+            })
+    return {"flow": flow, "steps": steps, "feeds": feeds,
+            "externals": externals}
 
 
 def build_flow_payloads(nodes, edges) -> list:
@@ -3278,6 +3601,7 @@ def cmd_flow_show(args) -> int:
             "entities": [step["contract_id"] for step in payload["steps"]],
             "steps": payload["steps"],
             "feeds": payload["feeds"],
+            "externals": payload.get("externals", []),
             "joins": joins,
         }, indent=2, ensure_ascii=False))
         return 0
@@ -3303,6 +3627,12 @@ def cmd_flow_show(args) -> int:
         note = f"  # {feed['note']}" if feed.get("note") else ""
         print(f"  {feed['from'].split('/', 1)[-1]} "
               f"-[{feed['kind']}]-> {feed['to'].split('/', 1)[-1]}{note}")
+    print()
+    if payload.get("externals"):
+        print()
+        print("EXTERNAL SYSTEMS")
+        for item in payload["externals"]:
+            print(f"  {item['id']} [{item['via']}]")
     print()
     print("PATH")
     tree = _flow_text_tree(payload)
@@ -3564,7 +3894,7 @@ def build_parser() -> argparse.ArgumentParser:
 
     migrate = sub.add_parser(
         "migrate", parents=[common],
-        help="convert a schema v1-v6 database to v7 (rules)")
+        help="convert a schema v1-v7 database to v8 (external systems)")
     migrate.set_defaults(func=cmd_migrate)
 
     migrate_db_cmd = sub.add_parser(
@@ -3660,12 +3990,30 @@ def build_parser() -> argparse.ArgumentParser:
                           help="reference file:line (repeatable)")
     add_rule.set_defaults(func=cmd_add_rule)
 
+    add_external = sub.add_parser(
+        "add-external", parents=[common],
+        help="create or update an External System node")
+    add_external.add_argument("--id", help="explicit id, e.g. external:sms-provider")
+    add_external.add_argument("--name")
+    add_external.add_argument("--description")
+    add_external.add_argument("--provider", help="vendor, e.g. Twilio")
+    add_external.add_argument("--protocol", help="HTTP, gRPC, SMTP, ...")
+    add_external.add_argument("--location", help="base URL or address")
+    add_external.add_argument("--cluster",
+                              help="grouping label, e.g. notification-service")
+    add_external.add_argument("--repo")
+    add_external.add_argument("--commit", dest="commit")
+    add_external.add_argument("--file", dest="file")
+    add_external.add_argument("--ref", action="append",
+                              help="reference file:line (repeatable)")
+    add_external.set_defaults(func=cmd_add_external)
+
     add_edge = sub.add_parser("add-edge", parents=[common],
                               help="create or update a relationship")
     add_edge.add_argument("--kind", required=True, choices=tuple(RELS))
     add_edge.add_argument("--from", dest="src", required=True)
     add_edge.add_argument("--to", dest="dst", required=True)
-    add_edge.add_argument("--flow", help="flow id for flow/transform passages")
+    add_edge.add_argument("--flow", help="flow id for flow/transform/delivers-to edges")
     add_edge.add_argument("--description",
                           help="what connects the entrypoints (related edges)")
     add_edge.add_argument("--ref", action="append", help="reference file:line (repeatable)")
@@ -3682,7 +4030,7 @@ def build_parser() -> argparse.ArgumentParser:
     remove_edge.add_argument("--kind", required=True, choices=tuple(RELS))
     remove_edge.add_argument("--from", dest="src", required=True)
     remove_edge.add_argument("--to", dest="dst", required=True)
-    remove_edge.add_argument("--flow", help="flow id for flow/transform passages")
+    remove_edge.add_argument("--flow", help="flow id for flow/transform/delivers-to edges")
     remove_edge.add_argument("--description",
                              help="identifies a related edge between entrypoints")
     remove_edge.set_defaults(func=cmd_remove_edge)

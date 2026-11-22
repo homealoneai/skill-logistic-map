@@ -220,6 +220,27 @@ add-edge --kind rule --from flow:search-products --to rule:search-limit
   vague label ("pagination").
 - Rules carry no data and never appear in a passage or `Impact`.
 
+## 10. Record external systems
+
+An `External` node is a service outside the mapped repositories: SMS or email
+providers, payment gateways, shipping APIs, identity providers. It is a
+dependency boundary, not a data entity.
+
+```sh
+add-external --id external:sms-gateway --name "SMS gateway" \
+  --provider Twilio --protocol HTTP --cluster notification-service \
+  --ref notify/sms.go:12
+add-edge --kind calls --from flow:send-sms --to external:sms-gateway
+add-edge --kind delivers-to --flow flow:send-sms \
+  --from entry:sms-request --to external:sms-gateway
+```
+
+- Use `calls` when the flow depends on the external system.
+- Use `delivers-to` when a specific Entry payload is sent to it; `--flow` is
+  mandatory and the Entry must be used by that flow.
+- Do not model the external vendor's internal database or fields.
+- External Systems stay out of passages and `Impact`.
+
 ## Anti-patterns
 
 | Anti-pattern | Why it hurts |
@@ -229,6 +250,8 @@ add-edge --kind rule --from flow:search-products --to rule:search-limit
 | `compose` used as "then" | Composition is whole/part; execution order belongs to Flows |
 | `related` used to move data | It only connects activation points; data belongs to Flow passages |
 | A rule written as a separate Markdown note | The behaviour is not queryable or rendered; use a `Rule` node |
+| An external vendor modelled as a local `Storage` | It is a dependency boundary, not data you own; use an `External` node |
+| `delivers-to` without `--flow` | The delivery is not attributable to a path; always name the flow |
 | A `transform` with no note or reference | Nobody can audit the mapping; the report warns |
 | `Storage` for an external API | The graph no longer distinguishes your data from someone else's |
 | Reusing a `Field` node across contracts to avoid duplicates | Hides type conflicts and missing fields |
